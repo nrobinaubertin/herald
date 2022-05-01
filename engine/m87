@@ -1,0 +1,108 @@
+#!/bin/env python3
+
+"""M87
+
+Usage:
+    m87
+    m87 (-h | --help | --version)
+"""
+
+import sys
+from docopt import docopt
+import chess
+
+NAME = "M87"
+VERSION = "{} 0.1.0".format(NAME)
+AUTHOR = "nrobinaubertin"
+CURRENT_BOARD = chess.Board()
+
+
+def eval(board):
+    """Naive board evaluation"""
+    score = 0
+    score = score + len(board.pieces(chess.PAWN, chess.WHITE))
+    score = score + len(board.pieces(chess.KNIGHT, chess.WHITE)) * 3
+    score = score + len(board.pieces(chess.BISHOP, chess.WHITE)) * 3
+    score = score + len(board.pieces(chess.ROOK, chess.WHITE)) * 5
+    score = score + len(board.pieces(chess.QUEEN, chess.WHITE)) * 9
+    score = score - len(board.pieces(chess.PAWN, chess.BLACK))
+    score = score - len(board.pieces(chess.KNIGHT, chess.BLACK)) * 3
+    score = score - len(board.pieces(chess.BISHOP, chess.BLACK)) * 3
+    score = score - len(board.pieces(chess.ROOK, chess.BLACK)) * 5
+    score = score - len(board.pieces(chess.QUEEN, chess.BLACK)) * 9
+    return score
+
+
+def search_best_move(board):
+    """Naive best move search"""
+    best_move = None
+    best_score = -1000 if board.turn == chess.WHITE else 1000
+    for move in board.legal_moves:
+        curr_board = board.copy()
+        curr_board.push(move)
+        score = eval(curr_board)
+        if board.turn == chess.WHITE and score > best_score:
+            best_move = move
+            best_score = score
+        if board.turn == chess.BLACK and score < best_score:
+            best_move = move
+            best_score = score
+    return best_move
+
+
+def uci_parser(line):
+    global CURRENT_BOARD
+    tokens = line.strip().split()
+    if len(tokens) == 1 and tokens[0] == "uci":
+        return [
+            "{} by {}".format(VERSION, AUTHOR),
+            "id name {}".format(NAME),
+            "id author {}".format(AUTHOR),
+            # fake some options
+            "option name Hash type spin default 16 min 1 max 33554432",
+            "option name Move Overhead type spin default 10 min 0 max 5000",
+            "option name Threads type spin default 1 min 1 max 512",
+            "uciok",
+        ]
+    if tokens[0] == "ucinewgame":
+        return []
+    if tokens[0] == "isready":
+        return [
+            "readyok",
+        ]
+    if len(tokens) > 1 and tokens[0] == "position":
+        if tokens[1] == "startpos":
+            fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+            next_token = 2
+        else:
+            print(tokens[1:7])
+            fen = "{0} {1} {2} {3} {4} {5}".format(
+                tokens[1],
+                tokens[2],
+                tokens[3],
+                tokens[4],
+                tokens[5],
+                tokens[6],
+            )
+            next_token = 7
+        board = chess.Board(fen)
+        if len(tokens) > next_token and tokens[next_token] == "moves":
+            for move in tokens[next_token + 1 :]:
+                board.push(chess.Move.from_uci(move))
+        CURRENT_BOARD = board
+        # print(CURRENT_BOARD)
+    if tokens[0] == "go":
+        best_move = search_best_move(CURRENT_BOARD)
+        return ["bestmove {}".format(best_move.uci())]
+    return []
+
+
+if __name__ == "__main__":
+    args = docopt(str(__doc__), version=VERSION)
+    while True:
+        # line = sys.stdin.readline()
+        line = input()
+        output = uci_parser(line)
+        for line in output:
+            print(line)
+        # print("got: {}".format(line), end="")
