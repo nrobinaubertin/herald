@@ -7,9 +7,12 @@ Usage:
     m87 (-h | --help | --version)
 """
 
+import os
 import sys
+import subprocess
 from docopt import docopt
 import chess
+import bestmove
 
 NAME = "M87"
 VERSION = "{} 0.1.0".format(NAME)
@@ -17,42 +20,11 @@ AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = chess.Board()
 
 
-def eval(board):
-    """Naive board evaluation"""
-    score = 0
-    score = score + len(board.pieces(chess.PAWN, chess.WHITE))
-    score = score + len(board.pieces(chess.KNIGHT, chess.WHITE)) * 3
-    score = score + len(board.pieces(chess.BISHOP, chess.WHITE)) * 3
-    score = score + len(board.pieces(chess.ROOK, chess.WHITE)) * 5
-    score = score + len(board.pieces(chess.QUEEN, chess.WHITE)) * 9
-    score = score - len(board.pieces(chess.PAWN, chess.BLACK))
-    score = score - len(board.pieces(chess.KNIGHT, chess.BLACK)) * 3
-    score = score - len(board.pieces(chess.BISHOP, chess.BLACK)) * 3
-    score = score - len(board.pieces(chess.ROOK, chess.BLACK)) * 5
-    score = score - len(board.pieces(chess.QUEEN, chess.BLACK)) * 9
-    return score
-
-
-def search_best_move(board):
-    """Naive best move search"""
-    best_move = None
-    best_score = -1000 if board.turn == chess.WHITE else 1000
-    for move in board.legal_moves:
-        curr_board = board.copy()
-        curr_board.push(move)
-        score = eval(curr_board)
-        if board.turn == chess.WHITE and score > best_score:
-            best_move = move
-            best_score = score
-        if board.turn == chess.BLACK and score < best_score:
-            best_move = move
-            best_score = score
-    return best_move
-
-
 def uci_parser(line):
     global CURRENT_BOARD
     tokens = line.strip().split()
+    if not tokens:
+        return []
     if len(tokens) == 1 and tokens[0] == "uci":
         return [
             "{} by {}".format(VERSION, AUTHOR),
@@ -75,7 +47,7 @@ def uci_parser(line):
             fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
             next_token = 2
         else:
-            print(tokens[1:7])
+            #print(tokens[1:7])
             fen = "{0} {1} {2} {3} {4} {5}".format(
                 tokens[1],
                 tokens[2],
@@ -91,9 +63,48 @@ def uci_parser(line):
                 board.push(chess.Move.from_uci(move))
         CURRENT_BOARD = board
         # print(CURRENT_BOARD)
-    if tokens[0] == "go":
-        best_move = search_best_move(CURRENT_BOARD)
-        return ["bestmove {}".format(best_move.uci())]
+    if len(tokens) > 1 and tokens[0] == "go":
+
+        if len(tokens) > 8:
+            if tokens[1] == "wtime":
+                wtime = int(tokens[2])
+            if tokens[3] == "btime":
+                btime = int(tokens[4])
+            if tokens[5] == "winc":
+                winc = int(tokens[6])
+            if tokens[7] == "binc":
+                binc = int(tokens[8])
+
+        if tokens[1] == "movetime":
+            wtime = int(tokens[2])
+            btime = int(tokens[2])
+            winc = 0
+            binc = 0
+
+        my_time = wtime + winc
+        if CURRENT_BOARD.turn == chess.BLACK:
+            my_time = btime + binc
+
+        #print(sys.executable)
+        #print(__file__)
+        #print(os.path.join(os.path.dirname(__file__), 'bestmove_py', 'bestmove.py'))
+        #print(CURRENT_BOARD.fen())
+        #process = subprocess.run([
+        #    ". {}/bin/activate; {}".format(os.path.join(os.path.dirname(__file__), "venv"), sys.executable),
+        #    os.path.join(os.path.dirname(__file__), 'bestmove_py', 'bestmove.py'),
+        #    CURRENT_BOARD.fen()
+        #], capture_output=True, shell=True, check=True)
+        #best_move = str(process.stdout)
+
+        depth = 1
+        if my_time > 30 * 1000:
+            depth = 2
+        if my_time > 60 * 1000:
+            depth = 3
+        if my_time > 120 * 1000:
+            depth = 4
+        best_move = bestmove.bestMove(CURRENT_BOARD.fen(), depth)
+        return ["bestmove {}".format(best_move)]
     return []
 
 
