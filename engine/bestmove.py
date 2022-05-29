@@ -1,11 +1,11 @@
 import sys
 import board_simple
 import eval_simple
-import alphabeta_simple
+import alphabeta_quiescence
 
 def bestMove(fen, depth):
     board = board_simple.Board(fen)
-    best_move = alphabeta_simple.search_best_move(board, depth, eval_simple.eval)
+    best_move = alphabeta_quiescence.search_best_move(board, depth, eval_simple.eval)
     return best_move.uci()
 
 if __name__ == "__main__":

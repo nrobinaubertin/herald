@@ -1,13 +1,13 @@
 import constants
 
 def search_best_move(board, depth: int, eval_fn):
-    """Naive best move search"""
     best_move = None
     best_value = constants.VALUE.MAX * -1
-    for move in board.legal_moves:
+    for move in board.moves():
         curr_board = board.copy()
         curr_board.push(move)
         value = alphaBeta(curr_board, constants.VALUE.MAX * -1, constants.VALUE.MAX, depth, eval_fn)
+        #print("{}: {}".format(move.uci(), value))
         if value > best_value:
             best_move = move
             best_value = value
@@ -25,12 +25,10 @@ def alphaBeta(board, alpha: int, beta: int, depthleft: int, eval_fn) -> int:
     if depthleft == 0:
         return -eval_fn(board)
     value = constants.VALUE.MAX * -1
-    for move in board.legal_moves:
+    for move in board.moves():
         curr_board = board.copy()
         curr_board.push(move)
-        ab = alphaBeta(curr_board, -beta, -alpha, depthleft - 1, eval_fn)
-        if value < ab:
-            value = ab
+        value = max(value, alphaBeta(curr_board, -beta, -alpha, depthleft - 1, eval_fn))
         alpha = max(alpha, value)
         if alpha >= beta:
             break

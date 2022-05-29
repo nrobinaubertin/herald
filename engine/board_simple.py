@@ -12,6 +12,24 @@ class Board():
     def pieces(self, type: constants.PIECE, color: constants.COLOR):
         return self.board.pieces(self.convert_type(type), self.convert_color(color))
 
+    def piece_at(self, square: constants.SQUARE) -> constants.PIECE:
+        return self.convert_type(self.board.piece_at(square), True)
+
+    def is_quiescent_move(self, move) -> bool:
+        return self.board.is_capture(move)
+
+    def is_valid(self):
+        return self.board.is_valid()
+
+    def king(self, color: constants.COLOR):
+        return self.board.king(self.convert_color(color))
+
+    def invert_color(self, color: constants.COLOR) -> constants.COLOR:
+        return constants.COLOR.WHITE if color == constants.COLOR.BLACK else constants.COLOR.BLACK
+
+    def fen(self):
+        return self.board.fen()
+
     @property
     def turn(self) -> constants.COLOR:
         return self.convert_color(self.board.turn, invert=True)
@@ -22,8 +40,9 @@ class Board():
     def copy(self):
         return Board(board=self.board.copy())
 
-    @property
-    def legal_moves(self):
+    def moves(self, quiescent: bool = False):
+        if quiescent:
+            return filter(self.is_quiescent_move, self.board.legal_moves)
         return self.board.legal_moves
 
     def is_game_over(self) -> bool:
@@ -31,6 +50,9 @@ class Board():
 
     def outcome(self):
         return self.board.outcome()
+
+    def debug_move_stack(self):
+        return [x.uci() for x in self.board.move_stack]
 
     def convert_color(self, color, invert: bool = False):
         if not invert:
@@ -73,3 +95,6 @@ class Board():
             if type == chess.KING:
                 return constants.PIECE.KING
         raise Exception("Unknown type!")
+
+    def __str__(self):
+        return str(self.board)

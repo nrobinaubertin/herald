@@ -69,6 +69,8 @@ def uci_parser(line):
 
     if len(tokens) > 1 and tokens[0] == "go":
 
+        depth = None
+
         if len(tokens) > 8:
             if tokens[1] == "wtime":
                 wtime = int(tokens[2])
@@ -85,17 +87,19 @@ def uci_parser(line):
             winc = 0
             binc = 0
 
-        my_time = wtime + winc
-        if CURRENT_BOARD.turn == chess.BLACK:
-            my_time = btime + binc
+        if tokens[1] == "depth":
+            depth = int(tokens[2])
 
-        depth = 1
-        if my_time > 30 * 1000:
-            depth = 2
-        if my_time > 60 * 1000:
-            depth = 3
-        if my_time > 120 * 1000:
-            depth = 4
+        if depth is None:
+            my_time = wtime + winc
+            if CURRENT_BOARD.turn == chess.BLACK:
+                my_time = btime + binc
+
+            depth = 0
+            if my_time > 60 * 1000:
+                depth = 1
+            #if my_time > 120 * 1000:
+            #    depth = 3
         best_move = bestmove.bestMove(CURRENT_BOARD.fen(), depth)
         return ["bestmove {}".format(best_move)]
     return []
