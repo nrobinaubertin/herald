@@ -13,6 +13,7 @@ import subprocess
 from docopt import docopt
 import chess
 import bestmove
+import perft
 
 NAME = "M87"
 VERSION = "{} 0.2.0".format(NAME)
@@ -66,6 +67,11 @@ def uci_parser(line):
             for move in tokens[next_token + 1 :]:
                 board.push(chess.Move.from_uci(move))
         CURRENT_BOARD = board
+
+    if len(tokens) > 1 and tokens[0] == "perft":
+        depth = int(tokens[1])
+        nodes = perft.perft(CURRENT_BOARD.fen(), depth)
+        return [f"nodes {nodes}"]
 
     if len(tokens) > 1 and tokens[0] == "go":
 
