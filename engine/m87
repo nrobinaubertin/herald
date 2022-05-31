@@ -58,8 +58,8 @@ def uci_parser(line):
                 tokens[2],
                 tokens[3],
                 tokens[4],
-                tokens[5],
-                tokens[6],
+                tokens[5] if len(tokens) > 5 else 0,
+                tokens[6] if len(tokens) > 6 else 0,
             )
             next_token = 7
         board = chess.Board(fen)
@@ -70,7 +70,10 @@ def uci_parser(line):
 
     if len(tokens) > 1 and tokens[0] == "perft":
         depth = int(tokens[1])
-        nodes = perft.perft(CURRENT_BOARD.fen(), depth)
+        if depth == 0:
+            nodes = 1
+        else:
+            nodes = perft.perft(CURRENT_BOARD.fen(), depth)
         return [f"nodes {nodes}"]
 
     if len(tokens) > 1 and tokens[0] == "go":
@@ -101,11 +104,11 @@ def uci_parser(line):
             if CURRENT_BOARD.turn == chess.BLACK:
                 my_time = btime + binc
 
-            depth = 0
+            depth = 1
             if my_time > 60 * 1000:
-                depth = 1
-            #if my_time > 120 * 1000:
-            #    depth = 3
+                depth = 2
+            if my_time > 120 * 1000:
+                depth = 3
         best_move = bestmove.bestMove(CURRENT_BOARD.fen(), depth)
         return ["bestmove {}".format(best_move)]
     return []
