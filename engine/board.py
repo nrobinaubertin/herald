@@ -1,6 +1,8 @@
 import enum
 import collections
 import copy
+import array
+from zlib import adler32
 
 from constants import PIECE, COLOR, ASCII_REP, CASTLE
 
@@ -68,6 +70,16 @@ class Board:
         self.half_move = 0
         self.full_move = 0
 
+    def hash(self):
+        data = array.array('b')
+        data.fromlist(self.squares[20:99])
+        data.append(self.turn)
+        for cr in self.castling_rights:
+            data.append(cr)
+        data.append(self.en_passant)
+        #data.append(self.half_move)
+        return adler32(data)
+
     def from_FEN(self, fen: str):
         if fen == "startpos":
             fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -84,7 +96,7 @@ class Board:
             self.castling_rights.add(CASTLE.KING_SIDE * COLOR.BLACK)
         if "q" in castling_rights:
             self.castling_rights.add(CASTLE.QUEEN_SIDE * COLOR.BLACK)
-        self.en_passant = en_passant
+        self.en_passant = -1 # TODO
         self.half_move = int(half_move)
         self.full_move = int(full_move)
 

@@ -1,14 +1,14 @@
-#import zlib
-#import time
+import zlib
+import time
 from constants import PIECE, COLOR, CASTLE
-#import hashtable
+import hashtable
 from evaluation import VALUE_MAX
 from board import toUCI
 
 def search_best_move(board, depth: int, eval_fn):
 
-    # search_hash = board.fen()
-    # start_time = time.process_time()
+    search_hash = ""
+    start_time = time.process_time()
 
     best_move = None
     best_value = VALUE_MAX * -1
@@ -17,7 +17,7 @@ def search_best_move(board, depth: int, eval_fn):
         curr_board.push(move)
         value = -alphaBeta(curr_board, VALUE_MAX * -1, VALUE_MAX, depth, eval_fn)
         # print("{}: {}\n------".format(toUCI(move), value))
-        # search_hash += f",{move.uci()}:{value}"
+        search_hash += f",{toUCI(move)}:{value}"
         if value > best_value:
             best_move = move
             best_value = value
@@ -32,11 +32,11 @@ def alphaBeta(board, alpha: int, beta: int, depthleft: int, eval_fn) -> int:
     if not len(board.pieces[PIECE.KING * board.turn]):
         return VALUE_MAX * -1
 
-    #if depthleft > 1:
-    #    mem = hashtable.get_value(board)
-    #    if mem is not None and mem.depth >= depthleft:
-    #        # print("hashtable HIT, depth: {}, value: {}, hash: {}".format(mem.depth, mem.value, hashtable.hash_board(board)))
-    #        return mem.value
+    if depthleft > 1:
+        mem = hashtable.get_value(board)
+        if mem is not None and mem.depth >= depthleft:
+            # print("hashtable HIT, depth: {}, value: {}, hash: {}".format(mem.depth, mem.value, hashtable.hash_board(board)))
+            return mem.value
 
     if depthleft == 0:
         eval = eval_fn(board)
@@ -52,8 +52,8 @@ def alphaBeta(board, alpha: int, beta: int, depthleft: int, eval_fn) -> int:
         if alpha >= beta:
             break
 
-    #if depthleft > 1:
-    #    hashtable.set_value(board, hashtable.Mem(depthleft, value))
+    if depthleft > 1:
+        hashtable.set_value(board, hashtable.Mem(depthleft, value))
     return value
 
 
