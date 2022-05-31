@@ -1,5 +1,4 @@
 import collections
-import board_simple
 
 HASH_TABLE = {}
 REQ = 0

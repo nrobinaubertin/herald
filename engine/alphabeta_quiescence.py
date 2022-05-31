@@ -1,7 +1,9 @@
-import zlib
-import time
-import constants
-import hashtable
+#import zlib
+#import time
+from constants import PIECE, COLOR, CASTLE
+#import hashtable
+from evaluation import VALUE_MAX
+from board import toUCI
 
 def search_best_move(board, depth: int, eval_fn):
 
@@ -9,12 +11,12 @@ def search_best_move(board, depth: int, eval_fn):
     # start_time = time.process_time()
 
     best_move = None
-    best_value = constants.VALUE.MAX * -1
+    best_value = VALUE_MAX * -1
     for move in board.moves():
         curr_board = board.copy()
         curr_board.push(move)
-        value = -alphaBeta(curr_board, constants.VALUE.MAX * -1, constants.VALUE.MAX, depth, eval_fn)
-        # print("{}: {}\n------".format(move.uci(), value))
+        value = -alphaBeta(curr_board, VALUE_MAX * -1, VALUE_MAX, depth, eval_fn)
+        # print("{}: {}\n------".format(toUCI(move), value))
         # search_hash += f",{move.uci()}:{value}"
         if value > best_value:
             best_move = move
@@ -27,10 +29,8 @@ def search_best_move(board, depth: int, eval_fn):
 
 
 def alphaBeta(board, alpha: int, beta: int, depthleft: int, eval_fn) -> int:
-    if board.king(board.turn) is None:
-        return constants.VALUE.MAX * -1
-    if board.king(board.invert_color(board.turn)) is None:
-        return constants.VALUE.MAX
+    if not len(board.pieces[PIECE.KING * board.turn]):
+        return VALUE_MAX * -1
 
     #if depthleft > 1:
     #    mem = hashtable.get_value(board)
@@ -39,10 +39,11 @@ def alphaBeta(board, alpha: int, beta: int, depthleft: int, eval_fn) -> int:
     #        return mem.value
 
     if depthleft == 0:
-        return eval_fn(board)
-        # return quiescent_alphaBeta(board, constants.VALUE.MAX * -1, constants.VALUE.MAX, eval_fn, 0)
+        eval = eval_fn(board)
+        return eval
+        # return quiescent_alphaBeta(board, VALUE_MAX * -1, VALUE_MAX, eval_fn, 0)
 
-    value = constants.VALUE.MAX * -1
+    value = VALUE_MAX * -1
     for move in board.moves():
         curr_board = board.copy()
         curr_board.push(move)
@@ -57,15 +58,13 @@ def alphaBeta(board, alpha: int, beta: int, depthleft: int, eval_fn) -> int:
 
 
 def quiescent_alphaBeta(board, alpha: int, beta: int, eval_fn, depth: int) -> int:
-    if board.king(board.turn) is None:
-        return constants.VALUE.MAX * -1
-    if board.king(board.invert_color(board.turn)) is None:
-        return constants.VALUE.MAX
+    if not len(board.pieces[PIECE.KING * board.turn]):
+        return VALUE_MAX * -1
 
     moves = list(board.moves(quiescent=True))
     if len(moves) == 0:
         return eval_fn(board)
-    value = constants.VALUE.MAX * -1
+    value = VALUE_MAX * -1
     for move in moves:
         curr_board = board.copy()
         curr_board.push(move)

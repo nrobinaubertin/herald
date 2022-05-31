@@ -2,7 +2,7 @@ import enum
 import collections
 import copy
 
-import constants
+from constants import PIECE, COLOR, ASCII_REP, CASTLE
 
 Move = collections.namedtuple(
     "Move",
@@ -16,44 +16,15 @@ Move = collections.namedtuple(
     },
 )
 
-
-class CASTLE(enum.IntEnum):
-    KING_SIDE = 1
-    QUEEN_SIDE = 2
-
-
-class COLOR(enum.IntEnum):
-    WHITE = 1
-    BLACK = -1
+def toNormalNotation(square: int) -> str:
+    row = 10 - (square // 10 - 2)
+    column = square - (square // 10) * 10
+    letter = ({1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e', 6: 'f', 7: 'g', 8: 'h'})[column]
+    return f"{letter}{row - 2}"
 
 
-class PIECE(enum.IntEnum):
-    EMPTY = 0
-    PAWN = 1
-    KNIGHT = 2
-    BISHOP = 3
-    ROOK = 4
-    QUEEN = 5
-    KING = 6
-    INVALID = 7
-
-
-ASCII_REP = {
-    0: ".",
-    (PIECE.PAWN * COLOR.WHITE): "P",
-    (PIECE.KNIGHT * COLOR.WHITE): "N",
-    (PIECE.BISHOP * COLOR.WHITE): "B",
-    (PIECE.ROOK * COLOR.WHITE): "R",
-    (PIECE.QUEEN * COLOR.WHITE): "Q",
-    (PIECE.KING * COLOR.WHITE): "K",
-    (PIECE.PAWN * COLOR.BLACK): "p",
-    (PIECE.KNIGHT * COLOR.BLACK): "n",
-    (PIECE.BISHOP * COLOR.BLACK): "b",
-    (PIECE.ROOK * COLOR.BLACK): "r",
-    (PIECE.QUEEN * COLOR.BLACK): "q",
-    (PIECE.KING * COLOR.BLACK): "k",
-}
-
+def toUCI(move: Move) -> str:
+    return f"{toNormalNotation(move.start)}{toNormalNotation(move.end)}"
 
 class Board:
     def toString(self) -> str:
