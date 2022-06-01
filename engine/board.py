@@ -437,6 +437,7 @@ class Board:
                 if (
                     abs(castle) == CASTLE.KING_SIDE
                     and self.squares[96] == PIECE.EMPTY
+                    and self.squares[97] == PIECE.EMPTY
                     and not self.is_square_attacked(95, COLOR.BLACK)
                     and not self.is_square_attacked(96, COLOR.BLACK)
                     and not self.is_square_attacked(97, COLOR.BLACK)
@@ -453,6 +454,8 @@ class Board:
                 if (
                     abs(castle) == CASTLE.QUEEN_SIDE
                     and self.squares[94] == PIECE.EMPTY
+                    and self.squares[93] == PIECE.EMPTY
+                    and self.squares[92] == PIECE.EMPTY
                     and not self.is_square_attacked(95, COLOR.BLACK)
                     and not self.is_square_attacked(94, COLOR.BLACK)
                     and not self.is_square_attacked(93, COLOR.BLACK)
@@ -470,6 +473,7 @@ class Board:
                 if (
                     abs(castle) == CASTLE.KING_SIDE
                     and self.squares[26] == PIECE.EMPTY
+                    and self.squares[27] == PIECE.EMPTY
                     and not self.is_square_attacked(25, COLOR.WHITE)
                     and not self.is_square_attacked(26, COLOR.WHITE)
                     and not self.is_square_attacked(27, COLOR.WHITE)
@@ -486,6 +490,8 @@ class Board:
                 if (
                     abs(castle) == CASTLE.QUEEN_SIDE
                     and self.squares[24] == PIECE.EMPTY
+                    and self.squares[23] == PIECE.EMPTY
+                    and self.squares[22] == PIECE.EMPTY
                     and not self.is_square_attacked(25, COLOR.WHITE)
                     and not self.is_square_attacked(24, COLOR.WHITE)
                     and not self.is_square_attacked(23, COLOR.WHITE)
