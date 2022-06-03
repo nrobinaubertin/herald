@@ -104,15 +104,12 @@ def uci_parser(line):
             if CURRENT_BOARD.turn == chess.BLACK:
                 my_time = btime + binc
 
-            depth = 2
-            if my_time > 9 * 1000:
+            depth = 1
+            if my_time > 29 * 1000:
                 depth = 3
-            if my_time > 19 * 1000:
-                depth = 4
-            if my_time > 60 * 1000:
-                depth = 5
-            if my_time > 120 * 1000:
-                depth = 6
+
+        #if CURRENT_BOARD.fullmove_number < 5 and my_time > 29 * 1000:
+        #    depth = 3
         best_move = bestmove.bestMove(CURRENT_BOARD.fen(), depth)
         return ["bestmove {}".format(best_move)]
     return []

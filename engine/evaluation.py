@@ -3,6 +3,7 @@ from constants import PIECE, COLOR, CASTLE
 VALUE_MAX = 60_000
 
 PIECE_VALUE = {
+    PIECE.EMPTY: 0,
     PIECE.PAWN: 100,
     PIECE.KNIGHT: 280,
     PIECE.BISHOP: 320,

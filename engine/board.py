@@ -2,7 +2,11 @@ import enum
 import collections
 import copy
 import array
-from zlib import adler32
+from zlib import adler32, crc32
+import hashlib
+
+# TO TEST:
+# r1bk3r/pp1n3p/5Q2/1Np5/5pB1/8/PPP2P1P/2KR3R b - - 0 17
 
 from constants import PIECE, COLOR, ASCII_REP, CASTLE
 
@@ -18,19 +22,21 @@ Move = collections.namedtuple(
     },
 )
 
+
 def toNormalNotation(square: int) -> str:
     row = 10 - (square // 10 - 2)
     column = square - (square // 10) * 10
-    letter = ({1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e', 6: 'f', 7: 'g', 8: 'h'})[column]
+    letter = ({1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f", 7: "g", 8: "h"})[column]
     return f"{letter}{row - 2}"
 
 
 def toUCI(move: Move) -> str:
     return f"{toNormalNotation(move.start)}{toNormalNotation(move.end)}"
 
+
 class Board:
     def toString(self) -> str:
-        rep = f"{'w' if board.turn == COLOR.WHITE else 'b'}  0 1 2 3 4 5 6 7 8 9"
+        rep = f"{'w' if self.turn == COLOR.WHITE else 'b'}  0 1 2 3 4 5 6 7 8 9"
         for i in range(120):
             if i % 10 == 0:
                 rep += f"\n{i//10:02d} "
@@ -69,16 +75,17 @@ class Board:
         self.en_passant = -1
         self.half_move = 0
         self.full_move = 0
+        self.king_en_passant = -1
 
     def hash(self):
-        data = array.array('b')
+        data = array.array("b")
         data.fromlist(self.squares[20:99])
         data.append(self.turn)
         for cr in self.castling_rights:
             data.append(cr)
         data.append(self.en_passant)
-        #data.append(self.half_move)
-        return adler32(data)
+        # data.append(self.half_move)
+        return crc32(data)
 
     def from_FEN(self, fen: str):
         if fen == "startpos":
@@ -96,7 +103,7 @@ class Board:
             self.castling_rights.add(CASTLE.KING_SIDE * COLOR.BLACK)
         if "q" in castling_rights:
             self.castling_rights.add(CASTLE.QUEEN_SIDE * COLOR.BLACK)
-        self.en_passant = -1 # TODO
+        self.en_passant = -1  # TODO
         self.half_move = int(half_move)
         self.full_move = int(full_move)
 
@@ -173,28 +180,48 @@ class Board:
         else:
             self.en_passant = -1
 
+        # check if the piece ends up on the king_en_passant square
+        if move.end == self.king_en_passant:
+            king_square = self.pieces[
+                PIECE.KING * (COLOR.WHITE if self.turn == COLOR.BLACK else COLOR.BLACK)
+            ]
+            self.pieces[
+                PIECE.KING * (COLOR.WHITE if self.turn == COLOR.BLACK else COLOR.BLACK)
+            ] = set()
+            self.squares[king_square] = PIECE.EMPTY
+
         # some hardcode for castling move of the rook
         if move.is_castle:
             if move.end == 97:
                 self.squares[98] = PIECE.EMPTY
+                self.squares[95] = PIECE.EMPTY
                 self.squares[96] = PIECE.ROOK * COLOR.WHITE
                 self.pieces[PIECE.ROOK * COLOR.WHITE].remove(98)
                 self.pieces[PIECE.ROOK * COLOR.WHITE].add(96)
+                self.king_en_passant = 96
             if move.end == 93:
                 self.squares[91] = PIECE.EMPTY
-                self.squares[95] = PIECE.ROOK * COLOR.WHITE
+                self.squares[95] = PIECE.EMPTY
+                self.squares[94] = PIECE.ROOK * COLOR.WHITE
                 self.pieces[PIECE.ROOK * COLOR.WHITE].remove(91)
                 self.pieces[PIECE.ROOK * COLOR.WHITE].add(94)
+                self.king_en_passant = 94
             if move.end == 27:
                 self.squares[28] = PIECE.EMPTY
+                self.squares[25] = PIECE.EMPTY
                 self.squares[26] = PIECE.ROOK * COLOR.BLACK
                 self.pieces[PIECE.ROOK * COLOR.BLACK].remove(28)
                 self.pieces[PIECE.ROOK * COLOR.BLACK].add(26)
+                self.king_en_passant = 26
             if move.end == 23:
                 self.squares[21] = PIECE.EMPTY
+                self.squares[25] = PIECE.EMPTY
                 self.squares[24] = PIECE.ROOK * COLOR.BLACK
                 self.pieces[PIECE.ROOK * COLOR.BLACK].remove(21)
                 self.pieces[PIECE.ROOK * COLOR.BLACK].add(24)
+                self.king_en_passant = 24
+        else:
+            self.king_en_passant = -1
 
         # remove castling rights
         if (
@@ -238,21 +265,29 @@ class Board:
         board.full_move = self.full_move
         return board
 
-    def moves(self):
+    def moves(self, quiescent=False):
         moves = []
-        for move in self.pseudo_legal_moves():
+        for move in self.pseudo_legal_moves(quiescent):
             b = self.copy()
             b.push(move)
-            if not b.is_square_attacked(
-                next(
-                    iter(
-                        b.pieces[
-                            PIECE.KING
-                            * (COLOR.WHITE if b.turn == COLOR.BLACK else COLOR.BLACK)
-                        ]
-                    )
-                ),
-                b.turn,
+            if (
+                not b.is_square_attacked(
+                    next(
+                        iter(
+                            b.pieces[
+                                PIECE.KING
+                                * (
+                                    COLOR.WHITE
+                                    if b.turn == COLOR.BLACK
+                                    else COLOR.BLACK
+                                )
+                            ]
+                        )
+                    ),
+                    b.turn,
+                )
+            ) and (
+                b.king_en_passant == -1 or not b.is_square_attacked(b.king_en_passant, b.turn)
             ):
                 moves.append(move)
         return moves
@@ -290,7 +325,7 @@ class Board:
                 return True
         return False
 
-    def pseudo_legal_moves(self):
+    def pseudo_legal_moves(self, quiescent=False):
         moves = []
         for type in [
             PIECE.PAWN,
@@ -304,15 +339,19 @@ class Board:
                 if type == PIECE.KNIGHT:
                     for depl in [21, 12, -8, -19, -21, -12, 8, 19]:
                         end = start + depl
+                        is_capture = bool(self.squares[end]) or end == self.king_en_passant
                         if (
                             self.squares[end] != PIECE.INVALID
                             and self.squares[end] * self.turn <= 0
+                            and (
+                                (not quiescent) or is_capture
+                            )  # quiescence check
                         ):
                             moves.append(
                                 Move(
                                     start=start,
                                     end=end,
-                                    is_capture=(bool(self.squares[start])),
+                                    is_capture=is_capture,
                                     is_castle=False,
                                     en_passant=-1,
                                 )
@@ -321,188 +360,192 @@ class Board:
                     for direction in [1, -1, 10, -10]:
                         for depl in [x * direction for x in range(1, 7)]:
                             end = start + depl
+                            is_capture = bool(self.squares[end]) or end == self.king_en_passant
                             if (
                                 self.squares[end] != PIECE.INVALID
                                 and self.squares[end] * self.turn <= 0
+                                and (
+                                    (not quiescent) or is_capture
+                                )  # quiescence check
                             ):
                                 moves.append(
                                     Move(
                                         start=start,
                                         end=end,
-                                        is_capture=(bool(self.squares[start])),
+                                        is_capture=is_capture,
                                         is_castle=False,
                                         en_passant=-1,
                                     )
                                 )
-                            if self.squares[end] != PIECE.EMPTY:
+                            if self.squares[end] != PIECE.EMPTY or is_capture:
                                 break
                 if type == PIECE.BISHOP:
                     for direction in [11, -11, 9, -9]:
                         for depl in [x * direction for x in range(1, 7)]:
                             end = start + depl
+                            is_capture = bool(self.squares[end]) or end == self.king_en_passant
                             if (
                                 self.squares[end] != PIECE.INVALID
                                 and self.squares[end] * self.turn <= 0
+                                and (
+                                    (not quiescent) or is_capture
+                                )  # quiescence check
                             ):
                                 moves.append(
                                     Move(
                                         start=start,
                                         end=end,
-                                        is_capture=(bool(self.squares[start])),
+                                        is_capture=is_capture,
                                         is_castle=False,
                                         en_passant=-1,
                                     )
                                 )
-                            if self.squares[end] != PIECE.EMPTY:
+                            if self.squares[end] != PIECE.EMPTY or is_capture:
                                 break
                 if type == PIECE.QUEEN:
                     for direction in [11, -11, 9, -9] + [1, -1, 10, -10]:
                         for depl in [x * direction for x in range(1, 7)]:
                             end = start + depl
+                            is_capture = bool(self.squares[end]) or end == self.king_en_passant
                             if (
                                 self.squares[end] != PIECE.INVALID
                                 and self.squares[end] * self.turn <= 0
+                                and (
+                                    (not quiescent) or is_capture
+                                )  # quiescence check
                             ):
                                 moves.append(
                                     Move(
                                         start=start,
                                         end=end,
-                                        is_capture=(bool(self.squares[start])),
+                                        is_capture=is_capture,
                                         is_castle=False,
                                         en_passant=-1,
                                     )
                                 )
-                            if self.squares[end] != PIECE.EMPTY:
+                            if self.squares[end] != PIECE.EMPTY or is_capture:
                                 break
                 if type == PIECE.KING:
                     for depl in [11, -11, 9, -9] + [1, -1, 10, -10]:
                         end = start + depl
+                        is_capture = bool(self.squares[end]) or end == self.king_en_passant
                         if (
                             self.squares[end] != PIECE.INVALID
                             and self.squares[end] * self.turn <= 0
+                            and (
+                                (not quiescent) or is_capture
+                            )  # quiescence check
                         ):
                             moves.append(
                                 Move(
                                     start=start,
                                     end=end,
-                                    is_capture=(bool(self.squares[start])),
+                                    is_capture=is_capture,
                                     is_castle=False,
                                     en_passant=-1,
                                 )
                             )
                 if type == PIECE.PAWN:
-                    depls = [(10 if self.turn == COLOR.BLACK else -10)]
-                    if start // 10 == (3 if self.turn == COLOR.BLACK else 8):
-                        depls.append((20 if self.turn == COLOR.BLACK else -20))
-                    for idx, depl in enumerate(depls):
-                        end = start + depl
-                        if self.squares[end] == PIECE.EMPTY:
-                            if idx == 1:
-                                en_passant = start + depls[0]
-                            else:
-                                en_passant = -1
-                            moves.append(
-                                Move(
-                                    start=start,
-                                    end=end,
-                                    is_capture=(bool(self.squares[start])),
-                                    is_castle=False,
-                                    en_passant=en_passant,
+                    if not quiescent:
+                        depls = [(10 if self.turn == COLOR.BLACK else -10)]
+                        if start // 10 == (3 if self.turn == COLOR.BLACK else 8):
+                            depls.append((20 if self.turn == COLOR.BLACK else -20))
+                        for idx, depl in enumerate(depls):
+                            end = start + depl
+                            if self.squares[end] == PIECE.EMPTY:
+                                if idx == 1:
+                                    en_passant = start + depls[0]
+                                else:
+                                    en_passant = -1
+                                moves.append(
+                                    Move(
+                                        start=start,
+                                        end=end,
+                                        is_capture=False,
+                                        is_castle=False,
+                                        en_passant=en_passant,
+                                    )
                                 )
-                            )
-                        else:
-                            # do not allow 2 squares move if there's a piece in the way
-                            break
+                            else:
+                                # do not allow 2 squares move if there's a piece in the way
+                                break
                     for depl in [9, 11] if self.turn == COLOR.BLACK else [-9, -11]:
                         end = start + depl
                         if (
                             self.squares[end] != PIECE.INVALID
                             and self.squares[end] * self.turn < 0
+                            and ((not quiescent) or end == self.king_en_passant)  # quiescence check
                         ) or end == self.en_passant:
                             moves.append(
                                 Move(
                                     start=start,
                                     end=end,
-                                    is_capture=(
-                                        end == self.en_passant
-                                        or bool(self.squares[start])
-                                    ),
+                                    is_capture=True,
                                     is_castle=False,
                                     en_passant=-1,
                                 )
                             )
         # castling moves
-        for castle in self.castling_rights:
-            if castle > 0 and self.turn == COLOR.WHITE:
-                if (
-                    abs(castle) == CASTLE.KING_SIDE
-                    and self.squares[96] == PIECE.EMPTY
-                    and self.squares[97] == PIECE.EMPTY
-                    and not self.is_square_attacked(95, COLOR.BLACK)
-                    and not self.is_square_attacked(96, COLOR.BLACK)
-                    and not self.is_square_attacked(97, COLOR.BLACK)
-                ):
-                    moves.append(
-                        Move(
-                            start=95,
-                            end=97,
-                            is_capture=False,
-                            is_castle=True,
-                            en_passant=-1,
+        if not quiescent:  # quiescence check
+            for castle in self.castling_rights:
+                if castle > 0 and self.turn == COLOR.WHITE:
+                    if (
+                        abs(castle) == CASTLE.KING_SIDE
+                        and self.squares[96] == PIECE.EMPTY
+                        and self.squares[97] == PIECE.EMPTY
+                    ):
+                        moves.append(
+                            Move(
+                                start=95,
+                                end=97,
+                                is_capture=False,
+                                is_castle=True,
+                                en_passant=-1,
+                            )
                         )
-                    )
-                if (
-                    abs(castle) == CASTLE.QUEEN_SIDE
-                    and self.squares[94] == PIECE.EMPTY
-                    and self.squares[93] == PIECE.EMPTY
-                    and self.squares[92] == PIECE.EMPTY
-                    and not self.is_square_attacked(95, COLOR.BLACK)
-                    and not self.is_square_attacked(94, COLOR.BLACK)
-                    and not self.is_square_attacked(93, COLOR.BLACK)
-                ):
-                    moves.append(
-                        Move(
-                            start=95,
-                            end=93,
-                            is_capture=False,
-                            is_castle=True,
-                            en_passant=-1,
+                    if (
+                        abs(castle) == CASTLE.QUEEN_SIDE
+                        and self.squares[94] == PIECE.EMPTY
+                        and self.squares[93] == PIECE.EMPTY
+                        and self.squares[92] == PIECE.EMPTY
+                    ):
+                        moves.append(
+                            Move(
+                                start=95,
+                                end=93,
+                                is_capture=False,
+                                is_castle=True,
+                                en_passant=-1,
+                            )
                         )
-                    )
-            if castle < 0 and self.turn == COLOR.BLACK:
-                if (
-                    abs(castle) == CASTLE.KING_SIDE
-                    and self.squares[26] == PIECE.EMPTY
-                    and self.squares[27] == PIECE.EMPTY
-                    and not self.is_square_attacked(25, COLOR.WHITE)
-                    and not self.is_square_attacked(26, COLOR.WHITE)
-                    and not self.is_square_attacked(27, COLOR.WHITE)
-                ):
-                    moves.append(
-                        Move(
-                            start=25,
-                            end=27,
-                            is_capture=False,
-                            is_castle=True,
-                            en_passant=-1,
+                if castle < 0 and self.turn == COLOR.BLACK:
+                    if (
+                        abs(castle) == CASTLE.KING_SIDE
+                        and self.squares[26] == PIECE.EMPTY
+                        and self.squares[27] == PIECE.EMPTY
+                    ):
+                        moves.append(
+                            Move(
+                                start=25,
+                                end=27,
+                                is_capture=False,
+                                is_castle=True,
+                                en_passant=-1,
+                            )
                         )
-                    )
-                if (
-                    abs(castle) == CASTLE.QUEEN_SIDE
-                    and self.squares[24] == PIECE.EMPTY
-                    and self.squares[23] == PIECE.EMPTY
-                    and self.squares[22] == PIECE.EMPTY
-                    and not self.is_square_attacked(25, COLOR.WHITE)
-                    and not self.is_square_attacked(24, COLOR.WHITE)
-                    and not self.is_square_attacked(23, COLOR.WHITE)
-                ):
-                    moves.append(
-                        Move(
-                            start=25,
-                            end=23,
-                            is_capture=False,
-                            is_castle=True,
-                            en_passant=-1,
+                    if (
+                        abs(castle) == CASTLE.QUEEN_SIDE
+                        and self.squares[24] == PIECE.EMPTY
+                        and self.squares[23] == PIECE.EMPTY
+                        and self.squares[22] == PIECE.EMPTY
+                    ):
+                        moves.append(
+                            Move(
+                                start=25,
+                                end=23,
+                                is_capture=False,
+                                is_castle=True,
+                                en_passant=-1,
+                            )
                         )
-                    )
         return moves
