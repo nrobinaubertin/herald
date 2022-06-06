@@ -1,7 +1,6 @@
 import time
 import board as b
 
-
 def perft(fen, depth) -> int:
     start_time = time.process_time()
     board = b.Board(fen)
@@ -12,13 +11,15 @@ def perft(fen, depth) -> int:
 
 def execute(board, depth: int) -> int:
     if depth == 1:
-        return len([x for x in board.moves()])
+        return len([x for x in board.pseudo_legal_moves()])
 
     nodes = 0
-    moves = board.moves()
-    for move in moves:
+    for move in board.pseudo_legal_moves():
         curr_board = board.copy()
         curr_board.push(move)
         nodes += execute(curr_board, depth - 1)
 
     return nodes
+
+if __name__ == "__main__":
+    perft("startpos", 5)
