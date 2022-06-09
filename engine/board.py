@@ -4,6 +4,7 @@ import copy
 from array import array
 from zlib import adler32, crc32
 import hashlib
+import evaluation
 
 # TO TEST:
 # position r1bk3r/pp1n3p/5Q2/1Np5/5pB1/8/PPP2P1P/2KR3R b - - 0 17
@@ -82,10 +83,11 @@ class Board:
         self.half_move = 0
         self.full_move = 0
         self.king_en_passant = -1
+        self.eval = 0
 
-    def get_pieces_squares(type: PIECE, color: COLOR):
-        return self.pieces_array[(color + 1) / 2 * type]
 
+    #def get_pieces_squares(type: PIECE, color: COLOR):
+    #    return self.pieces_array[(color + 1) / 2 * type]
 
     def hash(self):
         data = array('b')
@@ -95,7 +97,8 @@ class Board:
         data.append(self.en_passant)
         data.append(self.king_en_passant)
         # data.append(self.half_move)
-        return adler32(data)
+        return hashlib.sha256(data).hexdigest()
+        #return adler32(data)
 
     def from_FEN(self, fen: str):
         if fen == "startpos":
@@ -155,22 +158,25 @@ class Board:
                     for i in range(int(c)):
                         self.squares[s := s + 1] = PIECE.EMPTY
             self.squares[s := s + 1] = PIECE.INVALID
+        self.eval = evaluation.eval(self)
 
     def __init__(self, fen=""):
         if fen:
             self.from_FEN(fen)
-        else:
-            self.init()
 
     def push(self, move: Move):
 
         piece_start = self.squares[move.start]
+        self.eval -= evaluation.PIECE_SQUARE_TABLE[abs(piece_start)][evaluation.mailbox_to_board(move.start)] * abs(piece_start) // piece_start
         piece_end = self.squares[move.end]
         self.squares[move.start] = PIECE.EMPTY
         self.squares[move.end] = piece_start
+        self.eval += evaluation.PIECE_SQUARE_TABLE[abs(piece_start)][evaluation.mailbox_to_board(move.end)] * abs(piece_start) // piece_start
         self.pieces[piece_start].remove(move.start)
         self.pieces[piece_start].append(move.end)
         if piece_end != PIECE.EMPTY:
+            self.eval -= evaluation.PIECE_VALUE[abs(piece_end)] * abs(piece_end) // piece_end
+            self.eval -= evaluation.PIECE_SQUARE_TABLE[abs(piece_end)][evaluation.mailbox_to_board(move.end)] * abs(piece_end) // piece_end
             self.pieces[piece_end].remove(move.end)
 
         # special removal for "en passant" moves
@@ -184,6 +190,8 @@ class Board:
             target_piece = self.squares[target]
             self.squares[target] = PIECE.EMPTY
             self.pieces[target_piece].remove(target)
+            self.eval -= evaluation.PIECE_VALUE[abs(target_piece)] * abs(target_piece) // target_piece
+            self.eval -= evaluation.PIECE_SQUARE_TABLE[abs(target_piece)][evaluation.mailbox_to_board(target)] * abs(target_piece) // target_piece
 
         if move.en_passant != -1:
             self.en_passant = move.en_passant
@@ -199,6 +207,7 @@ class Board:
                 PIECE.KING * (COLOR.WHITE if self.turn == COLOR.BLACK else COLOR.BLACK)
             ] = set()
             self.squares[king_square] = PIECE.EMPTY
+            self.eval = -VALUE_MAX
 
         # some hardcode for castling move of the rook
         if move.is_castle:
@@ -289,6 +298,7 @@ class Board:
         board.king_en_passant = self.king_en_passant
         board.half_move = self.half_move
         board.full_move = self.full_move
+        board.eval = self.eval
         return board
 
     def moves(self, quiescent=False):
