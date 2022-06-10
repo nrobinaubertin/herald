@@ -25,18 +25,38 @@ Move = collections.namedtuple(
 )
 
 
-def toNormalNotation(square: int) -> str:
-    row = 10 - (square // 10 - 2)
-    column = square - (square // 10) * 10
-    letter = ({1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f", 7: "g", 8: "h"})[column]
-    return f"{letter}{row - 2}"
-
-
 def toUCI(move: Move) -> str:
+    def toNormalNotation(square: int) -> str:
+        row = 10 - (square // 10 - 2)
+        column = square - (square // 10) * 10
+        letter = ({1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f", 7: "g", 8: "h"})[
+            column
+        ]
+        return f"{letter}{row - 2}"
+
     return f"{toNormalNotation(move.start)}{toNormalNotation(move.end)}"
 
 
 class Board:
+    def fromUCI(self, uci: str) -> Move:
+        digits = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8}
+        start = digits[uci[0]] + (10 - int(uci[1])) * 10
+        end = digits[uci[2]] + (10 - int(uci[3])) * 10
+        return Move(
+            start=start,
+            end=end,
+            is_capture=(
+                abs(self.squares[end]) != PIECE.EMPTY
+                or end == self.en_passant
+                or end == self.king_en_passant
+            ),
+            is_castle=(start == 95 or start == 25)
+            and abs(self.squares[start]) == PIECE.KING
+            and abs(end - start) == 2,
+            en_passant=abs(self.squares[start]) == PIECE.PAWN
+            and end == self.en_passant,
+        )
+
     def toString(self) -> str:
         rep = f"{'w' if self.turn == COLOR.WHITE else 'b'}  0 1 2 3 4 5 6 7 8 9"
         for i in range(120):
@@ -99,7 +119,7 @@ class Board:
         return hashlib.sha256(data).hexdigest()
         # return adler32(data)
 
-    def from_FEN(self, fen: str):
+    def fromFEN(self, fen: str):
         if fen == "startpos":
             fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -161,66 +181,71 @@ class Board:
 
     def __init__(self, fen=""):
         if fen:
-            self.from_FEN(fen)
+            self.fromFEN(fen)
 
     def push(self, move: Move):
 
+        def change_eval(move, piece_start, piece_end):
+            # simple piece move
+            self.eval -= (
+                evaluation.PIECE_SQUARE_TABLE[abs(piece_start)][
+                    evaluation.mailbox_to_board(move.start)
+                ] * abs(piece_start) // piece_start
+            )
+            self.eval += (
+                evaluation.PIECE_SQUARE_TABLE[abs(piece_start)][
+                    evaluation.mailbox_to_board(move.end)
+                ] * abs(piece_start) // piece_start
+            )
+            # handle captures
+            if piece_end != PIECE.EMPTY:
+                self.eval -= (
+                    evaluation.PIECE_VALUE[abs(piece_end)] * abs(piece_end) // piece_end
+                )
+                self.eval -= (
+                    evaluation.PIECE_SQUARE_TABLE[abs(piece_end)][
+                        evaluation.mailbox_to_board(move.end)
+                    ] * abs(piece_end) // piece_end
+                )
+            # special removal for "en passant" moves
+            if (
+                abs(piece_start) == PIECE.PAWN
+                and move.end == self.en_passant
+            ):
+                target = move.end + (10 * self.turn)
+                target_piece = self.squares[target]
+                self.eval -= (
+                    evaluation.PIECE_VALUE[abs(target_piece)] * abs(target_piece) // target_piece
+                )
+                self.eval -= (
+                    evaluation.PIECE_SQUARE_TABLE[abs(target_piece)][
+                        evaluation.mailbox_to_board(target)
+                    ] * abs(target_piece) // target_piece
+                )
+            # check if the piece ends up on the king_en_passant square
+            if move.end == self.king_en_passant:
+                self.eval = -VALUE_MAX
+
         piece_start = self.squares[move.start]
-        self.eval -= (
-            evaluation.PIECE_SQUARE_TABLE[abs(piece_start)][
-                evaluation.mailbox_to_board(move.start)
-            ]
-            * abs(piece_start)
-            // piece_start
-        )
         piece_end = self.squares[move.end]
+        change_eval(move, piece_start, piece_end)
+
         self.squares[move.start] = PIECE.EMPTY
         self.squares[move.end] = piece_start
-        self.eval += (
-            evaluation.PIECE_SQUARE_TABLE[abs(piece_start)][
-                evaluation.mailbox_to_board(move.end)
-            ]
-            * abs(piece_start)
-            // piece_start
-        )
         self.pieces[piece_start].remove(move.start)
         self.pieces[piece_start].append(move.end)
         if piece_end != PIECE.EMPTY:
-            self.eval -= (
-                evaluation.PIECE_VALUE[abs(piece_end)] * abs(piece_end) // piece_end
-            )
-            self.eval -= (
-                evaluation.PIECE_SQUARE_TABLE[abs(piece_end)][
-                    evaluation.mailbox_to_board(move.end)
-                ]
-                * abs(piece_end)
-                // piece_end
-            )
             self.pieces[piece_end].remove(move.end)
 
         # special removal for "en passant" moves
         if (
-            piece_start == PIECE.PAWN * self.turn
-            and move.is_capture
-            and piece_end == PIECE.EMPTY
+            abs(piece_start) == PIECE.PAWN
             and move.end == self.en_passant
         ):
             target = move.end + (10 * self.turn)
             target_piece = self.squares[target]
             self.squares[target] = PIECE.EMPTY
             self.pieces[target_piece].remove(target)
-            self.eval -= (
-                evaluation.PIECE_VALUE[abs(target_piece)]
-                * abs(target_piece)
-                // target_piece
-            )
-            self.eval -= (
-                evaluation.PIECE_SQUARE_TABLE[abs(target_piece)][
-                    evaluation.mailbox_to_board(target)
-                ]
-                * abs(target_piece)
-                // target_piece
-            )
 
         if move.en_passant != -1:
             self.en_passant = move.en_passant
@@ -234,9 +259,8 @@ class Board:
             ]
             self.pieces[
                 PIECE.KING * (COLOR.WHITE if self.turn == COLOR.BLACK else COLOR.BLACK)
-            ] = set()
+            ] = array('b')
             self.squares[king_square] = PIECE.EMPTY
-            self.eval = -VALUE_MAX
 
         # some hardcode for castling move of the rook
         if move.is_castle:

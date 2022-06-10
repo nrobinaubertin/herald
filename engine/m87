@@ -7,18 +7,58 @@ Usage:
     m87 (-h | --help | --version)
 """
 
-import os
-import sys
-import subprocess
-from docopt import docopt
-import chess
-import bestmove
+import time
+from constants import COLOR
+from board import Board, toUCI
+from search import search
 import perft
 
 NAME = "M87"
-VERSION = "{} 0.2.0".format(NAME)
+VERSION = "{} 0.4.0".format(NAME)
 AUTHOR = "nrobinaubertin"
-CURRENT_BOARD = chess.Board()
+CURRENT_BOARD = Board("startpos")
+
+
+def bestMove(board, max_time=0, max_depth=0):
+    if max_time != 0:
+        start_time = time.process_time()
+        for i in range(max_depth + 1):
+            best = search(board, i)
+            used_time = (time.process_time_ns() - start_time) // 1e6
+            if used_time > max_time // 40:
+                return toUCI(best.move)
+            else:
+                print(
+                    ""
+                    + f"info depth {best.depth} "
+                    + f"score cp {best.score} "
+                    + f"time {int(best.time // 1e9)} "
+                    + f"nodes {best.nodes} "
+                    + (
+                        "nps " + str(int(best.nodes * 1e9 // max(0.0001, best.time))) + " "
+                        if best.time > 0
+                        else ""
+                    )
+                    + f"currmove {toUCI(best.move)}"
+                )
+    else:
+        start_time = time.process_time()
+        for i in range(max_depth + 1):
+            best = search(board, i)
+            print(
+                ""
+                + f"info depth {best.depth} "
+                + f"score cp {best.score} "
+                + f"time {int(best.time // 1e9)} "
+                + f"nodes {best.nodes} "
+                + (
+                    "nps " + str(int(best.nodes * 1e9 // max(0.0001, best.time))) + " "
+                    if best.time > 0
+                    else ""
+                )
+                + f"currmove {toUCI(best.move)}"
+            )
+    return toUCI(best.move)
 
 
 def uci_parser(line):
@@ -28,6 +68,9 @@ def uci_parser(line):
     if not tokens:
         return []
 
+    if len(tokens) == 1 and tokens[0] == "print":
+        return [str(CURRENT_BOARD)]
+
     if len(tokens) == 1 and tokens[0] == "uci":
         return [
             "{} by {}".format(VERSION, AUTHOR),
@@ -36,7 +79,7 @@ def uci_parser(line):
             # fake some options
             "option name Hash type spin default 16 min 1 max 33554432",
             "option name Move Overhead type spin default 10 min 0 max 5000",
-            "option name Threads type spin default 1 min 1 max 512",
+            "option name Threads type spin default 1 min 1 max 1",
             "uciok",
         ]
 
@@ -62,10 +105,10 @@ def uci_parser(line):
                 tokens[6] if len(tokens) > 6 else 0,
             )
             next_token = 7
-        board = chess.Board(fen)
+        board = Board(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
             for move in tokens[next_token + 1 :]:
-                board.push(chess.Move.from_uci(move))
+                board.push(board.fromUCI(move))
         CURRENT_BOARD = board
 
     if len(tokens) > 1 and tokens[0] == "perft":
@@ -73,7 +116,7 @@ def uci_parser(line):
         if depth == 0:
             nodes = 1
         else:
-            nodes = perft.perft(CURRENT_BOARD.fen(), depth)
+            nodes = perft.perft(CURRENT_BOARD, depth)
         return [f"nodes {nodes}"]
 
     if len(tokens) > 1 and tokens[0] == "go":
@@ -101,24 +144,18 @@ def uci_parser(line):
 
         if depth is None:
             my_time = wtime + winc
-            if CURRENT_BOARD.turn == chess.BLACK:
+            if CURRENT_BOARD.turn == COLOR.BLACK:
                 my_time = btime + binc
+            move = bestMove(CURRENT_BOARD, max_time=my_time)
+        else:
+            move = bestMove(CURRENT_BOARD, max_depth=depth)
 
-            depth = 1
-            if my_time > 29 * 1000:
-                depth = 3
-
-        #if CURRENT_BOARD.fullmove_number < 5 and my_time > 29 * 1000:
-        #    depth = 3
-        best_move = bestmove.bestMove(CURRENT_BOARD.fen(), depth)
-        return ["bestmove {}".format(best_move)]
+        return [f"bestmove {move}"]
     return []
 
 
 if __name__ == "__main__":
-    args = docopt(str(__doc__), version=VERSION)
     while True:
         line = input()
-        output = uci_parser(line)
-        for line in output:
+        for line in uci_parser(line):
             print(line)

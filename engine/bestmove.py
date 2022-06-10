@@ -1,4 +1,3 @@
-import sys
 import time
 import board
 import search
@@ -7,7 +6,16 @@ import hashtable
 
 def bestMove(fen, depth):
     b = board.Board(fen)
-    best_move = search.search(board, depth)
+    for i in range(depth + 1):
+        best_move = search.search(b, i)
+        print(f"""\
+info depth {best_move.depth} \
+score cp {best_move.score} \
+time {best_move.time / 1e9} \
+nodes {best_move.nodes} \
+{f"nps {int(best_move.nodes * 1e9 // max(0.0001, best_move.time))}" if best_move.time > 0 else " "}\
+currmove {board.toUCI(best_move.move)} \
+""")
     return board.toUCI(best_move)
 
 

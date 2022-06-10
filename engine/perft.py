@@ -1,9 +1,7 @@
 import time
-import board as b
 
-def perft(fen, depth) -> int:
+def perft(board, depth) -> int:
     start_time = time.process_time()
-    board = b.Board(fen)
     nodes = execute(board, depth)
     print(f"duration: {time.process_time() - start_time}")
     return nodes

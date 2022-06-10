@@ -5,7 +5,6 @@ import hashtable
 from evaluation import VALUE_MAX, PIECE_VALUE
 
 QUIESCENT_NODES = 0
-ALPHA_NODES = 0
 LEAF_NODES = 0
 
 Search = collections.namedtuple("Search", ["move", "depth", "score", "nodes", "time"])
@@ -16,11 +15,9 @@ def search(board, depth: int):
     start_time = time.process_time_ns()
 
     global QUIESCENT_NODES
-    global ALPHA_NODES
     global LEAF_NODES
 
     QUIESCENT_NODES = 0
-    ALPHA_NODES = 0
     LEAF_NODES = 0
     best_move = None
     best_value = (VALUE_MAX * -1) - 1
@@ -28,6 +25,7 @@ def search(board, depth: int):
         curr_board = board.copy()
         curr_board.push(move)
         value = aspirationWindow(curr_board, board.eval, depth)
+        #value = alphaBetaFailSoft(curr_board, -VALUE_MAX, VALUE_MAX, depth)
         if value > best_value:
             best_move = move
             best_value = value
@@ -82,10 +80,7 @@ def alphaBetaFailSoft(board, alpha: int, beta: int, depth: int) -> int:
     if depth == 0:
         global LEAF_NODES
         LEAF_NODES += 1
-        return board.eval * abs(board.turn) // board.turn
-
-    global ALPHA_NODES
-    ALPHA_NODES += 1
+        return board.eval * abs(board.turn) // board.turn * -1
 
     best_score = (VALUE_MAX * -1) - 1
     for move in board.pseudo_legal_moves():

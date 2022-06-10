@@ -9,7 +9,7 @@ PIECE_VALUE = {
     PIECE.BISHOP: 320,
     PIECE.ROOK: 479,
     PIECE.QUEEN: 929,
-    PIECE.KING: 60000,
+    PIECE.KING: 60_000,
 }
 
 #PIECE_SQUARE_TABLE = {
@@ -140,23 +140,6 @@ PIECE_SQUARE_TABLE = {
 
 def mailbox_to_board(square: int) -> int:
     return square - 21 - ((square - 21) // 10) * 2
-
-#def eval(board) -> int:
-#    evaluation = 0
-#    for square, piece in enumerate(board.squares):
-#        if piece == PIECE.EMPTY or piece == PIECE.INVALID:
-#            continue
-#        value = PIECE_VALUE[abs(piece)]
-#        if board.turn == COLOR.WHITE:
-#            #print(mailbox_to_board(square))
-#            value += PIECE_SQUARE_TABLE[abs(piece)][mailbox_to_board(square)]
-#        else:
-#            #print(mailbox_to_board(119 - square))
-#            value += PIECE_SQUARE_TABLE[abs(piece)][mailbox_to_board(119 - square)]
-#        #print(PIECE(abs(piece)), value, (-1 if piece * board.turn < 0 else 1))
-#        evaluation += value * (-1 if piece * board.turn < 0 else 1)
-#    #print("eval: ", evaluation)
-#    return evaluation
 
 def eval(board) -> int:
     evaluation = 0
