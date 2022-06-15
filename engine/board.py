@@ -9,6 +9,7 @@ import evaluation
 # TO TEST:
 # position r1bk3r/pp1n3p/5Q2/1Np5/5pB1/8/PPP2P1P/2KR3R b - - 0 17
 # position 2b1k2r/1pp2pp1/5r2/p1b1n3/P1P5/1P3N2/1q1PPPPP/3RKB1R w Kk - 4 21
+# position 5r1k/pp6/2p1bn1P/6r1/3pB3/3P4/1PP2R2/2K2R2 b - - 1 33
 
 from constants import PIECE, COLOR, ASCII_REP, CASTLE
 
@@ -97,6 +98,9 @@ class Board:
         # start index for each piece: (color + 1) / 2 * type
         self.pieces_array = array("b", [PIECE.EMPTY] * 120)
 
+        # move history
+        self.moves_history = collections.deque()
+
         self.turn = COLOR.WHITE
         self.castling_rights = array("b")
         self.en_passant = -1
@@ -110,14 +114,14 @@ class Board:
 
     def hash(self):
         data = array("b")
-        data.extend(self.squares[20:99])
+        data.extend(self.squares)
         data.append(self.turn)
         data.extend(self.castling_rights)
         data.append(self.en_passant)
         data.append(self.king_en_passant)
-        # data.append(self.half_move)
-        return hashlib.sha256(data).hexdigest()
-        # return adler32(data)
+        # return data
+        # return hashlib.sha256(data).hexdigest()
+        return adler32(data)
 
     def fromFEN(self, fen: str):
         if fen == "startpos":
@@ -184,18 +188,21 @@ class Board:
             self.fromFEN(fen)
 
     def push(self, move: Move):
-
         def change_eval(move, piece_start, piece_end):
             # simple piece move
             self.eval -= (
                 evaluation.PIECE_SQUARE_TABLE[abs(piece_start)][
                     evaluation.mailbox_to_board(move.start)
-                ] * abs(piece_start) // piece_start
+                ]
+                * abs(piece_start)
+                // piece_start
             )
             self.eval += (
                 evaluation.PIECE_SQUARE_TABLE[abs(piece_start)][
                     evaluation.mailbox_to_board(move.end)
-                ] * abs(piece_start) // piece_start
+                ]
+                * abs(piece_start)
+                // piece_start
             )
             # handle captures
             if piece_end != PIECE.EMPTY:
@@ -205,22 +212,25 @@ class Board:
                 self.eval -= (
                     evaluation.PIECE_SQUARE_TABLE[abs(piece_end)][
                         evaluation.mailbox_to_board(move.end)
-                    ] * abs(piece_end) // piece_end
+                    ]
+                    * abs(piece_end)
+                    // piece_end
                 )
             # special removal for "en passant" moves
-            if (
-                abs(piece_start) == PIECE.PAWN
-                and move.end == self.en_passant
-            ):
+            if abs(piece_start) == PIECE.PAWN and move.end == self.en_passant:
                 target = move.end + (10 * self.turn)
                 target_piece = self.squares[target]
                 self.eval -= (
-                    evaluation.PIECE_VALUE[abs(target_piece)] * abs(target_piece) // target_piece
+                    evaluation.PIECE_VALUE[abs(target_piece)]
+                    * abs(target_piece)
+                    // target_piece
                 )
                 self.eval -= (
                     evaluation.PIECE_SQUARE_TABLE[abs(target_piece)][
                         evaluation.mailbox_to_board(target)
-                    ] * abs(target_piece) // target_piece
+                    ]
+                    * abs(target_piece)
+                    // target_piece
                 )
             # check if the piece ends up on the king_en_passant square
             if move.end == self.king_en_passant:
@@ -238,10 +248,7 @@ class Board:
             self.pieces[piece_end].remove(move.end)
 
         # special removal for "en passant" moves
-        if (
-            abs(piece_start) == PIECE.PAWN
-            and move.end == self.en_passant
-        ):
+        if abs(piece_start) == PIECE.PAWN and move.end == self.en_passant:
             target = move.end + (10 * self.turn)
             target_piece = self.squares[target]
             self.squares[target] = PIECE.EMPTY
@@ -259,7 +266,7 @@ class Board:
             ]
             self.pieces[
                 PIECE.KING * (COLOR.WHITE if self.turn == COLOR.BLACK else COLOR.BLACK)
-            ] = array('b')
+            ] = array("b")
             self.squares[king_square] = PIECE.EMPTY
 
         # some hardcode for castling move of the rook
@@ -324,6 +331,7 @@ class Board:
         except ValueError:
             pass
 
+        self.moves_history.append(move)
         self.turn = COLOR.BLACK if self.turn == COLOR.WHITE else COLOR.WHITE
         self.half_move += 1
         self.full_move += 1
@@ -369,6 +377,7 @@ class Board:
                 "b", self.pieces[PIECE.KING * COLOR.BLACK]
             ),
         }
+        board.moves_history = collections.deque(self.moves_history)
         board.turn = self.turn
         board.castling_rights = self.castling_rights
         board.en_passant = self.en_passant
@@ -469,7 +478,7 @@ class Board:
                             )
                 if type == PIECE.ROOK:
                     for direction in [1, -1, 10, -10]:
-                        for depl in [x * direction for x in range(1, 7)]:
+                        for depl in [x * direction for x in range(1, 8)]:
                             end = start + depl
                             is_capture = (
                                 bool(self.squares[end]) or end == self.king_en_passant
@@ -521,7 +530,7 @@ class Board:
                                 break
                 if type == PIECE.BISHOP:
                     for direction in [11, -11, 9, -9]:
-                        for depl in [x * direction for x in range(1, 7)]:
+                        for depl in [x * direction for x in range(1, 8)]:
                             end = start + depl
                             is_capture = (
                                 bool(self.squares[end]) or end == self.king_en_passant
@@ -542,7 +551,7 @@ class Board:
                                 break
                 if type == PIECE.QUEEN:
                     for direction in [11, -11, 9, -9] + [1, -1, 10, -10]:
-                        for depl in [x * direction for x in range(1, 7)]:
+                        for depl in [x * direction for x in range(1, 8)]:
                             end = start + depl
                             is_capture = (
                                 bool(self.squares[end]) or end == self.king_en_passant

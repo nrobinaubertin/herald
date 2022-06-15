@@ -1,13 +1,25 @@
 import collections
+import enum
 import board
 
 HASH_TABLE = {}
 REQ = 0
 HITS = 0
 
-Mem = collections.namedtuple('Mem', ['depth', 'value'])
+class NODE_TYPE(enum.IntEnum):
+    PV = 0,
+    ALL = 1,
+    CUT = -1,
 
-def get_value(board) -> Mem:
+Node = collections.namedtuple('Node', ['board', 'depth', 'value', 'type', 'upper', 'lower'])
+
+def get_stats():
+    global HASH_TABLE
+    global HITS
+    global REQ
+    return [len(HASH_TABLE), REQ, HITS]
+
+def get_value(board) -> Node:
     global HASH_TABLE
     global HITS
     global REQ
@@ -17,6 +29,10 @@ def get_value(board) -> Mem:
     REQ += 1
     return ret
 
-def set_value(board, mem: Mem):
+def set_value(node: Node):
     global HASH_TABLE
-    HASH_TABLE[board.hash()] = mem
+    hash = node.board.hash()
+    if hash not in HASH_TABLE:
+        HASH_TABLE[hash] = node
+    elif HASH_TABLE[hash].depth < node.depth:
+        HASH_TABLE[hash] = node

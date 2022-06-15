@@ -12,37 +12,58 @@ from constants import COLOR
 from board import Board, toUCI
 from search import search
 import perft
+import hashtable
+from evaluation import eval
 
 NAME = "M87"
-VERSION = "{} 0.4.0".format(NAME)
+VERSION = "{} 0.6.0".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 
+def analyze(board, max_depth=0, scan_move: str = ""):
+    for i in range(max_depth + 1):
+        best = search(board, i, debug=True, scan_move=scan_move)
+        print(
+            ""
+            + f"info depth {best.depth} "
+            + f"score cp {best.score} "
+            + f"time {int(best.time // 1e9)} "
+            + f"nodes {best.nodes} "
+            + (
+                "nps " + str(int(best.nodes * 1e9 // max(0.0001, best.time))) + " "
+                if best.time > 0
+                else ""
+            )
+            + f"pv {' '.join([toUCI(x) for x in best.best_node.board.moves_history])}"
+        )
+    return toUCI(best.move)
 
 def bestMove(board, max_time=0, max_depth=0):
     if max_time != 0:
-        start_time = time.process_time()
-        for i in range(max_depth + 1):
+        print(f"info max_depth {max_depth}")
+        start_time = time.process_time_ns()
+        for i in range((10 if max_depth == 0 else max_depth)):
             best = search(board, i)
-            used_time = (time.process_time_ns() - start_time) // 1e6
-            if used_time > max_time // 40:
-                return toUCI(best.move)
-            else:
-                print(
-                    ""
-                    + f"info depth {best.depth} "
-                    + f"score cp {best.score} "
-                    + f"time {int(best.time // 1e9)} "
-                    + f"nodes {best.nodes} "
-                    + (
-                        "nps " + str(int(best.nodes * 1e9 // max(0.0001, best.time))) + " "
-                        if best.time > 0
-                        else ""
-                    )
-                    + f"currmove {toUCI(best.move)}"
+            used_time = (time.process_time_ns() - start_time) // 1000
+            print(
+                ""
+                + f"info depth {best.depth} "
+                + f"score cp {best.score} "
+                + f"time {int(best.time // 1e9)} "
+                + f"nodes {best.nodes} "
+                + (
+                    "nps "
+                    + str(int(best.nodes * 1e9 // max(0.0001, best.time)))
+                    + " "
+                    if best.time > 0
+                    else ""
                 )
+                + f"pv {' '.join([toUCI(x) for x in best.best_node.board.moves_history])}"
+            )
+            if used_time > max_time // max(20, 80 - board.full_move) * 1000:
+                return toUCI(best.move)
     else:
-        start_time = time.process_time()
+        #best = search(board, max_depth)
         for i in range(max_depth + 1):
             best = search(board, i)
             print(
@@ -56,7 +77,7 @@ def bestMove(board, max_time=0, max_depth=0):
                     if best.time > 0
                     else ""
                 )
-                + f"currmove {toUCI(best.move)}"
+                + f"pv {' '.join([toUCI(x) for x in best.best_node.board.moves_history])}"
             )
     return toUCI(best.move)
 
@@ -68,8 +89,15 @@ def uci_parser(line):
     if not tokens:
         return []
 
+    if len(tokens) == 1 and tokens[0] == "eval":
+        return [f"current: {CURRENT_BOARD.eval}, full: {eval(CURRENT_BOARD)}"]
+
     if len(tokens) == 1 and tokens[0] == "print":
         return [str(CURRENT_BOARD)]
+
+    if len(tokens) == 1 and tokens[0] == "hashtable":
+        stats = hashtable.get_stats()
+        return [f"HITS: {stats[2]}, REQ: {stats[1]}, LEN: {stats[0]}"]
 
     if len(tokens) == 1 and tokens[0] == "uci":
         return [
@@ -119,6 +147,15 @@ def uci_parser(line):
             nodes = perft.perft(CURRENT_BOARD, depth)
         return [f"nodes {nodes}"]
 
+    if len(tokens) > 1 and tokens[0] == "analyze":
+
+        depth = int(tokens[1])
+        scan_move = tokens[2]
+
+        move = analyze(CURRENT_BOARD, max_depth=depth, scan_move=scan_move)
+
+        return [f"bestmove {move}"]
+
     if len(tokens) > 1 and tokens[0] == "go":
 
         depth = None
@@ -146,7 +183,7 @@ def uci_parser(line):
             my_time = wtime + winc
             if CURRENT_BOARD.turn == COLOR.BLACK:
                 my_time = btime + binc
-            move = bestMove(CURRENT_BOARD, max_time=my_time)
+            move = bestMove(CURRENT_BOARD, max_time=my_time, max_depth=min(6, CURRENT_BOARD.full_move // 2))
         else:
             move = bestMove(CURRENT_BOARD, max_depth=depth)
 
