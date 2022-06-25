@@ -7,6 +7,7 @@ Usage:
     m87 (-h | --help | --version)
 """
 
+import sys
 import time
 from constants import COLOR
 from board import Board, toUCI
@@ -16,7 +17,7 @@ import hashtable
 from evaluation import eval
 
 NAME = "M87"
-VERSION = "{} 0.6.0".format(NAME)
+VERSION = "{} 0.7.0".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 
@@ -34,7 +35,7 @@ def analyze(board, max_depth=0, scan_move: str = ""):
                 if best.time > 0
                 else ""
             )
-            + f"pv {' '.join([toUCI(x) for x in best.best_node.board.moves_history])}"
+            + f"pv {' '.join([toUCI(x) for x in best.pv])}"
         )
     return toUCI(best.move)
 
@@ -58,7 +59,7 @@ def bestMove(board, max_time=0, max_depth=0):
                     if best.time > 0
                     else ""
                 )
-                + f"pv {' '.join([toUCI(x) for x in best.best_node.board.moves_history])}"
+                + f"pv {' '.join([toUCI(x) for x in best.pv])}"
             )
             if used_time > max_time // max(20, 80 - board.full_move) * 1000:
                 return toUCI(best.move)
@@ -77,7 +78,7 @@ def bestMove(board, max_time=0, max_depth=0):
                     if best.time > 0
                     else ""
                 )
-                + f"pv {' '.join([toUCI(x) for x in best.best_node.board.moves_history])}"
+                + f"pv {' '.join([toUCI(x) for x in best.pv])}"
             )
     return toUCI(best.move)
 
@@ -89,15 +90,23 @@ def uci_parser(line):
     if not tokens:
         return []
 
-    if len(tokens) == 1 and tokens[0] == "eval":
-        return [f"current: {CURRENT_BOARD.eval}, full: {eval(CURRENT_BOARD)}"]
+    if tokens[0] == "eval":
+        return [f"{eval(CURRENT_BOARD)}"]
 
-    if len(tokens) == 1 and tokens[0] == "print":
+    if tokens[0] == "print":
         return [str(CURRENT_BOARD)]
 
-    if len(tokens) == 1 and tokens[0] == "hashtable":
-        stats = hashtable.get_stats()
-        return [f"HITS: {stats[2]}, REQ: {stats[1]}, LEN: {stats[0]}"]
+    if tokens[0] == "hashtable":
+        stats = hashtable.stats()
+        stats_str = (
+            f"SHALLOW_HITS: {stats['SHALLOW_HITS']}, "
+            f"HITS: {stats['HITS']}, "
+            f"REQ: {stats['REQ']}, "
+            f"LEN: {stats['LEN']}, "
+            f"ADD: {stats['ADD']}, "
+            f"ADD_BETTER: {stats['ADD_BETTER']}"
+        )
+        return [stats_str]
 
     if len(tokens) == 1 and tokens[0] == "uci":
         return [
@@ -110,6 +119,9 @@ def uci_parser(line):
             "option name Threads type spin default 1 min 1 max 1",
             "uciok",
         ]
+
+    if tokens[0] == "quit":
+        sys.exit()
 
     if tokens[0] == "ucinewgame":
         return []
