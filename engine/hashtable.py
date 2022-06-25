@@ -5,34 +5,50 @@ import board
 HASH_TABLE = {}
 REQ = 0
 HITS = 0
+ADD = 0
+ADD_BETTER = 0
+SHALLOW_HITS = 0
 
 class NODE_TYPE(enum.IntEnum):
     PV = 0,
     ALL = 1,
     CUT = -1,
 
-Node = collections.namedtuple('Node', ['board', 'depth', 'value', 'type', 'upper', 'lower'])
-
-def get_stats():
+def stats():
     global HASH_TABLE
     global HITS
     global REQ
-    return [len(HASH_TABLE), REQ, HITS]
+    global ADD
+    global ADD_BETTER
+    return {
+        "LEN": len(HASH_TABLE),
+        "REQ": REQ,
+        "HITS": HITS,
+        "ADD": ADD,
+        "ADD_BETTER": ADD_BETTER,
+        "SHALLOW_HITS": SHALLOW_HITS,
+    }
 
-def get_value(board) -> Node:
+def get(hash, depth):
     global HASH_TABLE
-    global HITS
     global REQ
-    ret = HASH_TABLE.get(board.hash(), None)
-    if ret is not None:
-        HITS += 1
     REQ += 1
+    ret = HASH_TABLE.get(hash, None)
+    if ret is not None:
+        global HITS
+        HITS += 1
+        if ret.depth < depth:
+            global SHALLOW_HITS
+            SHALLOW_HITS += 1
     return ret
 
-def set_value(node: Node):
+def add(hash, node):
     global HASH_TABLE
-    hash = node.board.hash()
+    global ADD
+    global ADD_BETTER
+    ADD += 1
     if hash not in HASH_TABLE:
         HASH_TABLE[hash] = node
     elif HASH_TABLE[hash].depth < node.depth:
+        ADD_BETTER += 1
         HASH_TABLE[hash] = node
