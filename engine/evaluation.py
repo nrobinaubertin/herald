@@ -157,3 +157,8 @@ def eval(board) -> int:
     return eval_pst_adj(board)
     #return eval_pst(board)
     #return simple_eval(board)
+
+def move_eval(board, move) -> int:
+    if move.is_capture:
+        return PIECE_VALUE[abs(board.squares[move.end])]
+    return 0

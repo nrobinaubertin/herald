@@ -2,7 +2,7 @@ from collections import deque, namedtuple
 import time
 from constants import PIECE, COLOR, CASTLE
 import hashtable
-from evaluation import VALUE_MAX, PIECE_VALUE, eval
+from evaluation import VALUE_MAX, PIECE_VALUE, eval, move_eval
 from board import toUCI, Board
 
 ### Test center for algorithms
@@ -21,7 +21,7 @@ Search = namedtuple("Search", ["move", "depth", "score", "nodes", "time", "best_
 Node = namedtuple("Node", ["value", "depth", "pv", "type", "upper", "lower", "squares"], defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None])
 SmartMove = namedtuple("SmartMove", ["move", "board", "eval"])
 
-def search(board: Board, depth: int):
+def search(board: Board, depth: int, eval_guess: int = 0):
 
     start_time = time.process_time_ns()
 
@@ -38,11 +38,11 @@ def search(board: Board, depth: int):
     for move in board.moves():
         curr_board = board.copy()
         curr_board.push(move)
-        #node = aspirationWindow(curr_board, board.eval, depth, deque([move]))
+        #node = aspirationWindow(curr_board, eval_guess, depth, deque([move]))
         #node = negaC(curr_board, -VALUE_MAX, VALUE_MAX, depth)
         #node = alphabeta_tt_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
-        #node = alphabeta_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
-        node = alphabeta_tt(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
+        node = alphabeta_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
+        #node = alphabeta_tt(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
         #node = alphabeta(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
         #node = minimax_tt(curr_board, depth, deque([move]))
         #node = minimax(curr_board, depth, deque([move]))
@@ -78,7 +78,7 @@ def search(board: Board, depth: int):
         best_node=best
     )
 
-# validated with alphabeta
+# not validated
 def aspirationWindow(board: Board, guess: int, depth: int, pv: deque) -> Node:
     lower = guess - 50
     upper = guess + 50
@@ -110,7 +110,7 @@ def aspirationWindow(board: Board, guess: int, depth: int, pv: deque) -> Node:
 
 
 # alphabeta pruning (fail-soft) with move ordering and tt
-# not fully validated
+# not validated
 def alphabeta_tt_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
     global NODES
     NODES += 1
@@ -245,11 +245,13 @@ def alphabeta_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
     for move in board.pseudo_legal_moves():
         curr_board = board.copy()
         curr_board.push(move)
-        node = hashtable.get(curr_board.hash(), depth)
-        curr_eval = eval(curr_board)
-        smartMoves.append(SmartMove(move=move, board=curr_board, eval=curr_eval))
+        #node = hashtable.get(curr_board.hash(), depth)
+        #curr_eval = eval(curr_board)
+        smartMoves.append(SmartMove(move=move, board=curr_board, eval=move_eval(board, move)))
 
-    for sm in sorted(smartMoves, key=lambda x: x.eval, reverse=True):
+    ordered_smartMoves = sorted(smartMoves, key=lambda x: x.eval, reverse=True)
+
+    for sm in ordered_smartMoves:
         curr_pv = deque(pv)
         curr_pv.append(sm.move)
         node = alphabeta_mo(sm.board, alpha, beta, depth - 1, curr_pv)
