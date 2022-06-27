@@ -16,13 +16,7 @@ from constants import PIECE, COLOR, ASCII_REP, CASTLE
 Move = collections.namedtuple(
     "Move",
     ["start", "end", "is_capture", "is_castle", "en_passant"],
-    defaults={
-        "start": 0,
-        "end": 0,
-        "is_capture": False,
-        "is_castle": False,
-        "en_passant": -1,
-    },
+    defaults=[0, 0, False, False, -1],
 )
 
 
@@ -51,11 +45,8 @@ class Board:
                 or end == self.en_passant
                 or end == self.king_en_passant
             ),
-            is_castle=(start == 95 or start == 25)
-            and abs(self.squares[start]) == PIECE.KING
-            and abs(end - start) == 2,
-            en_passant=abs(self.squares[start]) == PIECE.PAWN
-            and end == self.en_passant,
+            is_castle=(start == 95 or start == 25) and abs(self.squares[start]) == PIECE.KING and abs(end - start) == 2,
+            en_passant=(start + end) // 2 if abs(self.squares[start]) == PIECE.PAWN and abs(start - end) == 20 else -1
         )
 
     def toString(self) -> str:
@@ -207,6 +198,7 @@ class Board:
             self.squares[target] = PIECE.EMPTY
             self.pieces[target_piece].remove(target)
 
+        # declare en_passant square for the current board
         if move.en_passant != -1:
             self.en_passant = move.en_passant
         else:
@@ -353,7 +345,7 @@ class Board:
             b.push(move)
             if (
                 not b.is_square_attacked(
-                    next(iter(b.pieces[PIECE.KING * b.invturn])),
+                    b.pieces[PIECE.KING * b.invturn][0],
                     b.turn,
                 )
             ) and (
@@ -541,10 +533,10 @@ class Board:
                         depls = [(10 if self.turn == COLOR.BLACK else -10)]
                         if start // 10 == (3 if self.turn == COLOR.BLACK else 8):
                             depls.append((20 if self.turn == COLOR.BLACK else -20))
-                        for idx, depl in enumerate(depls):
+                        for depl in depls:
                             end = start + depl
                             if self.squares[end] == PIECE.EMPTY:
-                                if idx == 1:
+                                if abs(depl) == 20:
                                     en_passant = start + depls[0]
                                 else:
                                     en_passant = -1
