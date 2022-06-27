@@ -9,11 +9,13 @@ from board import toUCI, Board
 ### A "validated" algorithm is one that does give the same result as minimax (with full pv equality)
 ### _tt algorithms can be validated by only taking tt_nodes with the same depth as the current pass
 
-QUIESCENT_NODES = 0
-LEAF_NODES = 0
-ENABLE_HASHTABLE = False
-COLLISIONS = 0
-NODE_DEPTH = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+if __debug__:
+    QUIESCENT_NODES = 0
+    LEAF_NODES = 0
+    NODES = 0
+    ENABLE_HASHTABLE = False
+    COLLISIONS = 0
+    NODE_DEPTH = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 Search = namedtuple("Search", ["move", "depth", "score", "nodes", "time", "best_node", "pv"])
 Node = namedtuple("Node", ["value", "depth", "pv", "type", "upper", "lower", "squares"], defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None])
@@ -23,11 +25,12 @@ def search(board: Board, depth: int):
 
     start_time = time.process_time_ns()
 
-    global QUIESCENT_NODES
-    global LEAF_NODES
+    if __debug__:
+        global QUIESCENT_NODES
+        global LEAF_NODES
+        QUIESCENT_NODES = 0
+        LEAF_NODES = 0
 
-    QUIESCENT_NODES = 0
-    LEAF_NODES = 0
     best = Node(
         depth=depth,
         value=(VALUE_MAX if board.turn == COLOR.BLACK else -VALUE_MAX),
@@ -35,11 +38,11 @@ def search(board: Board, depth: int):
     for move in board.moves():
         curr_board = board.copy()
         curr_board.push(move)
-        node = aspirationWindow(curr_board, board.eval, depth, deque([move]))
+        #node = aspirationWindow(curr_board, board.eval, depth, deque([move]))
         #node = negaC(curr_board, -VALUE_MAX, VALUE_MAX, depth)
         #node = alphabeta_tt_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
         #node = alphabeta_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
-        #node = alphabeta_tt(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
+        node = alphabeta_tt(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
         #node = alphabeta(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
         #node = minimax_tt(curr_board, depth, deque([move]))
         #node = minimax(curr_board, depth, deque([move]))
@@ -69,7 +72,7 @@ def search(board: Board, depth: int):
         move=best.pv[0],
         pv=best.pv,
         depth=depth,
-        nodes=LEAF_NODES,
+        nodes=NODES,
         score=best.value,
         time=(time.process_time_ns() - start_time),
         best_node=best
@@ -109,15 +112,19 @@ def aspirationWindow(board: Board, guess: int, depth: int, pv: deque) -> Node:
 # alphabeta pruning (fail-soft) with move ordering and tt
 # not fully validated
 def alphabeta_tt_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
-    global LEAF_NODES
+    global NODES
+    NODES += 1
 
-    global NODE_DEPTH
-    NODE_DEPTH[depth] += 1
+    if __debug__:
+        global LEAF_NODES
+        global NODE_DEPTH
+        NODE_DEPTH[depth] += 1
 
     # we check if there's no king of our color
     # in that case we can stop there
     if not len(board.pieces[PIECE.KING * board.turn]):
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=-VALUE_MAX * board.turn,
             depth=depth,
@@ -126,7 +133,8 @@ def alphabeta_tt_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) 
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=eval(board),
             depth=0,
@@ -198,15 +206,19 @@ def alphabeta_tt_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) 
 # alphabeta pruning (fail-soft) with move ordering
 # validated
 def alphabeta_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
-    global LEAF_NODES
+    global NODES
+    NODES += 1
 
-    global NODE_DEPTH
-    NODE_DEPTH[depth] += 1
+    if __debug__:
+        global LEAF_NODES
+        global NODE_DEPTH
+        NODE_DEPTH[depth] += 1
 
     # we check if there's no king of our color
     # in that case we can stop there
     if not len(board.pieces[PIECE.KING * board.turn]):
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=-VALUE_MAX * board.turn,
             depth=depth,
@@ -215,7 +227,8 @@ def alphabeta_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=eval(board),
             depth=0,
@@ -266,15 +279,19 @@ def alphabeta_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
 # simple alphabeta pruning (fail-soft) with transposition table
 # not fully validated
 def alphabeta_tt(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
-    global LEAF_NODES
+    global NODES
+    NODES += 1
 
-    global NODE_DEPTH
-    NODE_DEPTH[depth] += 1
+    if __debug__:
+        global LEAF_NODES
+        global NODE_DEPTH
+        NODE_DEPTH[depth] += 1
 
     # we check if there's no king of our color
     # in that case we can stop there
     if not len(board.pieces[PIECE.KING * board.turn]):
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=-VALUE_MAX * board.turn,
             depth=depth,
@@ -294,7 +311,8 @@ def alphabeta_tt(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=eval(board),
             depth=0,
@@ -313,10 +331,6 @@ def alphabeta_tt(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
         curr_pv = deque(pv)
         curr_pv.append(move)
         node = alphabeta_tt(curr_board, alpha, beta, depth - 1, curr_pv)
-
-        # Save the resulting best node in the transposition table
-        #if node.depth > 0:
-        #    hashtable.add(curr_board.hash(), node)
 
         if board.turn == COLOR.WHITE:
             if node.value > best.value:
@@ -348,15 +362,19 @@ def alphabeta_tt(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
 # simple alphabeta pruning (fail-soft)
 # validated
 def alphabeta(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
-    global LEAF_NODES
+    global NODES
+    NODES += 1
 
-    global NODE_DEPTH
-    NODE_DEPTH[depth] += 1
+    if __debug__:
+        global LEAF_NODES
+        global NODE_DEPTH
+        NODE_DEPTH[depth] += 1
 
     # we check if there's no king of our color
     # in that case we can stop there
     if not len(board.pieces[PIECE.KING * board.turn]):
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=-VALUE_MAX * board.turn,
             depth=depth,
@@ -365,7 +383,8 @@ def alphabeta(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Nod
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=eval(board),
             depth=0,
@@ -409,15 +428,19 @@ def alphabeta(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Nod
 # Simple minimax with transposition table
 # validated
 def minimax_tt(board: Board, depth: int, pv: deque) -> Node:
-    global LEAF_NODES
+    global NODES
+    NODES += 1
 
-    global NODE_DEPTH
-    NODE_DEPTH[depth] += 1
+    if __debug__:
+        global LEAF_NODES
+        global NODE_DEPTH
+        NODE_DEPTH[depth] += 1
 
     # we check if there's no king of our color
     # in that case we can stop there
     if not len(board.pieces[PIECE.KING * board.turn]):
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=-VALUE_MAX * board.turn,
             depth=depth,
@@ -442,7 +465,8 @@ def minimax_tt(board: Board, depth: int, pv: deque) -> Node:
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=eval(board),
             depth=0,
@@ -488,15 +512,19 @@ def minimax_tt(board: Board, depth: int, pv: deque) -> Node:
 # Simple minimax
 # validated
 def minimax(board: Board, depth: int, pv: deque) -> Node:
-    global LEAF_NODES
+    global NODES
+    NODES += 1
 
-    global NODE_DEPTH
-    NODE_DEPTH[depth] += 1
+    if __debug__:
+        global LEAF_NODES
+        global NODE_DEPTH
+        NODE_DEPTH[depth] += 1
 
     # we check if there's no king of our color
     # in that case we can stop there
     if not len(board.pieces[PIECE.KING * board.turn]):
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=-VALUE_MAX * board.turn,
             depth=depth,
@@ -505,7 +533,8 @@ def minimax(board: Board, depth: int, pv: deque) -> Node:
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
-        LEAF_NODES += 1
+        if __debug__:
+            LEAF_NODES += 1
         return Node(
             value=eval(board),
             depth=0,

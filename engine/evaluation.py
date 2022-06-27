@@ -15,6 +15,17 @@ VALUE_MAX = PIECE_VALUE[PIECE.KING] * 2
 
 DOUBLED_PAWN_PENALTY = -20
 
+# adjustements of piece value based on the number of own pawns
+PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER = {
+    PIECE.EMPTY: (0, 0, 0, 0, 0, 0, 0, 0, 0),
+    PIECE.PAWN: (0, 0, 0, 0, 0, 0, 0, 0, 0),
+    PIECE.KNIGHT: (-20, -16, -12, -8, -4, 0, 4, 8, 12),
+    PIECE.BISHOP: (0, 0, 0, 0, 0, 0, 0, 0, 0),
+    PIECE.ROOK: (15,  12,   9,  6,  3,  0, -3, -6, -9),
+    PIECE.QUEEN: (0, 0, 0, 0, 0, 0, 0, 0, 0),
+    PIECE.KING: (0, 0, 0, 0, 0, 0, 0, 0, 0),
+}
+
 PIECE_SQUARE_TABLE = {
     PIECE.PAWN: (
         0,   0,   0,   0,   0,   0,   0,   0,
@@ -121,18 +132,28 @@ def eval_pst(board) -> int:
                 evaluation += PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][120 - square] * color
     return evaluation
 
-def eval_pst_dp(board) -> int:
+# simple eval + pst + adjustements
+def eval_pst_adj(board) -> int:
     evaluation = 0
+    pawn_number = {
+        COLOR.WHITE: len(board.pieces[PIECE.PAWN * COLOR.WHITE]),
+        COLOR.BLACK: len(board.pieces[PIECE.PAWN * COLOR.BLACK]),
+    }
     for piece in board.pieces:
         for square in board.pieces[piece]:
             color = abs(piece)//piece
             evaluation += PIECE_VALUE[abs(piece)] * color
-            evaluation += PIECE_SQUARE_TABLE[abs(piece)][mailbox_to_board(square)] * color
+            evaluation += PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER[abs(piece)][pawn_number[color]]
+            if color == COLOR.WHITE:
+                evaluation += PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][square] * color
+            else:
+                evaluation += PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][120 - square] * color
             if abs(piece) == PIECE.PAWN:
                 if board.squares[square - 10 * color] == PIECE.PAWN * color:
                     evaluation -= DOUBLED_PAWN_PENALTY * color
     return evaluation
 
 def eval(board) -> int:
-    return eval_pst(board)
+    return eval_pst_adj(board)
+    #return eval_pst(board)
     #return simple_eval(board)
