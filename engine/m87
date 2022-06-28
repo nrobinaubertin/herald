@@ -9,6 +9,7 @@ Usage:
 
 import sys
 import time
+import multiprocessing
 from constants import COLOR
 from board import Board, toUCI
 from search import search
@@ -17,35 +18,20 @@ import hashtable
 from evaluation import eval
 
 NAME = "M87"
-VERSION = "{} 0.7.0".format(NAME)
+VERSION = "{} 0.9.0".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
+CURRENT_PROCESS = None
 
-def analyze(board, max_depth=0, scan_move: str = ""):
-    for i in range(max_depth + 1):
-        best = search(board, i, debug=True, scan_move=scan_move)
-        print(
-            ""
-            + f"info depth {best.depth} "
-            + f"score cp {best.score} "
-            + f"time {int(best.time // 1e9)} "
-            + f"nodes {best.nodes} "
-            + (
-                "nps " + str(int(best.nodes * 1e9 // max(0.0001, best.time))) + " "
-                if best.time > 0
-                else ""
-            )
-            + f"pv {' '.join([toUCI(x) for x in best.pv])}"
-        )
-    return toUCI(best.move)
-
-def bestMove(board, max_time=0, max_depth=0):
+def bestMove(board, max_time=0, max_depth=0, eval_guess=0):
+    current_eval = eval_guess
     if max_time != 0:
         print(f"info max_depth {max_depth}")
         start_time = time.process_time_ns()
         for i in range((10 if max_depth == 0 else max_depth)):
-            best = search(board, i)
-            used_time = (time.process_time_ns() - start_time) // 1000
+            best = search(board, i, current_eval)
+            current_eval = best.score
+            used_time = max(1, (time.process_time_ns() - start_time) // 1000)
             print(
                 ""
                 + f"info depth {best.depth} "
@@ -61,12 +47,12 @@ def bestMove(board, max_time=0, max_depth=0):
                 )
                 + f"pv {' '.join([toUCI(x) for x in best.pv])}"
             )
-            if used_time > max_time // max(20, 80 - board.full_move) * 1000:
+            if used_time > (max_time - 1) // max(20, 80 - board.full_move) * 1000:
                 return toUCI(best.move)
     else:
-        #best = search(board, max_depth)
         for i in range(max_depth + 1):
-            best = search(board, i)
+            best = search(board, i, current_eval)
+            current_eval = best.score
             print(
                 ""
                 + f"info depth {best.depth} "
@@ -80,8 +66,13 @@ def bestMove(board, max_time=0, max_depth=0):
                 )
                 + f"pv {' '.join([toUCI(x) for x in best.pv])}"
             )
+    print(f"bestmove {toUCI(best.move)}")
     return toUCI(best.move)
 
+def stop_calculating():
+    global CURRENT_PROCESS
+    if CURRENT_PROCESS is not None:
+        CURRENT_PROCESS.terminate()
 
 def uci_parser(line):
     global CURRENT_BOARD
@@ -91,7 +82,7 @@ def uci_parser(line):
         return []
 
     if tokens[0] == "eval":
-        return [f"{eval(CURRENT_BOARD)}"]
+        return [f"board: {eval(CURRENT_BOARD)}"]
 
     if tokens[0] == "print":
         return [str(CURRENT_BOARD)]
@@ -120,10 +111,15 @@ def uci_parser(line):
             "uciok",
         ]
 
+    if tokens[0] == "stop":
+        stop_calculating()
+
     if tokens[0] == "quit":
+        stop_calculating()
         sys.exit()
 
     if tokens[0] == "ucinewgame":
+        CURRENT_BOARD = Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         return []
 
     if tokens[0] == "isready":
@@ -159,15 +155,6 @@ def uci_parser(line):
             nodes = perft.perft(CURRENT_BOARD, depth)
         return [f"nodes {nodes}"]
 
-    if len(tokens) > 1 and tokens[0] == "analyze":
-
-        depth = int(tokens[1])
-        scan_move = tokens[2]
-
-        move = analyze(CURRENT_BOARD, max_depth=depth, scan_move=scan_move)
-
-        return [f"bestmove {move}"]
-
     if len(tokens) > 1 and tokens[0] == "go":
 
         depth = None
@@ -191,17 +178,41 @@ def uci_parser(line):
         if tokens[1] == "depth":
             depth = int(tokens[2])
 
+        current_eval = eval(CURRENT_BOARD)
+
+        global CURRENT_PROCESS
+        if CURRENT_PROCESS is not None:
+            CURRENT_PROCESS.terminate()
+
         if depth is None:
             my_time = wtime + winc
             if CURRENT_BOARD.turn == COLOR.BLACK:
                 my_time = btime + binc
-            move = bestMove(CURRENT_BOARD, max_time=my_time, max_depth=min(6, CURRENT_BOARD.full_move // 2))
+            process = multiprocessing.Process(
+                    target=bestMove,
+                    args=(CURRENT_BOARD,),
+                    kwargs={
+                        "max_time": my_time,
+                        "max_depth": min(6, CURRENT_BOARD.full_move // 2),
+                        "eval_guess": current_eval
+                    },
+                    daemon=True,
+                )
+            #move = bestMove(CURRENT_BOARD, max_time=my_time, max_depth=min(6, CURRENT_BOARD.full_move // 2), eval_guess=current_eval)
         else:
-            move = bestMove(CURRENT_BOARD, max_depth=depth)
-
-        return [f"bestmove {move}"]
+            process = multiprocessing.Process(
+                    target=bestMove,
+                    args=(CURRENT_BOARD,),
+                    kwargs={
+                        "max_depth":depth,
+                        "eval_guess":current_eval
+                    },
+                    daemon=True,
+                )
+            #move = bestMove(CURRENT_BOARD, max_depth=depth, eval_guess=current_eval)
+        process.start()
+        CURRENT_PROCESS = process
     return []
-
 
 if __name__ == "__main__":
     while True:
