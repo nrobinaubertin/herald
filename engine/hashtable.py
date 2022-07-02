@@ -1,7 +1,3 @@
-import collections
-import enum
-import board
-
 HASH_TABLE = {}
 if __debug__:
     REQ = 0
@@ -11,6 +7,7 @@ if __debug__:
     SHALLOW_HITS = 0
 
 if __debug__:
+
     def stats():
         global HASH_TABLE
         global HITS
@@ -26,12 +23,13 @@ if __debug__:
             "SHALLOW_HITS": SHALLOW_HITS,
         }
 
-def get(hash, depth):
+
+def get(board_hash, depth):
     if __debug__:
         global HASH_TABLE
         global REQ
         REQ += 1
-    ret = HASH_TABLE.get(hash, None)
+    ret = HASH_TABLE.get(board_hash, None)
     if __debug__:
         if ret is not None:
             global HITS
@@ -41,13 +39,14 @@ def get(hash, depth):
                 SHALLOW_HITS += 1
     return ret
 
-def add(hash, node):
+
+def add(board_hash, node):
     global HASH_TABLE
     global ADD
     global ADD_BETTER
     ADD += 1
-    if hash not in HASH_TABLE:
-        HASH_TABLE[hash] = node
-    elif HASH_TABLE[hash].depth < node.depth:
+    if board_hash not in HASH_TABLE:
+        HASH_TABLE[board_hash] = node
+    elif HASH_TABLE[board_hash].depth < node.depth:
         ADD_BETTER += 1
-        HASH_TABLE[hash] = node
+        HASH_TABLE[board_hash] = node

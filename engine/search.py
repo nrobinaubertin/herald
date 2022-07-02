@@ -1,8 +1,8 @@
 from collections import deque, namedtuple
 import time
-from constants import PIECE, COLOR, CASTLE
+from constants import PIECE, COLOR
 import hashtable
-from evaluation import VALUE_MAX, PIECE_VALUE, eval, move_eval
+from evaluation import VALUE_MAX, eval_board, move_eval
 from board import toUCI, Board
 
 ### Test center for algorithms
@@ -17,9 +17,16 @@ if __debug__:
     COLLISIONS = 0
     NODE_DEPTH = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-Search = namedtuple("Search", ["move", "depth", "score", "nodes", "time", "best_node", "pv"])
-Node = namedtuple("Node", ["value", "depth", "pv", "type", "upper", "lower", "squares"], defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None])
+Search = namedtuple(
+    "Search", ["move", "depth", "score", "nodes", "time", "best_node", "pv"]
+)
+Node = namedtuple(
+    "Node",
+    ["value", "depth", "pv", "type", "upper", "lower", "squares"],
+    defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None],
+)
 SmartMove = namedtuple("SmartMove", ["move", "board", "eval"])
+
 
 def search(board: Board, depth: int, eval_guess: int = 0):
 
@@ -38,15 +45,15 @@ def search(board: Board, depth: int, eval_guess: int = 0):
     for move in board.moves():
         curr_board = board.copy()
         curr_board.push(move)
-        #node = aspirationWindow(curr_board, eval_guess, depth, deque([move]))
-        #node = negaC(curr_board, -VALUE_MAX, VALUE_MAX, depth)
-        #node = alphabeta_tt_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
+        # node = aspiration_window(curr_board, eval_guess, depth, deque([move]))
+        # node = negaC(curr_board, -VALUE_MAX, VALUE_MAX, depth)
+        # node = alphabeta_tt_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
         node = alphabeta_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
-        #node = alphabeta_tt(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
-        #node = alphabeta(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
-        #node = minimax_tt(curr_board, depth, deque([move]))
-        #node = minimax(curr_board, depth, deque([move]))
-        #print(f"info " + f"score cp {node.value} " + f"pv {' '.join([toUCI(x) for x in node.pv])}")
+        # node = alphabeta_tt(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
+        # node = alphabeta(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
+        # node = minimax_tt(curr_board, depth, deque([move]))
+        # node = minimax(curr_board, depth, deque([move]))
+        # print(f"info " + f"score cp {node.value} " + f"pv {' '.join([toUCI(x) for x in node.pv])}")
         if board.turn == COLOR.WHITE:
             if node.value >= best.value:
                 best = Node(
@@ -75,17 +82,18 @@ def search(board: Board, depth: int, eval_guess: int = 0):
         nodes=NODES,
         score=best.value,
         time=(time.process_time_ns() - start_time),
-        best_node=best
+        best_node=best,
     )
 
+
 # not validated
-def aspirationWindow(board: Board, guess: int, depth: int, pv: deque) -> Node:
+def aspiration_window(board: Board, guess: int, depth: int, pv: deque) -> Node:
     lower = guess - 50
     upper = guess + 50
     iteration = 0
     while True:
         iteration += 1
-        #node = negaC(board, lower, upper, depth)
+        # node = negaC(board, lower, upper, depth)
         node = alphabeta(board, lower, upper, depth, pv)
         if node.value > upper:
             upper += 100 * (iteration**2)
@@ -98,7 +106,7 @@ def aspirationWindow(board: Board, guess: int, depth: int, pv: deque) -> Node:
 
 
 # In my tests, negaC was slower than just using an aspiration window
-#def negaC(board, min: int, max: int, depth: int) -> Node:
+# def negaC(board, min: int, max: int, depth: int) -> Node:
 #    while min < max - 1:
 #        alpha = (min + max + 1) // 2
 #        node = alphabeta(board, alpha, alpha + 100, depth)
@@ -122,7 +130,7 @@ def alphabeta_tt_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) 
 
     # we check if there's no king of our color
     # in that case we can stop there
-    if not len(board.pieces[PIECE.KING * board.turn]):
+    if len(board.pieces[PIECE.KING * board.turn]) == 0:
         if __debug__:
             LEAF_NODES += 1
         return Node(
@@ -136,7 +144,7 @@ def alphabeta_tt_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) 
         if __debug__:
             LEAF_NODES += 1
         return Node(
-            value=eval(board),
+            value=eval_board(board),
             depth=0,
             pv=pv,
         )
@@ -154,10 +162,10 @@ def alphabeta_tt_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) 
     # placeholder node meant to be replaced by a real one in the search
     best = Node(
         depth=depth,
-        value=(VALUE_MAX+1 if board.turn == COLOR.BLACK else -VALUE_MAX-1),
+        value=(VALUE_MAX + 1 if board.turn == COLOR.BLACK else -VALUE_MAX - 1),
     )
 
-    smartMoves = []
+    smart_moves = []
     for move in board.pseudo_legal_moves():
         curr_board = board.copy()
         curr_board.push(move)
@@ -165,17 +173,17 @@ def alphabeta_tt_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) 
         if node is not None:
             curr_eval = node.value
         else:
-            curr_eval = eval(curr_board)
-        smartMoves.append(SmartMove(move=move, board=curr_board, eval=curr_eval))
+            curr_eval = eval_board(curr_board)
+        smart_moves.append(SmartMove(move=move, board=curr_board, eval=curr_eval))
 
-    for sm in sorted(smartMoves, key=lambda x: x.eval, reverse=True):
+    for smart_move in sorted(smart_moves, key=lambda x: x.eval, reverse=True):
         curr_pv = deque(pv)
-        curr_pv.append(sm.move)
-        node = alphabeta_tt_mo(sm.board, alpha, beta, depth - 1, curr_pv)
+        curr_pv.append(smart_move.move)
+        node = alphabeta_tt_mo(smart_move.board, alpha, beta, depth - 1, curr_pv)
 
         # Save the resulting best node in the transposition table
         if node.depth > 0:
-            hashtable.add(sm.board.hash(), node)
+            hashtable.add(smart_move.board.hash(), node)
 
         if board.turn == COLOR.WHITE:
             if node.value > best.value:
@@ -203,6 +211,7 @@ def alphabeta_tt_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) 
         hashtable.add(board.hash(), best)
     return best
 
+
 # alphabeta pruning (fail-soft) with move ordering
 # validated
 def alphabeta_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
@@ -216,7 +225,7 @@ def alphabeta_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
 
     # we check if there's no king of our color
     # in that case we can stop there
-    if not len(board.pieces[PIECE.KING * board.turn]):
+    if len(board.pieces[PIECE.KING * board.turn]) == 0:
         if __debug__:
             LEAF_NODES += 1
         return Node(
@@ -230,7 +239,7 @@ def alphabeta_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
         if __debug__:
             LEAF_NODES += 1
         return Node(
-            value=eval(board),
+            value=eval_board(board),
             depth=0,
             pv=pv,
         )
@@ -238,23 +247,25 @@ def alphabeta_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
     # placeholder node meant to be replaced by a real one in the search
     best = Node(
         depth=depth,
-        value=(VALUE_MAX+1 if board.turn == COLOR.BLACK else -VALUE_MAX-1),
+        value=(VALUE_MAX + 1 if board.turn == COLOR.BLACK else -VALUE_MAX - 1),
     )
 
-    smartMoves = []
+    smart_moves = []
     for move in board.pseudo_legal_moves():
         curr_board = board.copy()
         curr_board.push(move)
-        #node = hashtable.get(curr_board.hash(), depth)
-        #curr_eval = eval(curr_board)
-        smartMoves.append(SmartMove(move=move, board=curr_board, eval=move_eval(board, move)))
+        # node = hashtable.get(curr_board.hash(), depth)
+        # curr_eval = eval_board(curr_board)
+        smart_moves.append(
+            SmartMove(move=move, board=curr_board, eval=move_eval(board, move))
+        )
 
-    ordered_smartMoves = sorted(smartMoves, key=lambda x: x.eval, reverse=True)
+    ordered_smart_moves = sorted(smart_moves, key=lambda x: x.eval, reverse=True)
 
-    for sm in ordered_smartMoves:
+    for smart_move in ordered_smart_moves:
         curr_pv = deque(pv)
-        curr_pv.append(sm.move)
-        node = alphabeta_mo(sm.board, alpha, beta, depth - 1, curr_pv)
+        curr_pv.append(smart_move.move)
+        node = alphabeta_mo(smart_move.board, alpha, beta, depth - 1, curr_pv)
 
         if board.turn == COLOR.WHITE:
             if node.value > best.value:
@@ -278,6 +289,7 @@ def alphabeta_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
                 break
     return best
 
+
 # simple alphabeta pruning (fail-soft) with transposition table
 # not fully validated
 def alphabeta_tt(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
@@ -291,7 +303,7 @@ def alphabeta_tt(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
 
     # we check if there's no king of our color
     # in that case we can stop there
-    if not len(board.pieces[PIECE.KING * board.turn]):
+    if len(board.pieces[PIECE.KING * board.turn]) == 0:
         if __debug__:
             LEAF_NODES += 1
         return Node(
@@ -304,7 +316,7 @@ def alphabeta_tt(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
     node = hashtable.get(board.hash(), depth)
     if node is not None:
         if node.depth >= depth:
-        #if node.depth == depth: # to reproduce pvs of other lower-end algs
+            # if node.depth == depth: # to reproduce pvs of other lower-end algs
             return Node(
                 value=node.value,
                 pv=pv,
@@ -316,7 +328,7 @@ def alphabeta_tt(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
         if __debug__:
             LEAF_NODES += 1
         return Node(
-            value=eval(board),
+            value=eval_board(board),
             depth=0,
             pv=pv,
         )
@@ -324,7 +336,7 @@ def alphabeta_tt(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
     # placeholder node meant to be replaced by a real one in the search
     best = Node(
         depth=depth,
-        value=(VALUE_MAX+1 if board.turn == COLOR.BLACK else -VALUE_MAX-1),
+        value=(VALUE_MAX + 1 if board.turn == COLOR.BLACK else -VALUE_MAX - 1),
     )
 
     for move in board.pseudo_legal_moves():
@@ -374,7 +386,7 @@ def alphabeta(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Nod
 
     # we check if there's no king of our color
     # in that case we can stop there
-    if not len(board.pieces[PIECE.KING * board.turn]):
+    if len(board.pieces[PIECE.KING * board.turn]) == 0:
         if __debug__:
             LEAF_NODES += 1
         return Node(
@@ -388,7 +400,7 @@ def alphabeta(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Nod
         if __debug__:
             LEAF_NODES += 1
         return Node(
-            value=eval(board),
+            value=eval_board(board),
             depth=0,
             pv=pv,
         )
@@ -396,7 +408,7 @@ def alphabeta(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Nod
     # placeholder node meant to be replaced by a real one in the search
     best = Node(
         depth=depth,
-        value=(VALUE_MAX+1 if board.turn == COLOR.BLACK else -VALUE_MAX-1),
+        value=(VALUE_MAX + 1 if board.turn == COLOR.BLACK else -VALUE_MAX - 1),
     )
 
     for move in board.pseudo_legal_moves():
@@ -427,6 +439,7 @@ def alphabeta(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Nod
                 break
     return best
 
+
 # Simple minimax with transposition table
 # validated
 def minimax_tt(board: Board, depth: int, pv: deque) -> Node:
@@ -440,7 +453,7 @@ def minimax_tt(board: Board, depth: int, pv: deque) -> Node:
 
     # we check if there's no king of our color
     # in that case we can stop there
-    if not len(board.pieces[PIECE.KING * board.turn]):
+    if len(board.pieces[PIECE.KING * board.turn]) == 0:
         if __debug__:
             LEAF_NODES += 1
         return Node(
@@ -454,7 +467,7 @@ def minimax_tt(board: Board, depth: int, pv: deque) -> Node:
     node = hashtable.get(board.hash(), depth)
     if node is not None:
         if node.depth >= depth:
-        #if node.depth == depth: # to reproduce pvs of other lower-end algs
+            # if node.depth == depth: # to reproduce pvs of other lower-end algs
             if board.squares.tobytes() != node.squares.tobytes():
                 global COLLISIONS
                 COLLISIONS += 1
@@ -470,7 +483,7 @@ def minimax_tt(board: Board, depth: int, pv: deque) -> Node:
         if __debug__:
             LEAF_NODES += 1
         return Node(
-            value=eval(board),
+            value=eval_board(board),
             depth=0,
             pv=pv,
             squares=board.squares,
@@ -479,7 +492,7 @@ def minimax_tt(board: Board, depth: int, pv: deque) -> Node:
     # placeholder node meant to be replaced by a real one in the search
     best = Node(
         depth=depth,
-        value=(VALUE_MAX+1 if board.turn == COLOR.BLACK else -VALUE_MAX-1),
+        value=(VALUE_MAX + 1 if board.turn == COLOR.BLACK else -VALUE_MAX - 1),
     )
 
     for move in board.pseudo_legal_moves():
@@ -511,6 +524,7 @@ def minimax_tt(board: Board, depth: int, pv: deque) -> Node:
         hashtable.add(board.hash(), best)
     return best
 
+
 # Simple minimax
 # validated
 def minimax(board: Board, depth: int, pv: deque) -> Node:
@@ -524,7 +538,7 @@ def minimax(board: Board, depth: int, pv: deque) -> Node:
 
     # we check if there's no king of our color
     # in that case we can stop there
-    if not len(board.pieces[PIECE.KING * board.turn]):
+    if len(board.pieces[PIECE.KING * board.turn]) == 0:
         if __debug__:
             LEAF_NODES += 1
         return Node(
@@ -538,7 +552,7 @@ def minimax(board: Board, depth: int, pv: deque) -> Node:
         if __debug__:
             LEAF_NODES += 1
         return Node(
-            value=eval(board),
+            value=eval_board(board),
             depth=0,
             pv=pv,
         )
@@ -546,7 +560,7 @@ def minimax(board: Board, depth: int, pv: deque) -> Node:
     # placeholder node meant to be replaced by a real one in the search
     best = Node(
         depth=depth,
-        value=(VALUE_MAX+1 if board.turn == COLOR.BLACK else -VALUE_MAX-1),
+        value=(VALUE_MAX + 1 if board.turn == COLOR.BLACK else -VALUE_MAX - 1),
     )
 
     for move in board.pseudo_legal_moves():
@@ -571,6 +585,7 @@ def minimax(board: Board, depth: int, pv: deque) -> Node:
                 )
 
     return best
+
 
 if __name__ == "__main__":
     # https://www.chessprogramming.org/Win_at_Chess
@@ -878,29 +893,29 @@ if __name__ == "__main__":
     ]
     depth = 3
 
-    #for fen in fens[1:10]:
+    # for fen in fens[1:10]:
     for fen in [
-    #    "r1bqk2r/pp2bpp1/2pp1n1p/8/1n1PPB1P/2NB1N2/PPP1Q1P1/R3K2R w KQkq - 0 10",
-    #    "r1bqk2r/pp2bpp1/2pp1n1p/8/1nBPPB1P/2N2N2/PPP1Q1P1/R3K2R b KQkq - 1 10",
-    #    "r1bqk2r/pp2bpp1/2pp3p/7n/1nBPPB1P/2N2N2/PPP1Q1P1/R3K2R w KQkq - 2 11",
-    #    "r1bqk2r/pp2bpp1/2pp3p/7n/1nBPP2P/2N2N2/PPP1Q1PB/R3K2R b KQkq - 3 11",
-    #    "r1bqk2r/pp3pp1/2pp3p/7n/1nBPP2b/2N2N2/PPP1Q1PB/R3K2R w KQkq - 0 12",
-    #    "r1bqk2r/pp3pp1/2pp3p/7n/1nBPP2b/2N2N2/PPPKQ1PB/R6R b kq - 1 12",
-    #    "r1bqk2r/pp3pp1/2pp3p/6bn/1nBPP3/2N2N2/PPPKQ1PB/R6R w kq - 2 13",
-    #    "r1bqk2r/pp3pp1/2pp3p/6bn/1nBPP3/2N2N2/PPP1Q1PB/R3K2R b kq - 3 13",
-    #    "r1bqk2r/pp2bpp1/2pp3p/7n/1nBPP3/2N2N2/PPP1Q1PB/R3K2R w kq - 4 14",
-    #]:
-    #    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-    #    "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1",
-    #    "rnbqkb1r/pppppppp/5n2/8/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 2 2",
-    #    "rnbqkb1r/pppppppp/5n2/8/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 0 2",
-    #    #"r1bqkb1r/pppppppp/2n2n2/8/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 1 3",
-    #    #"r1bqkb1r/pppppppp/2n2n2/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 2 3",
-    #    #"r1bqkbnr/pppppppp/2n5/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 3 4",
-    #    #"r1bqkbnr/pppppppp/2n5/8/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 4 4",
-    #    #"r1bqkb1r/pppppppp/2n2n2/8/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 5 5",
-    #]:
-    # https://lichess.org/broadcast/fide-candidates-tournament-2022/round-4/0QuWnLkU
+        #    "r1bqk2r/pp2bpp1/2pp1n1p/8/1n1PPB1P/2NB1N2/PPP1Q1P1/R3K2R w KQkq - 0 10",
+        #    "r1bqk2r/pp2bpp1/2pp1n1p/8/1nBPPB1P/2N2N2/PPP1Q1P1/R3K2R b KQkq - 1 10",
+        #    "r1bqk2r/pp2bpp1/2pp3p/7n/1nBPPB1P/2N2N2/PPP1Q1P1/R3K2R w KQkq - 2 11",
+        #    "r1bqk2r/pp2bpp1/2pp3p/7n/1nBPP2P/2N2N2/PPP1Q1PB/R3K2R b KQkq - 3 11",
+        #    "r1bqk2r/pp3pp1/2pp3p/7n/1nBPP2b/2N2N2/PPP1Q1PB/R3K2R w KQkq - 0 12",
+        #    "r1bqk2r/pp3pp1/2pp3p/7n/1nBPP2b/2N2N2/PPPKQ1PB/R6R b kq - 1 12",
+        #    "r1bqk2r/pp3pp1/2pp3p/6bn/1nBPP3/2N2N2/PPPKQ1PB/R6R w kq - 2 13",
+        #    "r1bqk2r/pp3pp1/2pp3p/6bn/1nBPP3/2N2N2/PPP1Q1PB/R3K2R b kq - 3 13",
+        #    "r1bqk2r/pp2bpp1/2pp3p/7n/1nBPP3/2N2N2/PPP1Q1PB/R3K2R w kq - 4 14",
+        # ]:
+        #    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        #    "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1",
+        #    "rnbqkb1r/pppppppp/5n2/8/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 2 2",
+        #    "rnbqkb1r/pppppppp/5n2/8/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 0 2",
+        #    #"r1bqkb1r/pppppppp/2n2n2/8/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 1 3",
+        #    #"r1bqkb1r/pppppppp/2n2n2/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 2 3",
+        #    #"r1bqkbnr/pppppppp/2n5/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 3 4",
+        #    #"r1bqkbnr/pppppppp/2n5/8/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 4 4",
+        #    #"r1bqkb1r/pppppppp/2n2n2/8/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 5 5",
+        # ]:
+        # https://lichess.org/broadcast/fide-candidates-tournament-2022/round-4/0QuWnLkU
         "rn1q1rk1/1p2bppp/p2pbn2/4p3/4P3/1NN1BP2/PPPQ2PP/2KR1B1R b - - 7 10",
         "r2q1rk1/1p1nbppp/p2pbn2/4p3/4P3/1NN1BP2/PPPQ2PP/2KR1B1R w - - 8 11",
         "r2q1rk1/1p1nbppp/p2pbn2/4p3/4P1P1/1NN1BP2/PPPQ3P/2KR1B1R b - - 0 11",

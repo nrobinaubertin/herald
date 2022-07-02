@@ -173,7 +173,7 @@ class Board:
                     for i in range(int(c)):
                         self.squares[s := s + 1] = PIECE.EMPTY
             self.squares[s := s + 1] = PIECE.INVALID
-        self.eval = evaluation.eval(self)
+        self.eval = evaluation.eval_board(self)
 
     def __init__(self, fen=""):
         if fen:

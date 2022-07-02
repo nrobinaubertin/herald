@@ -1,5 +1,4 @@
-#!/bin/env python3
-
+#!/usr/bin/env python3
 """M87
 
 Usage:
@@ -18,7 +17,7 @@ import hashtable
 from evaluation import eval
 
 NAME = "M87"
-VERSION = "{} 0.9.0".format(NAME)
+VERSION = "{} 0.9.1".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None
@@ -26,7 +25,6 @@ CURRENT_PROCESS = None
 def bestMove(board, max_time=0, max_depth=0, eval_guess=0):
     current_eval = eval_guess
     if max_time != 0:
-        print(f"info max_depth {max_depth}")
         start_time = time.process_time_ns()
         for i in range((10 if max_depth == 0 else max_depth)):
             best = search(board, i, current_eval)
