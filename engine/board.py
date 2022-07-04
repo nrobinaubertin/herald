@@ -2,16 +2,13 @@ import enum
 import collections
 import copy
 from array import array
-from zlib import adler32, crc32
 import hashlib
-import evaluation
+from engine.constants import PIECE, COLOR, ASCII_REP, CASTLE
 
 # TO TEST:
 # position r1bk3r/pp1n3p/5Q2/1Np5/5pB1/8/PPP2P1P/2KR3R b - - 0 17
 # position 2b1k2r/1pp2pp1/5r2/p1b1n3/P1P5/1P3N2/1q1PPPPP/3RKB1R w Kk - 4 21
 # position 5r1k/pp6/2p1bn1P/6r1/3pB3/3P4/1PP2R2/2K2R2 b - - 1 33
-
-from constants import PIECE, COLOR, ASCII_REP, CASTLE
 
 Move = collections.namedtuple(
     "Move",
@@ -98,7 +95,6 @@ class Board:
         self.half_move = 0
         self.full_move = 0
         self.king_en_passant = -1
-        self.eval = 0
 
     # def get_pieces_squares(type: PIECE, color: COLOR):
     #    return self.pieces_array[(color + 1) / 2 * type]
@@ -113,7 +109,6 @@ class Board:
         #return data.tobytes()
         # return data
         return hashlib.sha256(data).hexdigest()
-        #return adler32(data)
 
     def fromFEN(self, fen: str):
         if fen == "startpos":
@@ -173,7 +168,6 @@ class Board:
                     for i in range(int(c)):
                         self.squares[s := s + 1] = PIECE.EMPTY
             self.squares[s := s + 1] = PIECE.INVALID
-        self.eval = evaluation.eval_board(self)
 
     def __init__(self, fen=""):
         if fen:
@@ -331,7 +325,6 @@ class Board:
         board.king_en_passant = self.king_en_passant
         board.half_move = self.half_move
         board.full_move = self.full_move
-        board.eval = self.eval
         return board
 
     @property

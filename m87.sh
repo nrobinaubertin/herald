@@ -1,2 +1,2 @@
 #!/bin/sh
-python engine\m87
+python m87.py

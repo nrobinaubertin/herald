@@ -9,12 +9,12 @@ Usage:
 import sys
 import time
 import multiprocessing
-from constants import COLOR
-from board import Board, toUCI
-from search import search
-import perft
-import hashtable
-from evaluation import eval
+from engine.constants import COLOR
+from engine.board import Board, toUCI
+from engine.search import search
+import engine.perft
+import engine.hashtable
+from engine.evaluation import eval_board
 
 NAME = "M87"
 VERSION = "{} 0.9.1".format(NAME)
@@ -80,7 +80,7 @@ def uci_parser(line):
         return []
 
     if tokens[0] == "eval":
-        return [f"board: {eval(CURRENT_BOARD)}"]
+        return [f"board: {eval_board(CURRENT_BOARD)}"]
 
     if tokens[0] == "print":
         return [str(CURRENT_BOARD)]
@@ -176,7 +176,7 @@ def uci_parser(line):
         if tokens[1] == "depth":
             depth = int(tokens[2])
 
-        current_eval = eval(CURRENT_BOARD)
+        current_eval = eval_board(CURRENT_BOARD)
 
         global CURRENT_PROCESS
         if CURRENT_PROCESS is not None:

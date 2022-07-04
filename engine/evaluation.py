@@ -1,5 +1,5 @@
 from array import array
-from constants import PIECE, COLOR
+from engine.constants import PIECE, COLOR
 
 PIECE_VALUE = {
     PIECE.EMPTY: 0,
