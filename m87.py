@@ -10,14 +10,15 @@ import sys
 import time
 import multiprocessing
 from engine.constants import COLOR
-from engine.board import Board, toUCI
+from engine.board import Board
 from engine.search import search
 import engine.perft
 import engine.hashtable
 from engine.evaluation import eval_board
+from engine.data_structures import toUCI
 
 NAME = "M87"
-VERSION = "{} 0.9.1".format(NAME)
+VERSION = "{} 0.9.2".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None

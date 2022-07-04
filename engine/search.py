@@ -1,10 +1,10 @@
 from collections import deque, namedtuple
 import time
-from engine.constants import PIECE, COLOR
-import engine.hashtable
-from engine.evaluation import VALUE_MAX, eval_board, move_eval
-from engine.board import toUCI, Board
-from engine.algorithms import alphabeta_mo, Node
+from engine.constants import COLOR
+from engine.evaluation import VALUE_MAX, eval_board
+from engine.board import Board
+from engine.algorithms import alphabeta_mo
+from engine.data_structures import Node, toUCI
 
 Search = namedtuple(
     "Search", ["move", "depth", "score", "nodes", "time", "best_node", "pv"]

@@ -4,29 +4,7 @@ import copy
 from array import array
 import hashlib
 from engine.constants import PIECE, COLOR, ASCII_REP, CASTLE
-
-# TO TEST:
-# position r1bk3r/pp1n3p/5Q2/1Np5/5pB1/8/PPP2P1P/2KR3R b - - 0 17
-# position 2b1k2r/1pp2pp1/5r2/p1b1n3/P1P5/1P3N2/1q1PPPPP/3RKB1R w Kk - 4 21
-# position 5r1k/pp6/2p1bn1P/6r1/3pB3/3P4/1PP2R2/2K2R2 b - - 1 33
-
-Move = collections.namedtuple(
-    "Move",
-    ["start", "end", "is_capture", "is_castle", "en_passant"],
-    defaults=[0, 0, False, False, -1],
-)
-
-
-def toUCI(move: Move) -> str:
-    def toNormalNotation(square: int) -> str:
-        row = 10 - (square // 10 - 2)
-        column = square - (square // 10) * 10
-        letter = ({1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f", 7: "g", 8: "h"})[
-            column
-        ]
-        return f"{letter}{row - 2}"
-
-    return f"{toNormalNotation(move.start)}{toNormalNotation(move.end)}"
+from engine.data_structures import Move
 
 
 class Board:
@@ -46,7 +24,7 @@ class Board:
             en_passant=(start + end) // 2 if abs(self.squares[start]) == PIECE.PAWN and abs(start - end) == 20 else -1
         )
 
-    def toString(self) -> str:
+    def __str__(self) -> str:
         rep = f"{'w' if self.turn == COLOR.WHITE else 'b'}  0 1 2 3 4 5 6 7 8 9"
         for i in range(120):
             if i % 10 == 0:
@@ -56,9 +34,6 @@ class Board:
                 continue
             rep += f"{ASCII_REP[self.squares[i]]} "
         return rep
-
-    def __str__(self) -> str:
-        return self.toString()
 
     def init(self):
         # array of PIECE * COLOR
@@ -96,9 +71,6 @@ class Board:
         self.full_move = 0
         self.king_en_passant = -1
 
-    # def get_pieces_squares(type: PIECE, color: COLOR):
-    #    return self.pieces_array[(color + 1) / 2 * type]
-
     def hash(self):
         data = array("b")
         data.extend(self.squares)
@@ -106,7 +78,7 @@ class Board:
         data.extend(self.castling_rights)
         data.append(self.en_passant)
         data.append(self.king_en_passant)
-        #return data.tobytes()
+        # return data.tobytes()
         # return data
         return hashlib.sha256(data).hexdigest()
 
@@ -134,37 +106,23 @@ class Board:
         for row in board.split("/"):
             self.squares[s := s + 1] = PIECE.INVALID
             for c in row:
+                piece = None
                 if c.lower() == "r":
                     piece = PIECE.ROOK * (COLOR.BLACK if c.islower() else COLOR.WHITE)
-                    self.squares[s := s + 1] = piece
-                    self.pieces[piece].append(s)
-                    continue
                 if c.lower() == "n":
                     piece = PIECE.KNIGHT * (COLOR.BLACK if c.islower() else COLOR.WHITE)
-                    self.squares[s := s + 1] = piece
-                    self.pieces[piece].append(s)
-                    continue
                 if c.lower() == "b":
                     piece = PIECE.BISHOP * (COLOR.BLACK if c.islower() else COLOR.WHITE)
-                    self.squares[s := s + 1] = piece
-                    self.pieces[piece].append(s)
-                    continue
                 if c.lower() == "q":
                     piece = PIECE.QUEEN * (COLOR.BLACK if c.islower() else COLOR.WHITE)
-                    self.squares[s := s + 1] = piece
-                    self.pieces[piece].append(s)
-                    continue
                 if c.lower() == "k":
                     piece = PIECE.KING * (COLOR.BLACK if c.islower() else COLOR.WHITE)
-                    self.squares[s := s + 1] = piece
-                    self.pieces[piece].append(s)
-                    continue
                 if c.lower() == "p":
                     piece = PIECE.PAWN * (COLOR.BLACK if c.islower() else COLOR.WHITE)
+                if piece is not None:
                     self.squares[s := s + 1] = piece
                     self.pieces[piece].append(s)
-                    continue
-                if int(c) > 0:
+                elif int(c) > 0:
                     for i in range(int(c)):
                         self.squares[s := s + 1] = PIECE.EMPTY
             self.squares[s := s + 1] = PIECE.INVALID
@@ -331,7 +289,7 @@ class Board:
     def invturn(self):
         return COLOR.WHITE if self.turn == COLOR.BLACK else COLOR.BLACK
 
-    def moves(self, quiescent=False):
+    def moves(self, quiescent: bool = False):
         moves = []
         for move in self.pseudo_legal_moves(quiescent):
             b = self.copy()
@@ -381,7 +339,7 @@ class Board:
                 return True
         return False
 
-    def pseudo_legal_moves(self, quiescent=False):
+    def pseudo_legal_moves(self, quiescent: bool = False):
         for type in [
             PIECE.PAWN,
             PIECE.KNIGHT,

@@ -8,13 +8,9 @@ from collections import deque, namedtuple
 from engine.constants import PIECE, COLOR
 import engine.hashtable
 from engine.evaluation import VALUE_MAX, eval_board, move_eval
-from engine.board import toUCI, Board
+from engine.board import Board
+from engine.data_structures import Node, toUCI
 
-Node = namedtuple(
-    "Node",
-    ["value", "depth", "pv", "type", "upper", "lower", "squares", "children"],
-    defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None, 0],
-)
 SmartMove = namedtuple("SmartMove", ["move", "board", "eval"])
 
 if __debug__:
