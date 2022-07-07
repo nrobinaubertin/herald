@@ -12,7 +12,6 @@ import multiprocessing
 from engine.constants import COLOR
 from engine.board import Board
 from engine.search import search
-import engine.perft
 import engine.hashtable
 from engine.evaluation import eval_board
 from engine.data_structures import toUCI
@@ -145,14 +144,6 @@ def uci_parser(line):
             for move in tokens[next_token + 1 :]:
                 board.push(board.fromUCI(move))
         CURRENT_BOARD = board
-
-    if len(tokens) > 1 and tokens[0] == "perft":
-        depth = int(tokens[1])
-        if depth == 0:
-            nodes = 1
-        else:
-            nodes = perft.perft(CURRENT_BOARD, depth)
-        return [f"nodes {nodes}"]
 
     if len(tokens) > 1 and tokens[0] == "go":
 

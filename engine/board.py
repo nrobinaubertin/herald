@@ -294,6 +294,13 @@ class Board:
         for move in self.pseudo_legal_moves(quiescent):
             b = self.copy()
             b.push(move)
+
+            if len(b.pieces[PIECE.KING * COLOR.WHITE]) == 0:
+                continue
+
+            if len(b.pieces[PIECE.KING * COLOR.BLACK]) == 0:
+                continue
+
             if (
                 not b.is_square_attacked(
                     b.pieces[PIECE.KING * b.invturn][0],
