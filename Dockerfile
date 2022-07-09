@@ -10,7 +10,8 @@ RUN set -xe \
 
 COPY lichess-bot /m87/lichess-bot
 COPY engine /m87/engine
+COPY m87.py /m87/m87.py
 
 WORKDIR /m87
 
-CMD ["python", "/m87/lichess-bot/lichess-bot.py", "-v", "--config", "/m87/config.yml"]
+CMD ["python", "/m87/lichess-bot/lichess-bot.py", "-v", "--config", "/m87/config/config.yml"]

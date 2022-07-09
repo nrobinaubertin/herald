@@ -17,7 +17,7 @@ from engine.evaluation import eval_board
 from engine.data_structures import toUCI
 
 NAME = "M87"
-VERSION = "{} 0.9.2".format(NAME)
+VERSION = "{} 0.9.3".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None
@@ -45,8 +45,8 @@ def bestMove(board, max_time=0, max_depth=0, eval_guess=0):
                 )
                 + f"pv {' '.join([toUCI(x) for x in best.pv])}"
             )
-            if used_time > (max_time - 1) // max(20, 80 - board.full_move) * 1000:
-                return toUCI(best.move)
+            if used_time * 5 > (max_time - 1) // max(20, 80 - board.full_move) * 1000:
+                break
     else:
         for i in range(max_depth + 1):
             best = search(board, i, current_eval)
@@ -188,7 +188,6 @@ def uci_parser(line):
                     },
                     daemon=True,
                 )
-            #move = bestMove(CURRENT_BOARD, max_time=my_time, max_depth=min(6, CURRENT_BOARD.full_move // 2), eval_guess=current_eval)
         else:
             process = multiprocessing.Process(
                     target=bestMove,
@@ -199,7 +198,6 @@ def uci_parser(line):
                     },
                     daemon=True,
                 )
-            #move = bestMove(CURRENT_BOARD, max_depth=depth, eval_guess=current_eval)
         process.start()
         CURRENT_PROCESS = process
     return []
