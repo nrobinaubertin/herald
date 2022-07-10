@@ -17,7 +17,7 @@ from engine.evaluation import eval_board
 from engine.data_structures import toUCI
 
 NAME = "M87"
-VERSION = "{} 0.10.0".format(NAME)
+VERSION = "{} 0.10.1".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None
@@ -185,7 +185,7 @@ def uci_parser(line):
                     args=(CURRENT_BOARD,),
                     kwargs={
                         "max_time": my_time,
-                        "max_depth": min(6, CURRENT_BOARD.full_move // 2),
+                        "max_depth": min(6, CURRENT_BOARD.full_move),
                         "eval_guess": current_eval,
                         "rand_count": max(1, 2 * (5 - CURRENT_BOARD.full_move)),
                         "transposition_table": TRANSPOSITION_TABLE
@@ -197,8 +197,8 @@ def uci_parser(line):
                     target=bestMove,
                     args=(CURRENT_BOARD,),
                     kwargs={
-                        "max_depth":depth,
-                        "eval_guess":current_eval,
+                        "max_depth": depth,
+                        "eval_guess": current_eval,
                         "transposition_table": TRANSPOSITION_TABLE
                     },
                     daemon=True,
