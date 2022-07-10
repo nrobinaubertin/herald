@@ -12,22 +12,23 @@ import multiprocessing
 from engine.constants import COLOR
 from engine.board import Board
 from engine.search import search
-import engine.hashtable
+from engine.transposition_table import TranspositionTable
 from engine.evaluation import eval_board
 from engine.data_structures import toUCI
 
 NAME = "M87"
-VERSION = "{} 0.9.4".format(NAME)
+VERSION = "{} 0.10.0".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None
+TRANSPOSITION_TABLE = None
 
-def bestMove(board, max_time=0, max_depth=0, eval_guess=0, rand_count=1):
+def bestMove(board, max_time=0, max_depth=0, eval_guess=0, rand_count=1, transposition_table=None):
     current_eval = eval_guess
     if max_time != 0:
         start_time = time.process_time_ns()
         for i in range((10 if max_depth == 0 else max_depth)):
-            best = search(board, depth=i, eval_guess=current_eval, rand_count=rand_count)
+            best = search(board, depth=i, eval_guess=current_eval, rand_count=rand_count, transposition_table=transposition_table)
             current_eval = best.score
             used_time = max(1, (time.process_time_ns() - start_time) // 1000)
             print(
@@ -49,7 +50,7 @@ def bestMove(board, max_time=0, max_depth=0, eval_guess=0, rand_count=1):
                 break
     else:
         for i in range(max_depth + 1):
-            best = search(board, depth=i, eval_guess=current_eval)
+            best = search(board, depth=i, eval_guess=current_eval, transposition_table=transposition_table)
             current_eval = best.score
             print(
                 ""
@@ -64,6 +65,7 @@ def bestMove(board, max_time=0, max_depth=0, eval_guess=0, rand_count=1):
                 )
                 + f"pv {' '.join([toUCI(x) for x in best.pv])}"
             )
+
     print(f"bestmove {toUCI(best.move)}")
     return toUCI(best.move)
 
@@ -85,8 +87,8 @@ def uci_parser(line):
     if tokens[0] == "print":
         return [str(CURRENT_BOARD)]
 
-    if tokens[0] == "hashtable":
-        stats = hashtable.stats()
+    if tokens[0] == "tt":
+        stats = TRANSPOSITION_TABLE.stats()
         stats_str = (
             f"SHALLOW_HITS: {stats['SHALLOW_HITS']}, "
             f"HITS: {stats['HITS']}, "
@@ -185,7 +187,8 @@ def uci_parser(line):
                         "max_time": my_time,
                         "max_depth": min(6, CURRENT_BOARD.full_move // 2),
                         "eval_guess": current_eval,
-                        "rand_count": max(1, 2 * (5 - CURRENT_BOARD.full_move))
+                        "rand_count": max(1, 2 * (5 - CURRENT_BOARD.full_move)),
+                        "transposition_table": TRANSPOSITION_TABLE
                     },
                     daemon=True,
                 )
@@ -195,7 +198,8 @@ def uci_parser(line):
                     args=(CURRENT_BOARD,),
                     kwargs={
                         "max_depth":depth,
-                        "eval_guess":current_eval
+                        "eval_guess":current_eval,
+                        "transposition_table": TRANSPOSITION_TABLE
                     },
                     daemon=True,
                 )
@@ -204,7 +208,9 @@ def uci_parser(line):
     return []
 
 if __name__ == "__main__":
-    while True:
-        line = input()
-        for line in uci_parser(line):
-            print(line)
+    with multiprocessing.Manager() as manager:
+        TRANSPOSITION_TABLE = TranspositionTable(manager.dict())
+        while True:
+            line = input()
+            for line in uci_parser(line):
+                print(line)

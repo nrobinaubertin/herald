@@ -4,14 +4,15 @@ import random
 from engine.constants import COLOR
 from engine.evaluation import VALUE_MAX, eval_board
 from engine.board import Board
-from engine.algorithms import alphabeta_mo
+from engine.algorithms import alphabeta_mo, alphabeta_mo_tt
 from engine.data_structures import Node
+from engine.transposition_table import TranspositionTable
 
 Search = namedtuple(
     "Search", ["move", "depth", "score", "nodes", "time", "best_node", "pv"]
 )
 
-def search(board: Board, depth: int, eval_guess: int = 0, rand_count: int = 1):
+def search(board: Board, depth: int, eval_guess: int = 0, rand_count: int = 1, transposition_table: TranspositionTable = None):
 
     start_time = time.process_time_ns()
 
@@ -27,12 +28,12 @@ def search(board: Board, depth: int, eval_guess: int = 0, rand_count: int = 1):
         curr_board.push(move)
         # node = aspiration_window(curr_board, eval_guess, depth, deque([move]))
         # node = negaC(curr_board, -VALUE_MAX, VALUE_MAX, depth)
-        # node = alphabeta_tt_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
         # node = alphabeta_tt(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
         # node = alphabeta(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
         # node = minimax_tt(curr_board, depth, deque([move]))
         # node = minimax(curr_board, depth, deque([move]))
-        node = alphabeta_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
+        node = alphabeta_mo_tt(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]), transposition_table=transposition_table)
+        # node = alphabeta_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
         node_count += node.children + 1
         nodes.append(Node(depth=depth, value=node.value, pv=node.pv))
 
