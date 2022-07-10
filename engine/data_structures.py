@@ -1,9 +1,10 @@
 from collections import deque, namedtuple
 from engine.evaluation import VALUE_MAX
+from engine.constants import PIECE
 
 Move = namedtuple(
     "Move",
-    ["start", "end", "is_capture", "is_castle", "en_passant"],
+    ["start", "end", "moving_piece", "is_capture", "is_castle", "en_passant"],
     defaults=[0, 0, False, False, -1],
 )
 
@@ -13,13 +14,22 @@ Node = namedtuple(
     defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None, 0],
 )
 
-def toUCI(move: Move) -> str:
-    def toNormalNotation(square: int) -> str:
-        row = 10 - (square // 10 - 2)
-        column = square - (square // 10) * 10
-        letter = ({1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f", 7: "g", 8: "h"})[
-            column
-        ]
-        return f"{letter}{row - 2}"
+def decompose_square(square: int):
+    row = 10 - (square // 10 - 2) - 2
+    column = square - (square // 10) * 10
+    return (row, column)
 
-    return f"{toNormalNotation(move.start)}{toNormalNotation(move.end)}"
+def toNormalNotation(square: int) -> str:
+    row, column = decompose_square(square)
+    letter = ({
+        1: "a", 2: "b", 3: "c", 4: "d",
+        5: "e", 6: "f", 7: "g", 8: "h"
+    })[column]
+    return f"{letter}{row}"
+
+def is_promotion(move: Move) -> bool:
+    row, column = decompose_square(move.end)
+    return abs(move.moving_piece) == PIECE.PAWN and (row == 8 or row == 1)
+
+def toUCI(move: Move) -> str:
+    return f"{toNormalNotation(move.start)}{toNormalNotation(move.end)}{'d' if is_promotion(move) else ''}"
