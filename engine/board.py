@@ -370,6 +370,7 @@ class Board:
                             yield Move(
                                 start=start,
                                 end=end,
+                                moving_piece=type*self.turn,
                                 is_capture=is_capture,
                                 is_castle=False,
                                 en_passant=-1,
@@ -394,6 +395,7 @@ class Board:
                                         yield Move(
                                             start=start,
                                             end=end,
+                                            moving_piece=type*self.turn,
                                             is_capture=False,
                                             is_castle=True,
                                             en_passant=-1,
@@ -407,6 +409,7 @@ class Board:
                                         yield Move(
                                             start=start,
                                             end=end,
+                                            moving_piece=type*self.turn,
                                             is_capture=False,
                                             is_castle=True,
                                             en_passant=-1,
@@ -420,6 +423,7 @@ class Board:
                                 yield Move(
                                     start=start,
                                     end=end,
+                                    moving_piece=type*self.turn,
                                     is_capture=is_capture,
                                     is_castle=False,
                                     en_passant=-1,
@@ -441,6 +445,7 @@ class Board:
                                 yield Move(
                                     start=start,
                                     end=end,
+                                    moving_piece=type*self.turn,
                                     is_capture=is_capture,
                                     is_castle=False,
                                     en_passant=-1,
@@ -462,6 +467,7 @@ class Board:
                                 yield Move(
                                     start=start,
                                     end=end,
+                                    moving_piece=type*self.turn,
                                     is_capture=is_capture,
                                     is_castle=False,
                                     en_passant=-1,
@@ -482,6 +488,7 @@ class Board:
                             yield Move(
                                 start=start,
                                 end=end,
+                                moving_piece=type*self.turn,
                                 is_capture=is_capture,
                                 is_castle=False,
                                 en_passant=-1,
@@ -501,6 +508,7 @@ class Board:
                                 yield Move(
                                     start=start,
                                     end=end,
+                                    moving_piece=type*self.turn,
                                     is_capture=False,
                                     is_castle=False,
                                     en_passant=en_passant,
@@ -520,6 +528,7 @@ class Board:
                             yield Move(
                                 start=start,
                                 end=end,
+                                moving_piece=type*self.turn,
                                 is_capture=True,
                                 is_castle=False,
                                 en_passant=-1,

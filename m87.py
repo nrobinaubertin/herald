@@ -22,12 +22,12 @@ AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None
 
-def bestMove(board, max_time=0, max_depth=0, eval_guess=0):
+def bestMove(board, max_time=0, max_depth=0, eval_guess=0, rand_count=1):
     current_eval = eval_guess
     if max_time != 0:
         start_time = time.process_time_ns()
         for i in range((10 if max_depth == 0 else max_depth)):
-            best = search(board, i, current_eval)
+            best = search(board, depth=i, eval_guess=current_eval, rand_count=rand_count)
             current_eval = best.score
             used_time = max(1, (time.process_time_ns() - start_time) // 1000)
             print(
@@ -49,7 +49,7 @@ def bestMove(board, max_time=0, max_depth=0, eval_guess=0):
                 break
     else:
         for i in range(max_depth + 1):
-            best = search(board, i, current_eval)
+            best = search(board, depth=i, eval_guess=current_eval)
             current_eval = best.score
             print(
                 ""
@@ -184,7 +184,8 @@ def uci_parser(line):
                     kwargs={
                         "max_time": my_time,
                         "max_depth": min(6, CURRENT_BOARD.full_move // 2),
-                        "eval_guess": current_eval
+                        "eval_guess": current_eval,
+                        "rand_count": max(1, 2 * (5 - CURRENT_BOARD.full_move))
                     },
                     daemon=True,
                 )

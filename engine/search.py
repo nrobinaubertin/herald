@@ -1,16 +1,17 @@
 from collections import deque, namedtuple
 import time
+import random
 from engine.constants import COLOR
 from engine.evaluation import VALUE_MAX, eval_board
 from engine.board import Board
 from engine.algorithms import alphabeta_mo
-from engine.data_structures import Node, toUCI
+from engine.data_structures import Node
 
 Search = namedtuple(
     "Search", ["move", "depth", "score", "nodes", "time", "best_node", "pv"]
 )
 
-def search(board: Board, depth: int, eval_guess: int = 0):
+def search(board: Board, depth: int, eval_guess: int = 0, rand_count: int = 1):
 
     start_time = time.process_time_ns()
 
@@ -18,7 +19,8 @@ def search(board: Board, depth: int, eval_guess: int = 0):
         depth=depth,
         value=(VALUE_MAX if board.turn == COLOR.BLACK else -VALUE_MAX),
     )
-    nodes = 0
+    node_count = 0
+    nodes = []
 
     for move in board.moves():
         curr_board = board.copy()
@@ -31,34 +33,17 @@ def search(board: Board, depth: int, eval_guess: int = 0):
         # node = minimax_tt(curr_board, depth, deque([move]))
         # node = minimax(curr_board, depth, deque([move]))
         node = alphabeta_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
-        nodes += node.children + 1
+        node_count += node.children + 1
+        nodes.append(Node(depth=depth, value=node.value, pv=node.pv))
 
-        if board.turn == COLOR.WHITE:
-            if node.value >= best.value:
-                best = Node(
-                    depth=depth,
-                    value=node.value,
-                    pv=node.pv,
-                    type=node.type,
-                    lower=node.lower,
-                    upper=node.upper,
-                )
-        else:
-            if node.value <= best.value:
-                best = Node(
-                    depth=depth,
-                    value=node.value,
-                    pv=node.pv,
-                    type=node.type,
-                    lower=node.lower,
-                    upper=node.upper,
-                )
+    nodes = sorted(nodes, key=lambda x: x.value, reverse=board.turn == COLOR.WHITE)
+    best = random.choice(nodes[:rand_count])
 
     return Search(
         move=best.pv[0],
         pv=best.pv,
         depth=depth,
-        nodes=nodes,
+        nodes=node_count,
         score=best.value,
         time=(time.process_time_ns() - start_time),
         best_node=best,

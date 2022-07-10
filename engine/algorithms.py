@@ -9,7 +9,7 @@ from engine.constants import PIECE, COLOR
 import engine.hashtable
 from engine.evaluation import VALUE_MAX, eval_board, move_eval
 from engine.board import Board
-from engine.data_structures import Node, toUCI
+from engine.data_structures import Node
 
 SmartMove = namedtuple("SmartMove", ["move", "board", "eval"])
 
