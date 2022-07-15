@@ -17,7 +17,7 @@ from engine.evaluation import eval_board
 from engine.data_structures import toUCI
 
 NAME = "M87"
-VERSION = "{} 0.10.4".format(NAME)
+VERSION = "{} 0.10.5".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None
@@ -87,7 +87,7 @@ def uci_parser(line):
     if tokens[0] == "print":
         return [str(CURRENT_BOARD)]
 
-    if tokens[0] == "tt":
+    if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "stats":
         stats = TRANSPOSITION_TABLE.stats()
         stats_str = (
             f"SHALLOW_HITS: {stats['SHALLOW_HITS']}, "
@@ -98,6 +98,10 @@ def uci_parser(line):
             f"ADD_BETTER: {stats['ADD_BETTER']}"
         )
         return [stats_str]
+
+    if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "export":
+        output = TRANSPOSITION_TABLE.export()
+        return [output]
 
     if len(tokens) == 1 and tokens[0] == "uci":
         return [

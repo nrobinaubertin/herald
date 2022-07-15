@@ -1,3 +1,5 @@
+import datetime
+import pickle
 from engine.algorithms import Node
 
 
@@ -34,6 +36,15 @@ class TranspositionTable:
             self.table[board_hash] = node
             if __debug__:
                 self.better_nodes_added += 1
+
+    def export(self):
+        """export the table to a file"""
+        output = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)),
+            f"memory_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
+        )
+        pickle.dump(self.table, output)
+        return output
 
     def stats(self):
         return {
