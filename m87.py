@@ -17,7 +17,7 @@ from engine.evaluation import eval_board
 from engine.data_structures import toUCI
 
 NAME = "M87"
-VERSION = "{} 0.10.1".format(NAME)
+VERSION = "{} 0.10.4".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None
@@ -46,7 +46,7 @@ def bestMove(board, max_time=0, max_depth=0, eval_guess=0, rand_count=1, transpo
                 )
                 + f"pv {' '.join([toUCI(x) for x in best.pv])}"
             )
-            if used_time * 5 > (max_time - 1) // max(5, 40 - board.full_move) * 1000:
+            if (min(used_time, 1) + i) * 5 > (max_time - 1) // max(10, 40 - board.full_move) * 1000:
                 break
     else:
         for i in range(max_depth + 1):
