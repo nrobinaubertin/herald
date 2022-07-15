@@ -1,6 +1,4 @@
-import enum
 import collections
-import copy
 from array import array
 import hashlib
 from engine.constants import PIECE, COLOR, ASCII_REP, CASTLE
@@ -8,7 +6,7 @@ from engine.data_structures import Move
 
 
 class Board:
-    def fromUCI(self, uci: str) -> Move:
+    def from_uci(self, uci: str) -> Move:
         digits = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8}
         start = digits[uci[0]] + (10 - int(uci[1])) * 10
         end = digits[uci[2]] + (10 - int(uci[3])) * 10
@@ -20,8 +18,14 @@ class Board:
                 or end == self.en_passant
                 or end == self.king_en_passant
             ),
-            is_castle=(start == 95 or start == 25) and abs(self.squares[start]) == PIECE.KING and abs(end - start) == 2,
-            en_passant=(start + end) // 2 if abs(self.squares[start]) == PIECE.PAWN and abs(start - end) == 20 else -1
+            is_castle=(
+                start in (95, 25)
+                and abs(self.squares[start]) == PIECE.KING
+                and abs(end - start) == 2
+            ),
+            en_passant=(start + end) // 2
+                if abs(self.squares[start]) == PIECE.PAWN and abs(start - end) == 20
+                else -1,
         )
 
     def __str__(self) -> str:
@@ -82,7 +86,7 @@ class Board:
         # return data
         return hashlib.sha256(data).hexdigest()
 
-    def fromFEN(self, fen: str):
+    def from_fen(self, fen: str):
         if fen == "startpos":
             fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -123,13 +127,26 @@ class Board:
                     self.squares[s := s + 1] = piece
                     self.pieces[piece].append(s)
                 elif int(c) > 0:
-                    for i in range(int(c)):
+                    for _ in range(int(c)):
                         self.squares[s := s + 1] = PIECE.EMPTY
             self.squares[s := s + 1] = PIECE.INVALID
 
     def __init__(self, fen=""):
+
+        # minimal init
+        self.squares = array("b")
+        self.pieces = {}
+        self.pieces_array = array("b")
+        self.moves_history = collections.deque()
+        self.turn = COLOR.WHITE
+        self.castling_rights = array("b")
+        self.en_passant = -1
+        self.half_move = 0
+        self.full_move = 0
+        self.king_en_passant = -1
+
         if fen:
-            self.fromFEN(fen)
+            self.from_fen(fen)
 
     def push(self, move: Move):
 
@@ -163,7 +180,9 @@ class Board:
             self.squares[king_square] = PIECE.EMPTY
 
         # promotion
-        if abs(piece_start) == PIECE.PAWN and move.end // 10 == (2 if self.turn == COLOR.WHITE else 9):
+        if abs(piece_start) == PIECE.PAWN and move.end // 10 == (
+            2 if self.turn == COLOR.WHITE else 9
+        ):
             self.squares[move.end] = PIECE.QUEEN * self.turn
             self.pieces[PIECE.PAWN * self.turn].remove(move.end)
             self.pieces[PIECE.QUEEN * self.turn].append(move.end)
@@ -370,7 +389,7 @@ class Board:
                             yield Move(
                                 start=start,
                                 end=end,
-                                moving_piece=type*self.turn,
+                                moving_piece=type * self.turn,
                                 is_capture=is_capture,
                                 is_castle=False,
                                 en_passant=-1,
@@ -395,7 +414,7 @@ class Board:
                                         yield Move(
                                             start=start,
                                             end=end,
-                                            moving_piece=type*self.turn,
+                                            moving_piece=type * self.turn,
                                             is_capture=False,
                                             is_castle=True,
                                             en_passant=-1,
@@ -409,7 +428,7 @@ class Board:
                                         yield Move(
                                             start=start,
                                             end=end,
-                                            moving_piece=type*self.turn,
+                                            moving_piece=type * self.turn,
                                             is_capture=False,
                                             is_castle=True,
                                             en_passant=-1,
@@ -423,7 +442,7 @@ class Board:
                                 yield Move(
                                     start=start,
                                     end=end,
-                                    moving_piece=type*self.turn,
+                                    moving_piece=type * self.turn,
                                     is_capture=is_capture,
                                     is_castle=False,
                                     en_passant=-1,
@@ -445,7 +464,7 @@ class Board:
                                 yield Move(
                                     start=start,
                                     end=end,
-                                    moving_piece=type*self.turn,
+                                    moving_piece=type * self.turn,
                                     is_capture=is_capture,
                                     is_castle=False,
                                     en_passant=-1,
@@ -467,7 +486,7 @@ class Board:
                                 yield Move(
                                     start=start,
                                     end=end,
-                                    moving_piece=type*self.turn,
+                                    moving_piece=type * self.turn,
                                     is_capture=is_capture,
                                     is_castle=False,
                                     en_passant=-1,
@@ -488,7 +507,7 @@ class Board:
                             yield Move(
                                 start=start,
                                 end=end,
-                                moving_piece=type*self.turn,
+                                moving_piece=type * self.turn,
                                 is_capture=is_capture,
                                 is_castle=False,
                                 en_passant=-1,
@@ -496,26 +515,30 @@ class Board:
                     # castling
                     if (
                         CASTLE.KING_SIDE * self.turn in self.castling_rights
-                        and self.squares[(96 if self.turn == COLOR.WHITE else 26)] = PIECE.EMPTY
-                        and self.squares[(97 if self.turn == COLOR.WHITE else 27)] = PIECE.EMPTY
+                        and self.squares[(96 if self.turn == COLOR.WHITE else 26)]
+                        == PIECE.EMPTY
+                        and self.squares[(97 if self.turn == COLOR.WHITE else 27)]
+                        == PIECE.EMPTY
                     ):
                         yield Move(
                             start=(95 if self.turn == COLOR.WHITE else 25),
                             end=(97 if self.turn == COLOR.WHITE else 27),
-                            moving_piece=type*self.turn,
+                            moving_piece=type * self.turn,
                             is_capture=False,
                             is_castle=True,
                             en_passant=-1,
                         )
                     if (
                         CASTLE.QUEEN_SIDE * self.turn in self.castling_rights
-                        and self.squares[(94 if self.turn == COLOR.WHITE else 24)] = PIECE.EMPTY
-                        and self.squares[(93 if self.turn == COLOR.WHITE else 23)] = PIECE.EMPTY
+                        and self.squares[(94 if self.turn == COLOR.WHITE else 24)]
+                        == PIECE.EMPTY
+                        and self.squares[(93 if self.turn == COLOR.WHITE else 23)]
+                        == PIECE.EMPTY
                     ):
                         yield Move(
                             start=(95 if self.turn == COLOR.WHITE else 25),
                             end=(93 if self.turn == COLOR.WHITE else 23),
-                            moving_piece=type*self.turn,
+                            moving_piece=type * self.turn,
                             is_capture=False,
                             is_castle=True,
                             en_passant=-1,
@@ -535,7 +558,7 @@ class Board:
                                 yield Move(
                                     start=start,
                                     end=end,
-                                    moving_piece=type*self.turn,
+                                    moving_piece=type * self.turn,
                                     is_capture=False,
                                     is_castle=False,
                                     en_passant=en_passant,
@@ -555,7 +578,7 @@ class Board:
                             yield Move(
                                 start=start,
                                 end=end,
-                                moving_piece=type*self.turn,
+                                moving_piece=type * self.turn,
                                 is_capture=True,
                                 is_castle=False,
                                 en_passant=-1,

@@ -14,7 +14,14 @@ from engine.transposition_table import TranspositionTable
 SmartMove = namedtuple("SmartMove", ["move", "board", "eval"])
 
 # alphabeta pruning (fail-soft) with move ordering and transposition table
-def alphabeta_mo_tt(board: Board, alpha: int, beta: int, depth: int, pv: deque, transposition_table: TranspositionTable) -> Node:
+def alphabeta_mo_tt(
+    board: Board,
+    alpha: int,
+    beta: int,
+    depth: int,
+    pv: deque,
+    transposition_table: TranspositionTable,
+) -> Node:
 
     # we check if there's no king of our color
     # in that case we can stop there
@@ -68,7 +75,9 @@ def alphabeta_mo_tt(board: Board, alpha: int, beta: int, depth: int, pv: deque, 
     for smart_move in ordered_smart_moves:
         curr_pv = deque(pv)
         curr_pv.append(smart_move.move)
-        node = alphabeta_mo_tt(smart_move.board, alpha, beta, depth - 1, curr_pv, transposition_table)
+        node = alphabeta_mo_tt(
+            smart_move.board, alpha, beta, depth - 1, curr_pv, transposition_table
+        )
         children += node.children + 1
 
         if board.turn == COLOR.WHITE:
@@ -178,6 +187,7 @@ def alphabeta_mo(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> 
         children=children,
     )
 
+
 # simple alphabeta pruning (fail-soft)
 def alphabeta(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
 
@@ -243,6 +253,7 @@ def alphabeta(board: Board, alpha: int, beta: int, depth: int, pv: deque) -> Nod
         pv=best.pv,
         children=children,
     )
+
 
 # Simple minimax
 def minimax(board: Board, depth: int, pv: deque) -> Node:

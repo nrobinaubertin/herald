@@ -14,22 +14,23 @@ Node = namedtuple(
     defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None, 0],
 )
 
+
 def decompose_square(square: int):
     row = 10 - (square // 10 - 2) - 2
     column = square - (square // 10) * 10
     return (row, column)
 
-def toNormalNotation(square: int) -> str:
+
+def to_normal_notation(square: int) -> str:
     row, column = decompose_square(square)
-    letter = ({
-        1: "a", 2: "b", 3: "c", 4: "d",
-        5: "e", 6: "f", 7: "g", 8: "h"
-    })[column]
+    letter = ({1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f", 7: "g", 8: "h"})[column]
     return f"{letter}{row}"
 
-def is_promotion(move: Move) -> bool:
-    row, column = decompose_square(move.end)
-    return abs(move.moving_piece) == PIECE.PAWN and (row == 8 or row == 1)
 
-def toUCI(move: Move) -> str:
-    return f"{toNormalNotation(move.start)}{toNormalNotation(move.end)}{'q' if is_promotion(move) else ''}"
+def is_promotion(move: Move) -> bool:
+    row, _ = decompose_square(move.end)
+    return abs(move.moving_piece) == PIECE.PAWN and (row in (8, 1))
+
+
+def to_uci(move: Move) -> str:
+    return f"{to_normal_notation(move.start)}{to_normal_notation(move.end)}{'q' if is_promotion(move) else ''}"

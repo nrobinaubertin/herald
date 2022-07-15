@@ -1,6 +1,7 @@
+import os
 import datetime
 import pickle
-from engine.algorithms import Node
+from engine.data_structures import Node
 
 
 class TranspositionTable:
@@ -41,9 +42,11 @@ class TranspositionTable:
         """export the table to a file"""
         output = os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
-            f"memory_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
+            "..",
+            f"memory_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
         )
-        pickle.dump(self.table, output)
+        with open(output, "wb") as output_pickle:
+            pickle.dump(self.table, output_pickle)
         return output
 
     def stats(self):
