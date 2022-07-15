@@ -32,4 +32,4 @@ def is_promotion(move: Move) -> bool:
     return abs(move.moving_piece) == PIECE.PAWN and (row == 8 or row == 1)
 
 def toUCI(move: Move) -> str:
-    return f"{toNormalNotation(move.start)}{toNormalNotation(move.end)}{'d' if is_promotion(move) else ''}"
+    return f"{toNormalNotation(move.start)}{toNormalNotation(move.end)}{'q' if is_promotion(move) else ''}"
