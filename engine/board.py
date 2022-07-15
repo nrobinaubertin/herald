@@ -493,6 +493,33 @@ class Board:
                                 is_castle=False,
                                 en_passant=-1,
                             )
+                    # castling
+                    if (
+                        CASTLE.KING_SIDE * self.turn in self.castling_rights
+                        and self.squares[(96 if self.turn == COLOR.WHITE else 26)] = PIECE.EMPTY
+                        and self.squares[(97 if self.turn == COLOR.WHITE else 27)] = PIECE.EMPTY
+                    ):
+                        yield Move(
+                            start=(95 if self.turn == COLOR.WHITE else 25),
+                            end=(97 if self.turn == COLOR.WHITE else 27),
+                            moving_piece=type*self.turn,
+                            is_capture=False,
+                            is_castle=True,
+                            en_passant=-1,
+                        )
+                    if (
+                        CASTLE.QUEEN_SIDE * self.turn in self.castling_rights
+                        and self.squares[(94 if self.turn == COLOR.WHITE else 24)] = PIECE.EMPTY
+                        and self.squares[(93 if self.turn == COLOR.WHITE else 23)] = PIECE.EMPTY
+                    ):
+                        yield Move(
+                            start=(95 if self.turn == COLOR.WHITE else 25),
+                            end=(93 if self.turn == COLOR.WHITE else 23),
+                            moving_piece=type*self.turn,
+                            is_capture=False,
+                            is_castle=True,
+                            en_passant=-1,
+                        )
                 if type == PIECE.PAWN:
                     if not quiescent:
                         depls = [(10 if self.turn == COLOR.BLACK else -10)]
