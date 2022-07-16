@@ -1,5 +1,5 @@
-FROM python:3.10.5-buster
-#FROM pypy:3.9-7.3.9-bullseye
+# FROM python:3.10.5-buster
+FROM pypy:3.9-7.3.9-bullseye
 
 COPY lichess-bot/requirements.txt /m87/requirements.txt
 
@@ -14,4 +14,4 @@ COPY m87.py /m87/m87.py
 
 WORKDIR /m87
 
-CMD ["python", "/m87/lichess-bot/lichess-bot.py", "-v", "--config", "/m87/config/config.yml"]
+CMD ["pypy3", "/m87/lichess-bot/lichess-bot.py", "-v", "--config", "/m87/config/config.yml"]
