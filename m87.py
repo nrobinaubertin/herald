@@ -15,71 +15,14 @@ from engine.search import search
 from engine.transposition_table import TranspositionTable
 from engine.evaluation import eval_board
 from engine.data_structures import to_uci
+from engine.best_move import best_move
 
 NAME = "M87"
-VERSION = "{} 0.10.6".format(NAME)
+VERSION = "{} 0.11.0".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None
 TRANSPOSITION_TABLE = None
-
-
-def bestMove(
-    board, max_time=0, max_depth=0, eval_guess=0, rand_count=1, transposition_table=None
-):
-    current_eval = eval_guess
-    if max_time != 0:
-        start_time = time.process_time_ns()
-        for i in range((10 if max_depth == 0 else max_depth)):
-            best = search(
-                board,
-                depth=i,
-                rand_count=rand_count,
-                transposition_table=transposition_table,
-            )
-            current_eval = best.score
-            used_time = max(1, (time.process_time_ns() - start_time) // 1000)
-            print(
-                ""
-                + f"info depth {best.depth} "
-                + f"score cp {best.score} "
-                + f"time {int(best.time // 1e9)} "
-                + f"nodes {best.nodes} "
-                + (
-                    "nps " + str(int(best.nodes * 1e9 // max(0.001, best.time))) + " "
-                    if best.time > 0
-                    else ""
-                )
-                + f"pv {' '.join([to_uci(x) for x in best.pv])}"
-            )
-            if (min(used_time, 1) + i) * 5 > (max_time - 1) // max(
-                10, 40 - board.full_move
-            ) * 1000:
-                break
-    else:
-        for i in range(max_depth + 1):
-            best = search(
-                board,
-                depth=i,
-                transposition_table=transposition_table,
-            )
-            current_eval = best.score
-            print(
-                ""
-                + f"info depth {best.depth} "
-                + f"score cp {best.score} "
-                + f"time {int(best.time // 1e9)} "
-                + f"nodes {best.nodes} "
-                + (
-                    "nps " + str(int(best.nodes * 1e9 // max(0.0001, best.time))) + " "
-                    if best.time > 0
-                    else ""
-                )
-                + f"pv {' '.join([to_uci(x) for x in best.pv])}"
-            )
-
-    print(f"bestmove {to_uci(best.move)}")
-    return to_uci(best.move)
 
 
 def stop_calculating():
@@ -119,9 +62,9 @@ def uci_parser(line):
 
     if len(tokens) == 1 and tokens[0] == "uci":
         return [
-            "{} by {}".format(VERSION, AUTHOR),
-            "id name {}".format(NAME),
-            "id author {}".format(AUTHOR),
+            f"{VERSION} by {AUTHOR}",
+            f"id name {NAME}",
+            f"id author {AUTHOR}",
             # fake some options
             "option name Hash type spin default 16 min 1 max 33554432",
             "option name Move Overhead type spin default 10 min 0 max 5000",
@@ -152,18 +95,14 @@ def uci_parser(line):
             fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
             next_token = 2
         else:
-            fen = "{0} {1} {2} {3} {4} {5}".format(
-                tokens[1],
-                tokens[2],
-                tokens[3],
-                tokens[4],
-                tokens[5] if len(tokens) > 5 else 0,
-                tokens[6] if len(tokens) > 6 else 0,
-            )
+            fen = f"{tokens[1]} "
+            + f"{tokens[2]} {tokens[3]} {tokens[4]} "
+            + f"{tokens[5] if len(tokens) > 5 else 0} "
+            + f"{tokens[6] if len(tokens) > 6 else 0}"
             next_token = 7
         board = Board(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
-            for move in tokens[next_token + 1 :]:
+            for move in tokens[next_token + 1:]:
                 board.push(board.from_uci(move))
         CURRENT_BOARD = board
 
@@ -197,31 +136,33 @@ def uci_parser(line):
             CURRENT_PROCESS.terminate()
 
         if depth is None:
-            my_time = wtime + winc
+            max_time = wtime
+            inc_time = winc
             if CURRENT_BOARD.turn == COLOR.BLACK:
-                my_time = btime + binc
+                max_time = btime
+                inc_time = binc
             process = multiprocessing.Process(
-                target=bestMove,
+                target=best_move,
                 args=(CURRENT_BOARD,),
                 kwargs={
-                    "max_time": my_time,
-                    "max_depth": min(6, CURRENT_BOARD.full_move),
+                    "max_time": max_time // 1000,
+                    "inc_time": inc_time // 1000,
                     "eval_guess": current_eval,
                     "rand_count": max(1, 2 * (5 - CURRENT_BOARD.full_move)),
                     "transposition_table": TRANSPOSITION_TABLE,
                 },
-                daemon=True,
+                daemon=False,
             )
         else:
             process = multiprocessing.Process(
-                target=bestMove,
+                target=best_move,
                 args=(CURRENT_BOARD,),
                 kwargs={
                     "max_depth": depth,
                     "eval_guess": current_eval,
                     "transposition_table": TRANSPOSITION_TABLE,
                 },
-                daemon=True,
+                daemon=False,
             )
         process.start()
         CURRENT_PROCESS = process
