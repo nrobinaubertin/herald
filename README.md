@@ -1,5 +1,8 @@
-<h1 align="center">Herald</h1>
+<h1 align="center">
+Herald
+<br/>
 <img align="center" src="herald.webp">
+</h1>
 <h4 align="center">Chess engine written in python</h4>
 
 ## Why ?
