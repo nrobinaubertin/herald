@@ -10,7 +10,7 @@ RUN set -xe \
 
 COPY lichess-bot /workdir/lichess-bot
 COPY engine /workdir/engine
-COPY workdir.py /workdir/run.py
+COPY run.py /workdir/run.py
 
 WORKDIR /workdir
 
