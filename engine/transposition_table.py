@@ -38,12 +38,24 @@ class TranspositionTable:
             if __debug__:
                 self.better_nodes_added += 1
 
-    def export(self):
+    def import_table(self, filename):
+        """import a file as the table"""
+        input = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)),
+            "..",
+            filename
+        )
+        with open(input, "rb") as input_pickle:
+            self.table = pickle.load(input_pickle)
+
+    def export_table(self, filename = ""):
         """export the table to a file"""
+        if filename == "":
+            filename = f"memory_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
         output = os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
             "..",
-            f"memory_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+            filename
         )
         with open(output, "wb") as output_pickle:
             pickle.dump(self.table, output_pickle)
