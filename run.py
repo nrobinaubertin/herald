@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""M87
-
-Usage:
-    m87
-    m87 (-h | --help | --version)
-"""
 
 import sys
 import time
@@ -17,8 +11,8 @@ from engine.evaluation import eval_board
 from engine.data_structures import to_uci
 from engine.best_move import best_move
 
-NAME = "M87"
-VERSION = "{} 0.11.0".format(NAME)
+NAME = "Herald"
+VERSION = "{} 0.11.1".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None
@@ -170,9 +164,24 @@ def uci_parser(line):
 
 
 if __name__ == "__main__":
-    with multiprocessing.Manager() as manager:
-        TRANSPOSITION_TABLE = TranspositionTable(manager.dict())
-        while True:
-            line = input()
-            for line in uci_parser(line):
-                print(line)
+
+    if len(sys.argv) == 1:
+        with multiprocessing.Manager() as manager:
+            TRANSPOSITION_TABLE = TranspositionTable(manager.dict())
+            while True:
+                line = input()
+                for line in uci_parser(line):
+                    print(line)
+        sys.exit()
+
+    if sys.argv[1] == "-h" or sys.argv[1] == "--help":
+        print((
+            "Usage:\n"
+            "   run.py\n"
+            "   run.py (-h | --help | --version)\n"
+        ))
+        sys.exit()
+
+    if sys.argv[1] == "--version":
+        print(f"{VERSION}")
+        sys.exit()
