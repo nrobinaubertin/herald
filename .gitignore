@@ -3,3 +3,4 @@ uci_logs.txt
 **/__pycache__/
 memory_*
 config/
+*.pyz

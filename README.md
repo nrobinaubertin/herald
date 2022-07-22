@@ -16,3 +16,10 @@ I want it to only use the standard modules of python.
 It uses alpha-beta pruning with move ordering and a simple transposition table. Its evaluation function is based on material, piece-square tables.  
 I want to enhance this with some SSE, mobility evaluation, iterative deepening and aspiration windows (work in progress !)  
 I will also improve the PST and material evaluation with genetic algorithms.
+
+## Zipapp
+
+You can create a zipapp with the following command:
+```
+python3 -m zipapp . -o "herald-$(git log -n1 --format=%h).pyz" -p "/usr/bin/env python3"
+```
