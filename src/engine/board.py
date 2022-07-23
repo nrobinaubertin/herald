@@ -1,8 +1,8 @@
 import collections
 from array import array
 import hashlib
-from engine.constants import PIECE, COLOR, ASCII_REP, CASTLE
-from engine.data_structures import Move
+from .constants import PIECE, COLOR, ASCII_REP, CASTLE
+from .data_structures import Move
 
 
 class Board:

@@ -4,7 +4,7 @@ We test our move generation using the perft algorithm
 """
 
 import unittest
-from engine.board import Board
+from src.engine.board import Board
 
 
 class TestAlgorithms(unittest.TestCase):

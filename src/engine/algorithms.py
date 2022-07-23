@@ -5,11 +5,11 @@ _tt algorithms can be validated by only taking tt_nodes with the same depth as t
 """
 
 from collections import deque, namedtuple
-from engine.constants import PIECE, COLOR
-from engine.evaluation import VALUE_MAX, eval_board, move_eval
-from engine.board import Board
-from engine.data_structures import Node
-from engine.transposition_table import TranspositionTable
+from .constants import PIECE, COLOR
+from .evaluation import VALUE_MAX, eval_board, move_eval
+from .board import Board
+from .data_structures import Node
+from .transposition_table import TranspositionTable
 
 SmartMove = namedtuple("SmartMove", ["move", "board", "eval"])
 

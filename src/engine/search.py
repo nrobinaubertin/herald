@@ -1,12 +1,12 @@
 from collections import deque, namedtuple
 import time
 import random
-from engine.constants import COLOR
-from engine.evaluation import VALUE_MAX
-from engine.board import Board
-from engine.algorithms import alphabeta_mo_tt
-from engine.data_structures import Node
-from engine.transposition_table import TranspositionTable
+from .constants import COLOR
+from .evaluation import VALUE_MAX
+from .board import Board
+from .algorithms import alphabeta_mo_tt
+from .data_structures import Node
+from .transposition_table import TranspositionTable
 
 Search = namedtuple(
     "Search", ["move", "depth", "score", "nodes", "time", "best_node", "pv"]

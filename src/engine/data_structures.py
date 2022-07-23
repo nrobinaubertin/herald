@@ -1,6 +1,6 @@
 from collections import deque, namedtuple
-from engine.evaluation import VALUE_MAX
-from engine.constants import PIECE
+from .evaluation import VALUE_MAX
+from .constants import PIECE
 
 Move = namedtuple(
     "Move",

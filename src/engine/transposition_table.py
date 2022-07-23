@@ -1,7 +1,7 @@
 import os
 import datetime
 import pickle
-from engine.data_structures import Node
+from .data_structures import Node
 
 
 class TranspositionTable:
