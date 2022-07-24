@@ -13,7 +13,7 @@ from engine.data_structures import to_uci
 from engine.best_move import best_move
 
 NAME = "Herald"
-VERSION = "{} 0.11.2".format(NAME)
+VERSION = "{} 0.11.3".format(NAME)
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None
@@ -190,7 +190,7 @@ if __name__ == "__main__":
                 TRANSPOSITION_TABLE.import_table(filename)
 
             while True:
-                line = input()
+                line = input("> ")
                 for line in uci_parser(line):
                     print(line)
         sys.exit()
