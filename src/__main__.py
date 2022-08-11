@@ -2,7 +2,6 @@
 
 import os
 import sys
-import time
 import multiprocessing
 from engine.constants import COLOR
 from engine.board import Board
@@ -13,11 +12,10 @@ from engine.data_structures import to_uci
 from engine.best_move import best_move
 
 NAME = "Herald"
-VERSION = "{} 0.11.2".format(NAME)
+VERSION = f"{NAME} 0.11.2"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = Board("startpos")
 CURRENT_PROCESS = None
-TRANSPOSITION_TABLE = None
 
 
 def stop_calculating():
@@ -97,10 +95,12 @@ def uci_parser(line):
             fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
             next_token = 2
         else:
-            fen = f"{tokens[1]} "
-            + f"{tokens[2]} {tokens[3]} {tokens[4]} "
-            + f"{tokens[5] if len(tokens) > 5 else 0} "
-            + f"{tokens[6] if len(tokens) > 6 else 0}"
+            fen = (
+                f"{tokens[1]} "
+                f"{tokens[2]} {tokens[3]} {tokens[4]} "
+                f"{tokens[5] if len(tokens) > 5 else 0} "
+                f"{tokens[6] if len(tokens) > 6 else 0}"
+            )
             next_token = 7
         board = Board(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
@@ -125,6 +125,11 @@ def uci_parser(line):
         if tokens[1] == "movetime":
             wtime = int(tokens[2])
             btime = int(tokens[2])
+            winc = 0
+            binc = 0
+        else:
+            wtime = 0
+            btime = 0
             winc = 0
             binc = 0
 
@@ -193,7 +198,6 @@ if __name__ == "__main__":
                 line = input()
                 for line in uci_parser(line):
                     print(line)
-        sys.exit()
 
     if sys.argv[1] == "--version":
         print(f"{VERSION}")
@@ -201,8 +205,7 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "--prepare-memory":
         depth = int(sys.argv[2])
-        fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        board = Board(fen)
+        board = Board("startpos")
         transposition_table = TranspositionTable({})
 
         if len(sys.argv) > 4 and sys.argv[3] == "--from":

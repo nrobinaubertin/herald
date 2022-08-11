@@ -1,11 +1,6 @@
-import sys
 import time
 import multiprocessing
-from engine.constants import COLOR
-from engine.board import Board
 from engine.search import search
-from engine.transposition_table import TranspositionTable
-from engine.evaluation import eval_board
 from engine.data_structures import to_uci
 
 
@@ -20,14 +15,14 @@ def is_there_time(
 
     # fail-safe if there's no time left
     if remaining_time < 2:
-        print(f"info no time left")
+        print("info no time left")
         return False
 
     # try to estimate duration for the next depth
     next_depth_duration = (current_depth + 1) * 5 + used_time * 5
 
     if remaining_time < next_depth_duration:
-        print(f"info no time for next depth")
+        print("info no time for next depth")
         return False
 
     # so, we have time to increase depth, but should we ?
@@ -35,7 +30,7 @@ def is_there_time(
     # maybe we have enough depth
     max_depth = min(8, (turn // 2) + 2)
     if current_depth >= max_depth:
-        print(f"info depth is enough")
+        print("info depth is enough")
         return False
 
     # maybe we want to keep some time for the rest of the game
@@ -43,7 +38,7 @@ def is_there_time(
     time_budget = (remaining_time + remaining_turns * inc_time) // remaining_turns
 
     if time_budget < used_time:
-        print(f"info no time budget left")
+        print("info no time budget left")
         return False
 
     return True
@@ -59,7 +54,6 @@ def search_wrapper(queue, board, depth, rand_count, transposition_table):
     )
     queue.put_nowait(best)
     queue.close()
-
 
 
 def best_move(
@@ -99,9 +93,13 @@ def best_move(
                 finally:
                     if current_search is not None:
                         best = current_search
+                    else:
+                        # no move was found, is it a pat ?
+                        print("bestmove None")
+                        return
 
                     # calculate used time
-                    used_time = max(1, (time.time_ns() - start_time) // 1e9)
+                    used_time = int(max(1, (time.time_ns() - start_time) // 1e9))
 
                     # bail out if we have something and no time anymore
                     if not is_there_time(used_time, best.depth, max_time - used_time, inc_time, board.full_move) and best is not None:
@@ -110,22 +108,25 @@ def best_move(
                         print(f"bestmove {to_uci(best.move)}")
                         return
 
-            print(
-                ""
-                + f"info depth {best.depth} "
-                + f"score cp {best.score} "
-                + f"time {int(best.time // 1e9)} "
-                + f"nodes {best.nodes} "
-                + (
-                    "nps " + str(int(best.nodes * 1e9 // max(0.001, best.time))) + " "
-                    if best.time > 0
-                    else ""
+            if best is not None:
+                print(
+                    ""
+                    + f"info depth {best.depth} "
+                    + f"score cp {best.score} "
+                    + f"time {int(best.time // 1e9)} "
+                    + f"nodes {best.nodes} "
+                    + (
+                        "nps " + str(int(best.nodes * 1e9 // max(0.001, best.time))) + " "
+                        if best.time > 0
+                        else ""
+                    )
+                    + f"pv {' '.join([to_uci(x) for x in best.pv])}"
                 )
-                + f"pv {' '.join([to_uci(x) for x in best.pv])}"
-            )
 
-            used_time = max(1, (time.time_ns() - start_time) // 1e9)
-            if not is_there_time(used_time, best.depth, max_time - used_time, inc_time, board.full_move):
+                used_time = int(max(1, (time.time_ns() - start_time) // 1e9))
+                if not is_there_time(used_time, best.depth, max_time - used_time, inc_time, board.full_move):
+                    break
+            else:
                 break
     else:
         for i in range(max_depth + 1):
@@ -134,18 +135,20 @@ def best_move(
                 depth=i,
                 transposition_table=transposition_table,
             )
-            print(
-                ""
-                + f"info depth {best.depth} "
-                + f"score cp {best.score} "
-                + f"time {int(best.time // 1e9)} "
-                + f"nodes {best.nodes} "
-                + (
-                    "nps " + str(int(best.nodes * 1e9 // max(0.0001, best.time))) + " "
-                    if best.time > 0
-                    else ""
+            if best is not None:
+                print(
+                    ""
+                    + f"info depth {best.depth} "
+                    + f"score cp {best.score} "
+                    + f"time {int(best.time // 1e9)} "
+                    + f"nodes {best.nodes} "
+                    + (
+                        "nps " + str(int(best.nodes * 1e9 // max(0.0001, best.time))) + " "
+                        if best.time > 0
+                        else ""
+                    )
+                    + f"pv {' '.join([to_uci(x) for x in best.pv])}"
                 )
-                + f"pv {' '.join([to_uci(x) for x in best.pv])}"
-            )
 
-    print(f"bestmove {to_uci(best.move)}")
+    if best is not None:
+        print(f"bestmove {to_uci(best.move)}")

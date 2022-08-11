@@ -47,6 +47,9 @@ def search(
     nodes = sorted(nodes, key=lambda x: x.value, reverse=board.turn == COLOR.WHITE)
     best = random.choice(nodes[:rand_count])
 
+    if best is None:
+        return None
+
     return Search(
         move=best.pv[0],
         pv=best.pv,
