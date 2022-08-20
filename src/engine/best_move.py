@@ -1,5 +1,6 @@
 import time
 import multiprocessing
+from engine.board import Board
 from engine.search import search
 from engine.data_structures import to_uci
 
@@ -25,7 +26,7 @@ def is_there_time(
 
 
 # wrapper around the search function to allow for multiprocess time management
-def search_wrapper(queue, board, depth, rand_count, transposition_table):
+def search_wrapper(queue, board: Board, depth: int, rand_count: int, transposition_table):
     best = search(
         board,
         depth=depth,
@@ -37,12 +38,12 @@ def search_wrapper(queue, board, depth, rand_count, transposition_table):
 
 
 def best_move(
-    board,
-    max_time=0,
-    inc_time=0,
-    max_depth=0,
-    eval_guess=0,
-    rand_count=1,
+    board: Board,
+    max_time: int = 0,
+    inc_time: int = 0,
+    max_depth: int = 0,
+    eval_guess: int = 0,
+    rand_count: int = 1,
     transposition_table=None,
 ):
     if max_time != 0:

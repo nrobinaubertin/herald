@@ -105,6 +105,7 @@ if __name__ == "__main__":
                     print(f"eval: {evaluation}")
                 break
             moves.append(move)
+            h[i % 2]["bot"].pos_moves(moves)
             if args['--print']:
                 h[i % 2]["bot"].print()
             evaluation = int(h[i % 2]["bot"].eval().split()[-1])

@@ -35,12 +35,12 @@ def search(
     if len(possible_moves) == 1:
         return Search(
             move=possible_moves[0],
-            pv=possible_moves[0],
+            pv=[possible_moves[0]],
             depth=0,
             nodes=1,
             score=0,
             time=(time.time_ns() - start_time),
-            best_node=None,
+            best_node=Node(depth=0, value=0)
         )
 
     for move in possible_moves:
