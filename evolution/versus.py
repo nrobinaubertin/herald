@@ -1,5 +1,20 @@
+"""
+versus.py
+
+Usage:
+    versus.py <bot1> <bot2> [--print] [--matches=<matches>]
+    versus.py -h | --help
+
+Options:
+  --print               Print board and evaluation on each move
+  --matches=<matches>   Do <matches> between the bots instead of 1
+  -h --help             Show this screen.
+"""
+
 import sys
+
 import pexpect
+from docopt import docopt
 
 
 class Bot():
@@ -54,30 +69,56 @@ class Bot():
 
 
 if __name__ == "__main__":
+    args = docopt(str(__doc__))
+
     h = []
-    h.append(Bot(sys.argv[1]))
-    h.append(Bot(sys.argv[2]))
-    moves = []
-    should_break = 0
-    evaluation = 0
-    for i in range(100):
-        h[i % 2].pos_moves(moves)
-        move = h[i % 2].gotime(10)
-        move = move.split()[-1]
-        moves.append(move)
-        if len(sys.argv) > 3 and sys.argv[3] == "print":
-            h[i % 2].print()
-        evaluation = int(h[i % 2].eval().split()[-1])
-        if len(sys.argv) > 3 and sys.argv[3] == "print":
-            print(evaluation)
-        if abs(evaluation) > 1000:
-            should_break += 1
-        if should_break > 4:
-            break
-    h[0].quit()
-    h[1].quit()
-    if abs(evaluation) > 500:
-        if evaluation > 0:
-            print(sys.argv[1])
-        else:
-            print(sys.argv[2])
+    h.append({
+        "bot": Bot(sys.argv[1]),
+        "score": 0
+    })
+    h.append({
+        "bot": Bot(sys.argv[2]),
+        "score": 0
+    })
+
+    matches = int(args['--matches']) if args['--matches'] else 1
+
+    for i in range(matches):
+        print(f"[{i + 1}/{matches}]")
+        h[0]["bot"].position("startpos")
+        h[1]["bot"].position("startpos")
+        moves = []
+        should_break = 0
+        evaluation = 0
+        for i in range(100):
+            try:
+                h[i % 2]["bot"].pos_moves(moves)
+                move = h[i % 2]["bot"].gotime(10)
+            except Exception as exc:
+                print(moves)
+                sys.exit(exc)
+            if move == "nomove":
+                if evaluation > 0:
+                    h[0]["score"] += 1
+                else:
+                    h[1]["score"] += 1
+                break
+            move = move.split()[-1]
+            moves.append(move)
+            if args['--print']:
+                h[i % 2]["bot"].print()
+            evaluation = int(h[i % 2]["bot"].eval().split()[-1])
+            if args['--print']:
+                print(evaluation)
+            if abs(evaluation) > 1000:
+                should_break += 1
+            if should_break > 4:
+                break
+        if abs(evaluation) > 500:
+            if evaluation > 0:
+                h[0]["score"] += 1
+            else:
+                h[1]["score"] += 1
+    h[0]["bot"].quit()
+    h[1]["bot"].quit()
+    print([b["score"] for b in h])
