@@ -90,20 +90,20 @@ if __name__ == "__main__":
         moves = []
         should_break = 0
         evaluation = 0
-        for i in range(100):
+        for i in range(50):
             try:
                 h[i % 2]["bot"].pos_moves(moves)
                 move = h[i % 2]["bot"].gotime(10)
             except Exception as exc:
                 print(moves)
                 sys.exit(exc)
+            move = move.split()[-1]
             if move == "nomove":
                 if evaluation > 0:
                     h[0]["score"] += 1
                 else:
                     h[1]["score"] += 1
                 break
-            move = move.split()[-1]
             moves.append(move)
             if args['--print']:
                 h[i % 2]["bot"].print()
