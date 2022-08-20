@@ -94,15 +94,18 @@ def best_move(
                     if current_search is not None:
                         best = current_search
                     else:
-                        # no move was found, is it a pat ?
-                        print("bestmove None")
+                        # This is not strictly UCI but helps for evaluation/versus.py
+                        print("bestmove nomove")
                         return
 
                     # calculate used time
                     used_time = int(max(1, (time.time_ns() - start_time) // 1e9))
 
                     # bail out if we have something and no time anymore
-                    if not is_there_time(used_time, best.depth, max_time - used_time, inc_time, board.full_move) and best is not None:
+                    if (
+                        not is_there_time(used_time, best.depth, max_time - used_time, inc_time, board.full_move)
+                        and best is not None
+                    ):
                         process.terminate()
                         queue.close()
                         print(f"bestmove {to_uci(best.move)}")
@@ -152,3 +155,6 @@ def best_move(
 
     if best is not None:
         print(f"bestmove {to_uci(best.move)}")
+    else:
+        # This is not strictly UCI but helps for evaluation/versus.py
+        print("bestmove nomove")

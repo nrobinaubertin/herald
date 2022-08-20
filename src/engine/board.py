@@ -7,6 +7,7 @@ from .data_structures import Move
 
 class Board:
     def from_uci(self, uci: str) -> Move:
+        uci = uci.lower()
         digits = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8}
         start = digits[uci[0]] + (10 - int(uci[1])) * 10
         end = digits[uci[2]] + (10 - int(uci[3])) * 10
@@ -24,8 +25,8 @@ class Board:
                 and abs(end - start) == 2
             ),
             en_passant=(start + end) // 2
-                if abs(self.squares[start]) == PIECE.PAWN and abs(start - end) == 20
-                else -1,
+            if abs(self.squares[start]) == PIECE.PAWN and abs(start - end) == 20
+            else -1,
         )
 
     def __str__(self) -> str:
