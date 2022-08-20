@@ -10,7 +10,6 @@ def is_there_time(
     current_depth: int,
     remaining_time: int,
     inc_time: int,
-    turn: int
 ) -> bool:
 
     # fail-safe if there's no time left
@@ -18,27 +17,8 @@ def is_there_time(
         print("info no time left")
         return False
 
-    # try to estimate duration for the next depth
-    next_depth_duration = (current_depth + 1) * 5 + used_time * 5
-
-    if remaining_time < next_depth_duration:
+    if remaining_time < used_time:
         print("info no time for next depth")
-        return False
-
-    # so, we have time to increase depth, but should we ?
-
-    # maybe we have enough depth
-    max_depth = min(8, (turn // 2) + 2)
-    if current_depth >= max_depth:
-        print("info depth is enough")
-        return False
-
-    # maybe we want to keep some time for the rest of the game
-    remaining_turns = max(10, 40 - turn)
-    time_budget = (remaining_time + remaining_turns * inc_time) // remaining_turns
-
-    if time_budget < used_time:
-        print("info no time budget left")
         return False
 
     return True
@@ -67,9 +47,11 @@ def best_move(
 ):
     if max_time != 0:
         start_time = time.time_ns()
-        best = None
+        current_move = None
 
         for i in range((10 if max_depth == 0 else max_depth)):
+
+            # we create a queue to be able to stop the search when there's no time left
             queue = multiprocessing.Queue()
             process = multiprocessing.Process(
                 target=search_wrapper,
@@ -86,75 +68,73 @@ def best_move(
             current_search = None
             while current_search is None:
 
+                # every second, we check if we got a move out of the queue
                 try:
                     current_search = queue.get(True, 1)
                 except:
                     pass
                 finally:
                     if current_search is not None:
-                        best = current_search
-                    else:
-                        # This is not strictly UCI but helps for evaluation/versus.py
-                        print("bestmove nomove")
-                        return
+                        current_move = current_search
 
                     # calculate used time
                     used_time = int(max(1, (time.time_ns() - start_time) // 1e9))
 
                     # bail out if we have something and no time anymore
-                    if (
-                        not is_there_time(used_time, best.depth, max_time - used_time, inc_time, board.full_move)
-                        and best is not None
-                    ):
+                    if not is_there_time(used_time, current_move.depth, max_time - used_time, inc_time):
                         process.terminate()
                         queue.close()
-                        print(f"bestmove {to_uci(best.move)}")
+                        if current_move is not None:
+                            print(f"bestmove {to_uci(current_move.move)}")
+                        else:
+                            # This is not strictly UCI but helps for evaluation/versus.py
+                            print("bestmove nomove")
                         return
 
-            if best is not None:
+            if current_move is not None:
                 print(
                     ""
-                    + f"info depth {best.depth} "
-                    + f"score cp {best.score} "
-                    + f"time {int(best.time // 1e9)} "
-                    + f"nodes {best.nodes} "
+                    + f"info depth {current_move.depth} "
+                    + f"score cp {current_move.score} "
+                    + f"time {int(current_move.time // 1e9)} "
+                    + f"nodes {current_move.nodes} "
                     + (
-                        "nps " + str(int(best.nodes * 1e9 // max(0.001, best.time))) + " "
-                        if best.time > 0
+                        "nps " + str(int(current_move.nodes * 1e9 // max(0.001, current_move.time))) + " "
+                        if current_move.time > 0
                         else ""
                     )
-                    + f"pv {' '.join([to_uci(x) for x in best.pv])}"
+                    + f"pv {' '.join([to_uci(x) for x in current_move.pv])}"
                 )
 
                 used_time = int(max(1, (time.time_ns() - start_time) // 1e9))
-                if not is_there_time(used_time, best.depth, max_time - used_time, inc_time, board.full_move):
+                if not is_there_time(used_time, current_move.depth, max_time - used_time, inc_time):
                     break
             else:
                 break
     else:
         for i in range(max_depth + 1):
-            best = search(
+            current_move = search(
                 board,
                 depth=i,
                 transposition_table=transposition_table,
             )
-            if best is not None:
+            if current_move is not None:
                 print(
                     ""
-                    + f"info depth {best.depth} "
-                    + f"score cp {best.score} "
-                    + f"time {int(best.time // 1e9)} "
-                    + f"nodes {best.nodes} "
+                    + f"info depth {current_move.depth} "
+                    + f"score cp {current_move.score} "
+                    + f"time {int(current_move.time // 1e9)} "
+                    + f"nodes {current_move.nodes} "
                     + (
-                        "nps " + str(int(best.nodes * 1e9 // max(0.0001, best.time))) + " "
-                        if best.time > 0
+                        "nps " + str(int(current_move.nodes * 1e9 // max(0.0001, current_move.time))) + " "
+                        if current_move.time > 0
                         else ""
                     )
-                    + f"pv {' '.join([to_uci(x) for x in best.pv])}"
+                    + f"pv {' '.join([to_uci(x) for x in current_move.pv])}"
                 )
 
-    if best is not None:
-        print(f"bestmove {to_uci(best.move)}")
+    if current_move is not None:
+        print(f"bestmove {to_uci(current_move.move)}")
     else:
         # This is not strictly UCI but helps for evaluation/versus.py
         print("bestmove nomove")
