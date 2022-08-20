@@ -29,7 +29,21 @@ def search(
     node_count = 0
     nodes = []
 
-    for move in board.moves():
+    possible_moves = board.moves()
+
+    # if there's only one move possible, return it immediately
+    if len(possible_moves) == 1:
+        return Search(
+            move=possible_moves[0],
+            pv=possible_moves[0],
+            depth=0,
+            nodes=1,
+            score=0,
+            time=(time.time_ns() - start_time),
+            best_node=None,
+        )
+
+    for move in possible_moves:
         curr_board = board.copy()
         curr_board.push(move)
         node = alphabeta_mo_tt(
