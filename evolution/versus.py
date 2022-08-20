@@ -84,7 +84,7 @@ if __name__ == "__main__":
     matches = int(args['--matches']) if args['--matches'] else 1
 
     for i in range(matches):
-        print(f"[{i + 1}/{matches}]")
+        print(f"[{i}/{matches}]{[b['score'] for b in h]}")
         h[0]["bot"].position("startpos")
         h[1]["bot"].position("startpos")
         moves = []
@@ -95,26 +95,26 @@ if __name__ == "__main__":
                 h[i % 2]["bot"].pos_moves(moves)
                 move = h[i % 2]["bot"].gotime(10)
             except Exception as exc:
-                print(moves)
+                print(i, moves)
                 sys.exit(exc)
             move = move.split()[-1]
             if move == "nomove":
-                if evaluation > 0:
-                    h[0]["score"] += 1
-                else:
-                    h[1]["score"] += 1
+                if args['--print']:
+                    h[i % 2]["bot"].print()
+                if args['--print']:
+                    print(f"eval: {evaluation}")
                 break
             moves.append(move)
             if args['--print']:
                 h[i % 2]["bot"].print()
             evaluation = int(h[i % 2]["bot"].eval().split()[-1])
             if args['--print']:
-                print(evaluation)
+                print(f"eval: {evaluation}")
             if abs(evaluation) > 1000:
                 should_break += 1
             if should_break > 4:
                 break
-        if abs(evaluation) > 500:
+        if abs(evaluation) > 400:
             if evaluation > 0:
                 h[0]["score"] += 1
             else:
