@@ -13,6 +13,7 @@ from .transposition_table import TranspositionTable
 
 SmartMove = namedtuple("SmartMove", ["move", "board", "eval"])
 
+
 # alphabeta pruning (fail-soft) with move ordering and transposition table
 def alphabeta_mo_tt(
     board: Board,

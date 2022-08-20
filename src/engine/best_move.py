@@ -81,7 +81,9 @@ def best_move(
                     used_time = int(max(1, (time.time_ns() - start_time) // 1e9))
 
                     # bail out if we have something and no time anymore
-                    if not is_there_time(used_time, current_move.depth, max_time - used_time, inc_time):
+                    if not is_there_time(
+                        used_time, current_move.depth, max_time - used_time, inc_time
+                    ):
                         process.terminate()
                         queue.close()
                         if current_move is not None:
@@ -99,7 +101,15 @@ def best_move(
                     + f"time {int(current_move.time // 1e9)} "
                     + f"nodes {current_move.nodes} "
                     + (
-                        "nps " + str(int(current_move.nodes * 1e9 // max(0.001, current_move.time))) + " "
+                        "nps "
+                        + str(
+                            int(
+                                current_move.nodes
+                                * 1e9
+                                // max(0.001, current_move.time)
+                            )
+                        )
+                        + " "
                         if current_move.time > 0
                         else ""
                     )
@@ -107,7 +117,9 @@ def best_move(
                 )
 
                 used_time = int(max(1, (time.time_ns() - start_time) // 1e9))
-                if not is_there_time(used_time, current_move.depth, max_time - used_time, inc_time):
+                if not is_there_time(
+                    used_time, current_move.depth, max_time - used_time, inc_time
+                ):
                     break
             else:
                 break
@@ -126,7 +138,15 @@ def best_move(
                     + f"time {int(current_move.time // 1e9)} "
                     + f"nodes {current_move.nodes} "
                     + (
-                        "nps " + str(int(current_move.nodes * 1e9 // max(0.0001, current_move.time))) + " "
+                        "nps "
+                        + str(
+                            int(
+                                current_move.nodes
+                                * 1e9
+                                // max(0.0001, current_move.time)
+                            )
+                        )
+                        + " "
                         if current_move.time > 0
                         else ""
                     )

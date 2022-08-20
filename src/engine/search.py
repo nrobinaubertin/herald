@@ -54,7 +54,6 @@ def search(
             deque([move]),
             transposition_table=transposition_table,
         )
-        # node = alphabeta_mo(curr_board, -VALUE_MAX, VALUE_MAX, depth, deque([move]))
         node_count += node.children + 1
         nodes.append(Node(depth=depth, value=node.value, pv=node.pv))
 

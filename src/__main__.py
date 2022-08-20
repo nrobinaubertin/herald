@@ -104,7 +104,7 @@ def uci_parser(line):
             next_token = 7
         board = Board(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
-            for move in tokens[next_token + 1:]:
+            for move in tokens[next_token + 1 :]:
                 board.push(board.from_uci(move))
         CURRENT_BOARD = board
 
@@ -183,10 +183,7 @@ if __name__ == "__main__":
             TRANSPOSITION_TABLE = TranspositionTable(manager.dict())
 
             # check if standard path for memory exists
-            memory = os.path.join(
-                os.path.abspath(os.path.dirname(__file__)),
-                "memory"
-            )
+            memory = os.path.join(os.path.abspath(os.path.dirname(__file__)), "memory")
             filename = sys.argv[2] if len(sys.argv) > 2 else ""
             if os.path.exists(memory) and filename == "":
                 filename = "memory"
@@ -225,7 +222,9 @@ if __name__ == "__main__":
                     + f"time {int(best.time // 1e9)} "
                     + f"nodes {best.nodes} "
                     + (
-                        "nps " + str(int(best.nodes * 1e9 // max(0.0001, best.time))) + " "
+                        "nps "
+                        + str(int(best.nodes * 1e9 // max(0.0001, best.time)))
+                        + " "
                         if best.time > 0
                         else ""
                     )
@@ -239,10 +238,12 @@ if __name__ == "__main__":
         sys.exit()
 
     # if we don't know what to do, print the help
-    print((
-        "Usage:\n"
-        "   run.py [--import-memory <filename>]\n"
-        "   run.py --prepare-memory <depth> [--from <filename>]\n"
-        "   run.py (-h | --help | --version)\n"
-    ))
+    print(
+        (
+            "Usage:\n"
+            "   run.py [--import-memory <filename>]\n"
+            "   run.py --prepare-memory <depth> [--from <filename>]\n"
+            "   run.py (-h | --help | --version)\n"
+        )
+    )
     sys.exit()
