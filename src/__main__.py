@@ -4,7 +4,7 @@ import os
 import sys
 import multiprocessing
 from engine.constants import COLOR
-from engine.board import Board
+import engine.board as board
 from engine.search import search
 from engine.transposition_table import TranspositionTable
 from engine.evaluation import eval_board
@@ -12,9 +12,9 @@ from engine.data_structures import to_uci
 from engine.best_move import best_move
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.11.2"
+VERSION = f"{NAME} 0.12.0"
 AUTHOR = "nrobinaubertin"
-CURRENT_BOARD = Board("startpos")
+CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 
 
@@ -35,7 +35,7 @@ def uci_parser(line):
         return [f"board: {eval_board(CURRENT_BOARD)}"]
 
     if tokens[0] == "print":
-        return [str(CURRENT_BOARD)]
+        return [board.to_string(CURRENT_BOARD)]
 
     if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "stats":
         stats = TRANSPOSITION_TABLE.stats()
@@ -80,7 +80,7 @@ def uci_parser(line):
         sys.exit()
 
     if tokens[0] == "ucinewgame":
-        CURRENT_BOARD = Board(
+        CURRENT_BOARD = board.from_fen(
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         )
         return []
@@ -102,11 +102,11 @@ def uci_parser(line):
                 f"{tokens[6] if len(tokens) > 6 else 0}"
             )
             next_token = 7
-        board = Board(fen)
+        b = board.from_fen(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
-            for move in tokens[next_token + 1 :]:
-                board.push(board.from_uci(move))
-        CURRENT_BOARD = board
+            for move in tokens[next_token + 1:]:
+                b = board.push(b, board.from_uci(b, move))
+        CURRENT_BOARD = b
 
     if len(tokens) > 1 and tokens[0] == "go":
 
@@ -202,7 +202,7 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "--prepare-memory":
         depth = int(sys.argv[2])
-        board = Board("startpos")
+        b = board.from_fen("startpos")
         transposition_table = TranspositionTable({})
 
         if len(sys.argv) > 4 and sys.argv[3] == "--from":
@@ -211,7 +211,7 @@ if __name__ == "__main__":
         for j in range(depth + 1):
             for i in range(5):
                 best = search(
-                    board,
+                    b,
                     depth=i,
                     transposition_table=transposition_table,
                 )
@@ -231,7 +231,7 @@ if __name__ == "__main__":
                     + f"pv {' '.join([to_uci(x) for x in best.pv])}"
                 )
             print(f"--> {to_uci(best.move)}")
-            board.push(best.move)
+            board.push(b, best.move)
 
         output = transposition_table.export_table("memory")
         print(output)

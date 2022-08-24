@@ -26,9 +26,9 @@ def is_there_time(
 
 
 # wrapper around the search function to allow for multiprocess time management
-def search_wrapper(queue, board: Board, depth: int, rand_count: int, transposition_table):
+def search_wrapper(queue, b: Board, depth: int, rand_count: int, transposition_table):
     best = search(
-        board,
+        b,
         depth=depth,
         rand_count=rand_count,
         transposition_table=transposition_table,
@@ -38,7 +38,7 @@ def search_wrapper(queue, board: Board, depth: int, rand_count: int, transpositi
 
 
 def best_move(
-    board: Board,
+    b: Board,
     max_time: int = 0,
     inc_time: int = 0,
     max_depth: int = 0,
@@ -46,9 +46,11 @@ def best_move(
     rand_count: int = 1,
     transposition_table=None,
 ):
+
+    current_move = None
+
     if max_time != 0:
         start_time = time.time_ns()
-        current_move = None
 
         for i in range((10 if max_depth == 0 else max_depth)):
 
@@ -56,10 +58,10 @@ def best_move(
             queue = multiprocessing.Queue()
             process = multiprocessing.Process(
                 target=search_wrapper,
-                args=(queue, board),
+                args=(queue, b),
                 kwargs={
                     "depth": i,
-                    "rand_count": max(1, 2 * (5 - board.full_move)),
+                    "rand_count": max(1, 2 * (5 - b.full_move)),
                     "transposition_table": transposition_table,
                 },
                 daemon=False,
@@ -127,7 +129,7 @@ def best_move(
     else:
         for i in range(max_depth + 1):
             current_move = search(
-                board,
+                b,
                 depth=i,
                 transposition_table=transposition_table,
             )

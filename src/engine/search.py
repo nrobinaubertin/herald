@@ -4,6 +4,7 @@ import random
 from .constants import COLOR
 from .evaluation import VALUE_MAX
 from .board import Board
+from . import board
 from .algorithms import alphabeta_mo_tt
 from .data_structures import Node
 from .transposition_table import TranspositionTable
@@ -14,7 +15,7 @@ Search = namedtuple(
 
 
 def search(
-    board: Board,
+    b: Board,
     depth: int,
     rand_count: int = 1,
     transposition_table: TranspositionTable = None,
@@ -24,12 +25,12 @@ def search(
 
     best = Node(
         depth=depth,
-        value=(VALUE_MAX if board.turn == COLOR.BLACK else -VALUE_MAX),
+        value=(VALUE_MAX if b.turn == COLOR.BLACK else -VALUE_MAX),
     )
     node_count = 0
     nodes = []
 
-    possible_moves = board.moves()
+    possible_moves = board.moves(b)
 
     # if there's only one move possible, return it immediately
     if len(possible_moves) == 1:
@@ -44,8 +45,7 @@ def search(
         )
 
     for move in possible_moves:
-        curr_board = board.copy()
-        curr_board.push(move)
+        curr_board = board.push(b, move)
         node = alphabeta_mo_tt(
             curr_board,
             -VALUE_MAX,
@@ -57,7 +57,7 @@ def search(
         node_count += node.children + 1
         nodes.append(Node(depth=depth, value=node.value, pv=node.pv))
 
-    nodes = sorted(nodes, key=lambda x: x.value, reverse=board.turn == COLOR.WHITE)
+    nodes = sorted(nodes, key=lambda x: x.value, reverse=b.turn == COLOR.WHITE)
     best = random.choice(nodes[:rand_count])
 
     if best is None:
