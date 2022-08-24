@@ -276,7 +276,7 @@ win_at_chess = [
     "2kr4/ppp3Pp/4RP1B/2r5/5P2/1P6/P2p4/3K4 w - - 0 0",
     "nrq4r/2k1p3/1p1pPnp1/pRpP1p2/P1P2P2/2P1BB2/1R2Q1P1/6K1 w - - 0 0",
     "2k4B/bpp1qp2/p1b5/7p/1PN1n1p1/2Pr4/P5PP/R3QR1K b - - 0 0",
-    "8/1p6/p5R1/k7/Prpp4/K7/1NP5/8 w - - am Rd6; 0 0",
+    "8/1p6/p5R1/k7/Prpp4/K7/1NP5/8 w - - 0 0",
     "r1b2rk1/1p1n1ppp/p1p2q2/4p3/P1B1Pn2/1QN2N2/1P3PPP/3R1RK1 b - - 0 0",
     "r5k1/pp1RR1pp/1b6/6r1/2p5/B6P/P4qPK/3Q4 w - - 0 0",
     "1r4r1/p2kb2p/bq2p3/3p1p2/5P2/2BB3Q/PP4PP/3RKR2 b - - 0 0",
