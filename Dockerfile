@@ -1,5 +1,4 @@
-# FROM python:3.10.5-buster
-FROM pypy:3.9-7.3.9-bullseye
+FROM python:3.10.6-buster
 
 COPY lichess-bot/requirements.txt /workdir/requirements.txt
 
@@ -9,9 +8,8 @@ RUN set -xe \
     && pip install -r /workdir/requirements.txt
 
 COPY lichess-bot /workdir/lichess-bot
-COPY engine /workdir/engine
-COPY run.py /workdir/run.py
+COPY src /workdir/src/
 
 WORKDIR /workdir
 
-CMD ["pypy3", "/workdir/lichess-bot/lichess-bot.py", "-v", "--config", "/workdir/config/config.yml"]
+CMD ["python3", "-O", "/workdir/lichess-bot/lichess-bot.py", "-v", "--config", "/workdir/config/config.yml"]
