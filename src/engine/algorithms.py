@@ -8,15 +8,12 @@ _tt algorithms can be validated by only
 taking tt_nodes with the same depth as the current pass
 """
 
-from collections import deque, namedtuple
-from .constants import PIECE, COLOR
-from .evaluation import VALUE_MAX, eval_board, move_eval
-from .board import Board
+from collections import deque
+from .constants import COLOR, VALUE_MAX
+from .evaluation import move_eval
 from . import board
-from .data_structures import Node
+from .data_structures import Node, SmartMove, Board
 from .transposition_table import TranspositionTable
-
-SmartMove = namedtuple("SmartMove", ["move", "board", "eval"])
 
 
 # alphabeta pruning (fail-soft) with move ordering and transposition table
@@ -29,19 +26,10 @@ def alphabeta_mo_tt(
     transposition_table: TranspositionTable,
 ) -> Node:
 
-    # we check if there's no king of our color
-    # in that case we can stop there
-    if len(b.pieces[PIECE.KING * b.turn]) == 0:
-        return Node(
-            value=-VALUE_MAX * b.turn,
-            depth=depth,
-            pv=pv,
-        )
-
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=eval_board(b),
+            value=b.value,
             depth=0,
             pv=pv,
         )
@@ -69,8 +57,6 @@ def alphabeta_mo_tt(
     smart_moves = []
     for move in board.pseudo_legal_moves(b):
         curr_board = board.push(b, move)
-        # node = tt.get(curr_board.hash(), depth)
-        # curr_eval = eval_board(curr_board)
         smart_moves.append(
             SmartMove(move=move, board=curr_board, eval=move_eval(curr_board, move))
         )
@@ -89,6 +75,15 @@ def alphabeta_mo_tt(
     for smart_move in ordered_smart_captures + ordered_smart_normal:
         curr_pv = deque(pv)
         curr_pv.append(smart_move.move)
+
+        # return immediatly if this is a king capture
+        if smart_move.move.is_king_capture:
+            return Node(
+                value=VALUE_MAX * b.turn,
+                depth=depth,
+                pv=pv,
+            )
+
         node = alphabeta_mo_tt(
             smart_move.board, alpha, beta, depth - 1, curr_pv, transposition_table
         )
@@ -130,19 +125,10 @@ def alphabeta_mo_tt(
 # alphabeta pruning (fail-soft) with move ordering
 def alphabeta_mo(b: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
 
-    # we check if there's no king of our color
-    # in that case we can stop there
-    if len(b.pieces[PIECE.KING * b.turn]) == 0:
-        return Node(
-            value=-VALUE_MAX * b.turn,
-            depth=depth,
-            pv=pv,
-        )
-
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=eval_board(b),
+            value=b.value,
             depth=0,
             pv=pv,
         )
@@ -169,6 +155,15 @@ def alphabeta_mo(b: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node
     for smart_move in ordered_smart_moves:
         curr_pv = deque(pv)
         curr_pv.append(smart_move.move)
+
+        # return immediatly if this is a king capture
+        if smart_move.move.is_king_capture:
+            return Node(
+                value=VALUE_MAX * b.turn,
+                depth=depth,
+                pv=pv,
+            )
+
         node = alphabeta_mo(smart_move.board, alpha, beta, depth - 1, curr_pv)
         children += node.children + 1
 
@@ -204,19 +199,10 @@ def alphabeta_mo(b: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node
 # simple alphabeta pruning (fail-soft)
 def alphabeta(b: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
 
-    # we check if there's no king of our color
-    # in that case we can stop there
-    if len(b.pieces[PIECE.KING * b.turn]) == 0:
-        return Node(
-            value=-VALUE_MAX * b.turn,
-            depth=depth,
-            pv=pv,
-        )
-
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=eval_board(b),
+            value=b.value,
             depth=0,
             pv=pv,
         )
@@ -235,6 +221,15 @@ def alphabeta(b: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
         curr_board = board.push(b, move)
         curr_pv = deque(pv)
         curr_pv.append(move)
+
+        # return immediatly if this is a king capture
+        if move.is_king_capture:
+            return Node(
+                value=VALUE_MAX * b.turn,
+                depth=depth,
+                pv=pv,
+            )
+
         node = alphabeta(curr_board, alpha, beta, depth - 1, curr_pv)
         children += node.children + 1
 
@@ -270,19 +265,10 @@ def alphabeta(b: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
 # Simple minimax
 def minimax(b: Board, depth: int, pv: deque) -> Node:
 
-    # we check if there's no king of our color
-    # in that case we can stop there
-    if len(b.pieces[PIECE.KING * b.turn]) == 0:
-        return Node(
-            value=-VALUE_MAX * b.turn,
-            depth=depth,
-            pv=pv,
-        )
-
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=eval_board(b),
+            value=b.value,
             depth=0,
             pv=pv,
         )
@@ -301,6 +287,15 @@ def minimax(b: Board, depth: int, pv: deque) -> Node:
         curr_board = board.push(b, move)
         curr_pv = deque(pv)
         curr_pv.append(move)
+
+        # return immediatly if this is a king capture
+        if move.is_king_capture:
+            return Node(
+                value=VALUE_MAX * b.turn,
+                depth=depth,
+                pv=pv,
+            )
+
         node = minimax(curr_board, depth - 1, curr_pv)
         children += node.children + 1
         if b.turn == COLOR.WHITE:

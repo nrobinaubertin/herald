@@ -1,5 +1,7 @@
 from array import array
+from . import board
 from .constants import PIECE, COLOR
+from .data_structures import Move, Board
 
 PIECE_VALUE = {
     PIECE.EMPTY: 0,
@@ -9,21 +11,6 @@ PIECE_VALUE = {
     PIECE.ROOK: 479,
     PIECE.QUEEN: 929,
     PIECE.KING: 60_000,
-}
-
-VALUE_MAX = PIECE_VALUE[PIECE.KING] * 2
-
-DOUBLED_PAWN_PENALTY = -20
-
-# adjustements of piece value based on the number of own pawns
-PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER = {
-    PIECE.EMPTY: (0, 0, 0, 0, 0, 0, 0, 0, 0),
-    PIECE.PAWN: (0, 0, 0, 0, 0, 0, 0, 0, 0),
-    PIECE.KNIGHT: (-20, -16, -12, -8, -4, 0, 4, 8, 12),
-    PIECE.BISHOP: (0, 0, 0, 0, 0, 0, 0, 0, 0),
-    PIECE.ROOK: (15, 12, 9, 6, 3, 0, -3, -6, -9),
-    PIECE.QUEEN: (0, 0, 0, 0, 0, 0, 0, 0, 0),
-    PIECE.KING: (0, 0, 0, 0, 0, 0, 0, 0, 0),
 }
 
 PIECE_SQUARE_TABLE = {
@@ -114,61 +101,50 @@ for piece in PIECE_SQUARE_TABLE:
     PIECE_SQUARE_TABLE_MAILBOX[piece] = new_table
 
 
-def simple_eval(board) -> int:
-    evaluation = 0
-    for piece in board.pieces:
-        evaluation += PIECE_VALUE[abs(piece)] * (abs(piece) // piece)
-    return evaluation
+def new_value(b: Board, move: Move) -> int:
+    value = b.value
+
+    piece_start = b.squares[move.start]
+    assert piece_start != 0, "Moving piece cannot be empty"
+    assert abs(piece_start) != 7, "Moving piece cannot be invalid"
+    color_start = abs(piece_start) // piece_start
+    assert color_start != 0, "Color of moving piece should not be empty"
+
+    if color_start == COLOR.WHITE:
+        value -= PIECE_SQUARE_TABLE_MAILBOX[abs(piece_start)][move.start] * color_start
+        value += PIECE_SQUARE_TABLE_MAILBOX[abs(piece_start)][move.end] * color_start
+    else:
+        value -= PIECE_SQUARE_TABLE_MAILBOX[abs(piece_start)][120 - move.start] * color_start
+        value += PIECE_SQUARE_TABLE_MAILBOX[abs(piece_start)][120 - move.end] * color_start
+
+    # simple capture move
+    piece_end = b.squares[move.end]
+    if piece_end != 0:
+        color_end = abs(piece_end) // piece_end
+        value -= PIECE_VALUE[abs(piece_end)] * color_end
+        if color_end == COLOR.WHITE:
+            value -= PIECE_SQUARE_TABLE_MAILBOX[abs(piece_end)][move.end] * color_end
+        else:
+            value -= PIECE_SQUARE_TABLE_MAILBOX[abs(piece_end)][120 - move.end] * color_end
+    return value
 
 
-def eval_pst(board) -> int:
-    evaluation = 0
-    for piece in board.pieces:
-        for square in board.pieces[piece]:
-            color = abs(piece) // piece
-            evaluation += PIECE_VALUE[abs(piece)] * color
-            if color == COLOR.WHITE:
-                evaluation += PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][square] * color
-            else:
-                evaluation += (
-                    PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][120 - square] * color
-                )
-    return evaluation
-
-
-# simple eval + pst + adjustements
-def eval_pst_adj(board) -> int:
-    evaluation = 0
-    pawn_number = {
-        COLOR.WHITE: len(board.pieces[PIECE.PAWN * COLOR.WHITE]),
-        COLOR.BLACK: len(board.pieces[PIECE.PAWN * COLOR.BLACK]),
-    }
-    for piece in board.pieces:
-        for square in board.pieces[piece]:
-            color = abs(piece) // piece
-            evaluation += PIECE_VALUE[abs(piece)] * color
-            evaluation += PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER[abs(piece)][
-                pawn_number[color]
-            ]
-            if color == COLOR.WHITE:
-                evaluation += PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][square] * color
-            else:
-                evaluation += (
-                    PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][120 - square] * color
-                )
-            if abs(piece) == PIECE.PAWN:
-                if board.squares[square - 10 * color] == PIECE.PAWN * color:
-                    evaluation -= DOUBLED_PAWN_PENALTY * color
-    return evaluation
-
-
-def eval_board(board) -> int:
-    return eval_pst_adj(board)
-    # return eval_pst(board)
-    # return simple_eval(board)
-
-
-def move_eval(board, move) -> int:
+def move_eval(b: Board, move: Move) -> int:
     if move.is_capture:
-        return PIECE_VALUE[abs(board.squares[move.end])]
+        return PIECE_VALUE[abs(b.squares[move.end])]
     return 0
+
+
+def eval_board(b: Board) -> int:
+    evaluation = 0
+    for square in board.pieces(b):
+        piece = b.squares[square]
+        color = abs(piece) // piece
+        evaluation += PIECE_VALUE[abs(piece)] * color
+        if color == COLOR.WHITE:
+            evaluation += PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][square] * color
+        else:
+            evaluation += (
+                PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][120 - square] * color
+            )
+    return evaluation

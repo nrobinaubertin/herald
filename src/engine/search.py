@@ -1,17 +1,12 @@
-from collections import deque, namedtuple
+from collections import deque
 import time
 import random
-from .constants import COLOR
-from .evaluation import VALUE_MAX
+from .constants import COLOR, VALUE_MAX
 from .board import Board
 from . import board
 from .algorithms import alphabeta_mo_tt
-from .data_structures import Node
+from .data_structures import Node, Search
 from .transposition_table import TranspositionTable
-
-Search = namedtuple(
-    "Search", ["move", "depth", "score", "nodes", "time", "best_node", "pv"]
-)
 
 
 def search(
@@ -32,6 +27,9 @@ def search(
 
     possible_moves = board.moves(b)
 
+    if len(possible_moves) == 0:
+        return None
+
     # if there's only one move possible, return it immediately
     if len(possible_moves) == 1:
         return Search(
@@ -41,7 +39,8 @@ def search(
             nodes=1,
             score=0,
             time=(time.time_ns() - start_time),
-            best_node=Node(depth=0, value=0)
+            best_node=Node(depth=0, value=0),
+            stop_search=True,
         )
 
     for move in possible_moves:
@@ -58,6 +57,7 @@ def search(
         nodes.append(Node(depth=depth, value=node.value, pv=node.pv))
 
     nodes = sorted(nodes, key=lambda x: x.value, reverse=b.turn == COLOR.WHITE)
+
     best = random.choice(nodes[:rand_count])
 
     if best is None:

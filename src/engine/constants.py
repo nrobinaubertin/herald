@@ -37,3 +37,5 @@ ASCII_REP = {
     (PIECE.QUEEN * COLOR.BLACK): "q",
     (PIECE.KING * COLOR.BLACK): "k",
 }
+
+VALUE_MAX = 1_000_000

@@ -8,9 +8,7 @@ from engine.data_structures import to_uci
 # This function should evaluate if we have time to think deeper
 def is_there_time(
     used_time: int,
-    current_depth: int,
     remaining_time: int,
-    inc_time: int,
 ) -> bool:
 
     # fail-safe if there's no time left
@@ -75,57 +73,49 @@ def best_move(
                 try:
                     current_search = queue.get(True, 1)
                 except:
-                    pass
-                finally:
-                    if current_search is not None:
-                        current_move = current_search
+                    current_search = "Searching"
 
-                    # calculate used time
-                    used_time = int(max(1, (time.time_ns() - start_time) // 1e9))
+                # if there is no move available
+                if current_search is None:
+                    # This is not strictly UCI but helps for evaluation/versus.py
+                    print("bestmove nomove")
+                    return
 
-                    # bail out if we have something and no time anymore
-                    if not is_there_time(
-                        used_time, current_move.depth, max_time - used_time, inc_time
-                    ):
-                        process.terminate()
-                        queue.close()
-                        if current_move is not None:
-                            print(f"bestmove {to_uci(current_move.move)}")
-                        else:
-                            # This is not strictly UCI but helps for evaluation/versus.py
-                            print("bestmove nomove")
-                        return
-
-            if current_move is not None:
-                print(
-                    ""
-                    + f"info depth {current_move.depth} "
-                    + f"score cp {current_move.score} "
-                    + f"time {int(current_move.time // 1e9)} "
-                    + f"nodes {current_move.nodes} "
-                    + (
-                        "nps "
-                        + str(
-                            int(
-                                current_move.nodes
-                                * 1e9
-                                // max(0.001, current_move.time)
+                if current_search != "Searching":
+                    current_move = current_search
+                    print(
+                        ""
+                        + f"info depth {current_move.depth} "
+                        + f"score cp {current_move.score} "
+                        + f"time {int(current_move.time // 1e9)} "
+                        + f"nodes {current_move.nodes} "
+                        + (
+                            "nps "
+                            + str(
+                                int(
+                                    current_move.nodes
+                                    * 1e9
+                                    // max(0.001, current_move.time)
+                                )
                             )
+                            + " "
+                            if current_move.time > 0
+                            else ""
                         )
-                        + " "
-                        if current_move.time > 0
-                        else ""
+                        + f"pv {' '.join([to_uci(x) for x in current_move.pv])}"
                     )
-                    + f"pv {' '.join([to_uci(x) for x in current_move.pv])}"
-                )
+                else:
+                    current_search = None
 
+                # calculate used time
                 used_time = int(max(1, (time.time_ns() - start_time) // 1e9))
-                if not is_there_time(
-                    used_time, current_move.depth, max_time - used_time, inc_time
-                ):
-                    break
-            else:
-                break
+
+                # bail out if we have something and no time anymore
+                if current_move.stop_search or not is_there_time(used_time, max_time - used_time):
+                    process.terminate()
+                    queue.close()
+                    print(f"bestmove {to_uci(current_move.move)}")
+                    return
     else:
         for i in range(max_depth + 1):
             current_move = search(
@@ -133,31 +123,36 @@ def best_move(
                 depth=i,
                 transposition_table=transposition_table,
             )
-            if current_move is not None:
-                print(
-                    ""
-                    + f"info depth {current_move.depth} "
-                    + f"score cp {current_move.score} "
-                    + f"time {int(current_move.time // 1e9)} "
-                    + f"nodes {current_move.nodes} "
-                    + (
-                        "nps "
-                        + str(
-                            int(
-                                current_move.nodes
-                                * 1e9
-                                // max(0.0001, current_move.time)
-                            )
-                        )
-                        + " "
-                        if current_move.time > 0
-                        else ""
-                    )
-                    + f"pv {' '.join([to_uci(x) for x in current_move.pv])}"
-                )
 
-    if current_move is not None:
+            # if there is no move available
+            if current_move is None:
+                # This is not strictly UCI but helps for evaluation/versus.py
+                print("bestmove nomove")
+                return
+
+            print(
+                ""
+                + f"info depth {current_move.depth} "
+                + f"score cp {current_move.score} "
+                + f"time {int(current_move.time // 1e9)} "
+                + f"nodes {current_move.nodes} "
+                + (
+                    "nps "
+                    + str(
+                        int(
+                            current_move.nodes
+                            * 1e9
+                            // max(0.0001, current_move.time)
+                        )
+                    )
+                    + " "
+                    if current_move.time > 0
+                    else ""
+                )
+                + f"pv {' '.join([to_uci(x) for x in current_move.pv])}"
+            )
+
+            if current_move.stop_search:
+                break
+
         print(f"bestmove {to_uci(current_move.move)}")
-    else:
-        # This is not strictly UCI but helps for evaluation/versus.py
-        print("bestmove nomove")

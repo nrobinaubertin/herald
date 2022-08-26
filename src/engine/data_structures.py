@@ -1,17 +1,64 @@
 from collections import deque, namedtuple
-from .evaluation import VALUE_MAX
-from .constants import PIECE
+from .constants import PIECE, VALUE_MAX
 
-Move = namedtuple(
-    "Move",
-    ["start", "end", "moving_piece", "is_capture", "is_castle", "en_passant"],
-    defaults=[0, 0, False, False, -1],
+Move = namedtuple("Move", [
+       "start",
+       "end",
+       "moving_piece",
+       "is_capture",
+       "is_castle",
+       "en_passant",
+       "is_king_capture"
+    ],
+    defaults=[0, False, False, -1, False],
 )
 
 Node = namedtuple(
     "Node",
     ["value", "depth", "pv", "type", "upper", "lower", "squares", "children"],
     defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None, 0],
+)
+
+SmartMove = namedtuple("SmartMove", [
+        "move",
+        "board",
+        "eval",
+    ]
+)
+
+Board = namedtuple("Board", [
+        # array of PIECE * COLOR
+        # 120 squares for a 10*12 mailbox
+        # https://www.chessprogramming.org/Mailbox
+        "squares",
+        # move history
+        "moves_history",
+        # color of the player whos turn it is
+        "turn",
+        # array reprensenting castling rights
+        "castling_rights",
+        # the following values are ints with default values
+        "en_passant",
+        "half_move",
+        "full_move",
+        "king_en_passant",
+        "value",
+    ],
+    defaults=[-1, 0, 0, -1, 0]
+)
+
+
+Search = namedtuple("Search", [
+        "move",
+        "depth",
+        "score",
+        "nodes",
+        "time",
+        "best_node",
+        "pv",
+        "stop_search",
+    ],
+    defaults=[False]
 )
 
 
