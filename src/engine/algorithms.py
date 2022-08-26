@@ -10,7 +10,6 @@ taking tt_nodes with the same depth as the current pass
 
 from collections import deque
 from .constants import COLOR, VALUE_MAX
-from .evaluation import move_eval
 from . import board
 from .data_structures import Node, SmartMove, Board
 from .transposition_table import TranspositionTable
@@ -58,7 +57,7 @@ def alphabeta_mo_tt(
     for move in board.pseudo_legal_moves(b):
         curr_board = board.push(b, move)
         smart_moves.append(
-            SmartMove(move=move, board=curr_board, eval=move_eval(curr_board, move))
+            SmartMove(move=move, board=curr_board, eval=curr_board.value)
         )
 
     ordered_smart_captures = sorted(
@@ -147,12 +146,21 @@ def alphabeta_mo(b: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node
     for move in board.pseudo_legal_moves(b):
         curr_board = board.push(b, move)
         smart_moves.append(
-            SmartMove(move=move, board=curr_board, eval=move_eval(curr_board, move))
+            SmartMove(move=move, board=curr_board, eval=curr_board.value)
         )
 
-    ordered_smart_moves = sorted(smart_moves, key=lambda x: x.eval, reverse=True)
+    ordered_smart_captures = sorted(
+        filter(lambda x: x.move.is_capture, smart_moves),
+        key=lambda x: x.eval,
+        reverse=b.turn == COLOR.WHITE,
+    )
+    ordered_smart_normal = sorted(
+        filter(lambda x: not x.move.is_capture, smart_moves),
+        key=lambda x: x.eval,
+        reverse=b.turn == COLOR.WHITE,
+    )
 
-    for smart_move in ordered_smart_moves:
+    for smart_move in ordered_smart_captures + ordered_smart_normal:
         curr_pv = deque(pv)
         curr_pv.append(smart_move.move)
 
