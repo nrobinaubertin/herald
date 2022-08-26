@@ -35,7 +35,7 @@ Board = namedtuple("Board", [
         "moves_history",
         # color of the player whos turn it is
         "turn",
-        # array reprensenting castling rights
+        # array reprensenting castling rights (index CASTLE + COLOR)
         "castling_rights",
         # the following values are ints with default values
         "en_passant",
