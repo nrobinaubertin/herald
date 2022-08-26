@@ -12,10 +12,11 @@ from engine.data_structures import to_uci
 from engine.best_move import best_move
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.12.0"
+VERSION = f"{NAME} 0.12.1"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
+TRANSPOSITION_TABLE = None
 
 
 def stop_calculating():
@@ -26,6 +27,7 @@ def stop_calculating():
 
 def uci_parser(line):
     global CURRENT_BOARD
+    global TRANSPOSITION_TABLE
     tokens = line.strip().split()
 
     if not tokens:
@@ -88,6 +90,12 @@ def uci_parser(line):
     if tokens[0] == "isready":
         return [
             "readyok",
+        ]
+
+    if tokens[0] == "nott":
+        TRANSPOSITION_TABLE = None
+        return [
+            "tt removed",
         ]
 
     if len(tokens) > 1 and tokens[0] == "position":

@@ -3,6 +3,7 @@ import multiprocessing
 from engine.board import Board
 from engine.search import search
 from engine.data_structures import to_uci
+from engine.transposition_table import TranspositionTable
 
 
 # This function should evaluate if we have time to think deeper
@@ -24,7 +25,7 @@ def is_there_time(
 
 
 # wrapper around the search function to allow for multiprocess time management
-def search_wrapper(queue, b: Board, depth: int, rand_count: int, transposition_table):
+def search_wrapper(queue, b: Board, depth: int, rand_count: int, transposition_table: TranspositionTable | None = None):
     best = search(
         b,
         depth=depth,
@@ -42,7 +43,7 @@ def best_move(
     max_depth: int = 0,
     eval_guess: int = 0,
     rand_count: int = 1,
-    transposition_table=None,
+    transposition_table: TranspositionTable | None = None,
 ):
 
     current_move = None

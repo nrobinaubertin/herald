@@ -4,7 +4,7 @@ import random
 from .constants import COLOR, VALUE_MAX
 from .board import Board
 from . import board
-from .algorithms import alphabeta_mo_tt
+from .algorithms import alphabeta_mo, alphabeta_mo_tt
 from .data_structures import Node, Search
 from .transposition_table import TranspositionTable
 
@@ -13,7 +13,7 @@ def search(
     b: Board,
     depth: int,
     rand_count: int = 1,
-    transposition_table: TranspositionTable = None,
+    transposition_table: TranspositionTable | None = None,
 ):
 
     start_time = time.time_ns()
@@ -45,14 +45,23 @@ def search(
 
     for move in possible_moves:
         curr_board = board.push(b, move)
-        node = alphabeta_mo_tt(
-            curr_board,
-            -VALUE_MAX,
-            VALUE_MAX,
-            depth,
-            deque([move]),
-            transposition_table=transposition_table,
-        )
+        if transposition_table is None:
+            node = alphabeta_mo(
+                curr_board,
+                -VALUE_MAX,
+                VALUE_MAX,
+                depth,
+                deque([move])
+            )
+        else:
+            node = alphabeta_mo_tt(
+                curr_board,
+                -VALUE_MAX,
+                VALUE_MAX,
+                depth,
+                deque([move]),
+                transposition_table=transposition_table,
+            )
         node_count += node.children + 1
         nodes.append(Node(depth=depth, value=node.value, pv=node.pv))
 
