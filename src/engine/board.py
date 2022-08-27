@@ -221,13 +221,25 @@ def moves(b: Board, quiescent: bool = False) -> list[Move]:
     for move in pseudo_legal_moves(b, quiescent):
         b2 = push(b, move)
 
+        # the king should not be in check after the move
+        if is_square_attacked(b2, king_square(b2, invturn(b2)), b2.turn):
+            continue
+
+        # the king_en_passant square should not be in check
         if (
-            not is_square_attacked(b2, king_square(b2, invturn(b2)), b2.turn)
-        ) and (
-            b2.king_en_passant == -1
-            or not is_square_attacked(b2, b2.king_en_passant, b2.turn)
+            b2.king_en_passant != -1
+            and is_square_attacked(b2, b2.king_en_passant, b2.turn)
         ):
-            moves.append(move)
+            continue
+
+        # a castling move is only acceptable if the king is not in check
+        if (
+            move.is_castle
+            and is_square_attacked(b, king_square(b, b.turn), invturn(b))
+        ):
+            continue
+
+        moves.append(move)
     return moves
 
 
