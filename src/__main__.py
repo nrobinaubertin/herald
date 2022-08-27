@@ -7,7 +7,7 @@ from engine.constants import COLOR
 import engine.board as board
 from engine.search import search
 from engine.transposition_table import TranspositionTable
-from engine.evaluation import eval_board
+from engine.evaluation import eval_pst
 from engine.data_structures import to_uci
 from engine.best_move import best_move
 
@@ -34,7 +34,7 @@ def uci_parser(line):
         return []
 
     if tokens[0] == "eval":
-        return [f"board: {eval_board(CURRENT_BOARD)}"]
+        return [f"board: {eval_pst(CURRENT_BOARD)}"]
 
     if tokens[0] == "print":
         return [board.to_string(CURRENT_BOARD)]
@@ -146,7 +146,7 @@ def uci_parser(line):
         if tokens[1] == "depth":
             depth = int(tokens[2])
 
-        current_eval = eval_board(CURRENT_BOARD)
+        current_eval = eval_pst(CURRENT_BOARD)
 
         global CURRENT_PROCESS
         if CURRENT_PROCESS is not None:

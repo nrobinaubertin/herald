@@ -28,7 +28,7 @@ def alphabeta_mo_tt(
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=b.value,
+            value=sum(b.eval, start=1),
             depth=0,
             pv=pv,
         )
@@ -57,7 +57,7 @@ def alphabeta_mo_tt(
     for move in board.pseudo_legal_moves(b):
         curr_board = board.push(b, move)
         smart_moves.append(
-            SmartMove(move=move, board=curr_board, eval=curr_board.value)
+            SmartMove(move=move, board=curr_board, eval=sum(curr_board.eval, start=1))
         )
 
     ordered_smart_captures = sorted(
@@ -127,7 +127,7 @@ def alphabeta_mo(b: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=b.value,
+            value=sum(b.eval, start=1),
             depth=0,
             pv=pv,
         )
@@ -146,7 +146,7 @@ def alphabeta_mo(b: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node
     for move in board.pseudo_legal_moves(b):
         curr_board = board.push(b, move)
         smart_moves.append(
-            SmartMove(move=move, board=curr_board, eval=curr_board.value)
+            SmartMove(move=move, board=curr_board, eval=sum(curr_board.eval, start=1))
         )
 
     ordered_smart_captures = sorted(
@@ -210,7 +210,7 @@ def alphabeta(b: Board, alpha: int, beta: int, depth: int, pv: deque) -> Node:
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=b.value,
+            value=sum(b.eval, start=1),
             depth=0,
             pv=pv,
         )
@@ -276,7 +276,7 @@ def minimax(b: Board, depth: int, pv: deque) -> Node:
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=b.value,
+            value=sum(b.eval, start=1),
             depth=0,
             pv=pv,
         )

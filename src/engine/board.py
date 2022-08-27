@@ -62,7 +62,7 @@ def from_fen(fen: str) -> Board:
     if fen == "startpos":
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
-    b, turn, castling_rights, en_passant, half_move, full_move = fen.split()
+    rep, turn, castling_rights, en_passant, half_move, full_move = fen.split()
 
     cr = array('b', [0, 0, 0, 0])
     if "K" in castling_rights:
@@ -76,7 +76,7 @@ def from_fen(fen: str) -> Board:
 
     squares = array("b", [PIECE.INVALID] * 120)
     s = 19
-    for row in b.split("/"):
+    for row in rep.split("/"):
         squares[s := s + 1] = PIECE.INVALID
         for c in row:
             piece = None
@@ -99,16 +99,19 @@ def from_fen(fen: str) -> Board:
                     squares[s := s + 1] = PIECE.EMPTY
         squares[s := s + 1] = PIECE.INVALID
 
-    return Board(
+    b = Board(
         squares=squares,
+        moves_history=collections.deque(),
         turn=COLOR.WHITE if turn == "w" else COLOR.BLACK,
         castling_rights=cr,
-        en_passant=-1,  # TODO
         half_move=int(half_move),
         full_move=int(full_move),
-        moves_history=collections.deque(),
-        king_en_passant=-1,
     )
+
+    eval = array('l', [1, evaluation.eval_pst(b), 0])
+    b._replace(eval=eval)
+
+    return b
 
 
 def push(b: Board, move: Move) -> Board:
@@ -120,7 +123,11 @@ def push(b: Board, move: Move) -> Board:
     moves_history = b.moves_history.copy()
     assert b.squares[move.start] != PIECE.EMPTY, "Moving piece cannot be empty"
     assert abs(b.squares[move.start]) != PIECE.INVALID, "Moving piece cannot be invalid"
-    value = evaluation.new_value(b, move)
+
+    eval = array('l')
+    eval.append(1)
+    eval.append(b.eval[1] + evaluation.eval_pst_inc(b, move))
+    eval.append(0)
 
     piece_start = b.squares[move.start]
 
@@ -201,14 +208,14 @@ def push(b: Board, move: Move) -> Board:
 
     return Board(
         squares=squares,
+        moves_history=moves_history,
         turn=invturn(b),
         castling_rights=castling_rights,
+        eval=eval,
         en_passant=en_passant,
         half_move=b.half_move + 1,
         full_move=b.full_move + 1,
-        moves_history=moves_history,
         king_en_passant=king_en_passant,
-        value=value,
     )
 
 
@@ -248,29 +255,27 @@ def is_square_attacked(b: Board, square: int, color: COLOR) -> bool:
         if b.squares[square + depl] == PIECE.KNIGHT * color:
             return True
     for direction in [1, -1, 10, -10]:
-        for depl in [x * direction for x in range(1, 7)]:
-            end = square + depl
-            if b.squares[end] == PIECE.ROOK * color:
+        for x in range(1, 7):
+            end = square + x * direction
+            if (
+                b.squares[end] == PIECE.ROOK * color
+                or b.squares[end] == PIECE.QUEEN * color
+                or (x == 1 and b.squares[end] == PIECE.KING * color)
+            ):
                 return True
             if b.squares[end] != PIECE.EMPTY:
                 break
     for direction in [11, -11, 9, -9]:
-        for depl in [x * direction for x in range(1, 7)]:
-            end = square + depl
-            if b.squares[end] == PIECE.BISHOP * color:
+        for x in range(1, 7):
+            end = square + x * direction
+            if (
+                b.squares[end] == PIECE.BISHOP * color
+                or b.squares[end] == PIECE.QUEEN * color
+                or (x == 1 and b.squares[end] == PIECE.KING * color)
+            ):
                 return True
             if b.squares[end] != PIECE.EMPTY:
                 break
-    for direction in [11, -11, 9, -9, 1, -1, 10, -10]:
-        for depl in [x * direction for x in range(1, 7)]:
-            end = square + depl
-            if b.squares[end] == PIECE.QUEEN * color:
-                return True
-            if b.squares[end] != PIECE.EMPTY:
-                break
-    for depl in [11, -11, 9, -9, 1, -1, 10, -10]:
-        if b.squares[square + depl] == PIECE.KING * color:
-            return True
     for depl in [9, 11] if color == COLOR.WHITE else [-9, -11]:
         if b.squares[square + depl] == PIECE.PAWN * color:
             return True

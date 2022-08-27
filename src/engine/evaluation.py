@@ -101,8 +101,9 @@ for piece in PIECE_SQUARE_TABLE:
     PIECE_SQUARE_TABLE_MAILBOX[piece] = new_table
 
 
-def new_value(b: Board, move: Move) -> int:
-    value = b.value
+# return change in PST evaluation
+def eval_pst_inc(b: Board, move: Move) -> int:
+    value = 0
 
     piece_start = b.squares[move.start]
     assert piece_start != 0, "Moving piece cannot be empty"
@@ -129,13 +130,8 @@ def new_value(b: Board, move: Move) -> int:
     return value
 
 
-def move_eval(b: Board, move: Move) -> int:
-    if move.is_capture:
-        return PIECE_VALUE[abs(b.squares[move.end])]
-    return 0
-
-
-def eval_board(b: Board) -> int:
+# full board PST evaluation
+def eval_pst(b: Board) -> int:
     evaluation = 0
     for square in board.pieces(b):
         piece = b.squares[square]

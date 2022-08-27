@@ -1,4 +1,5 @@
 from collections import deque, namedtuple
+from array import array
 from .constants import PIECE, VALUE_MAX
 
 Move = namedtuple("Move", [
@@ -37,14 +38,18 @@ Board = namedtuple("Board", [
         "turn",
         # array reprensenting castling rights (index CASTLE + COLOR)
         "castling_rights",
+        # array with bits of eval
+        # 0: what eval was done (using sum of squares of evals indexes)
+        # 1: PST eval
+        # 2: mobility eval
+        "eval",
         # the following values are ints with default values
         "en_passant",
         "half_move",
         "full_move",
         "king_en_passant",
-        "value",
     ],
-    defaults=[-1, 0, 0, -1, 0]
+    defaults=[array('l', [0, 0, 0]), -1, 0, 0, -1]
 )
 
 
