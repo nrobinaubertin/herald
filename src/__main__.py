@@ -12,7 +12,7 @@ from engine.data_structures import to_uci
 from engine.best_move import best_move
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.12.1"
+VERSION = f"{NAME} 0.12.2"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
@@ -38,6 +38,9 @@ def uci_parser(line):
 
     if tokens[0] == "print":
         return [board.to_string(CURRENT_BOARD)]
+
+    if tokens[0] == "moves":
+        return [", ".join([to_uci(m) for m in board.moves(CURRENT_BOARD)])]
 
     if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "stats":
         stats = TRANSPOSITION_TABLE.stats()
@@ -119,6 +122,16 @@ def uci_parser(line):
     if len(tokens) > 1 and tokens[0] == "go":
 
         depth = None
+        wtime = 0
+        btime = 0
+        winc = 0
+        binc = 0
+
+        if tokens[1] == "movetime":
+            wtime = int(tokens[2])
+            btime = int(tokens[2])
+            winc = 0
+            binc = 0
 
         if len(tokens) > 8:
             if tokens[1] == "wtime":
@@ -129,17 +142,6 @@ def uci_parser(line):
                 winc = int(tokens[6])
             if tokens[7] == "binc":
                 binc = int(tokens[8])
-
-        if tokens[1] == "movetime":
-            wtime = int(tokens[2])
-            btime = int(tokens[2])
-            winc = 0
-            binc = 0
-        else:
-            wtime = 0
-            btime = 0
-            winc = 0
-            binc = 0
 
         if tokens[1] == "depth":
             depth = int(tokens[2])
@@ -156,6 +158,9 @@ def uci_parser(line):
             if CURRENT_BOARD.turn == COLOR.BLACK:
                 max_time = btime
                 inc_time = binc
+
+            max_time = min(40000, max_time)
+
             process = multiprocessing.Process(
                 target=best_move,
                 args=(CURRENT_BOARD,),
@@ -163,7 +168,7 @@ def uci_parser(line):
                     "max_time": max_time // 1000,
                     "inc_time": inc_time // 1000,
                     "eval_guess": current_eval,
-                    "rand_count": max(1, 2 * (5 - CURRENT_BOARD.full_move)),
+                    "rand_count": max(1, 2 * (4 - CURRENT_BOARD.full_move)),
                     "transposition_table": TRANSPOSITION_TABLE,
                 },
                 daemon=False,
