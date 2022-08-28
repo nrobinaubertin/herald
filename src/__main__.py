@@ -8,11 +8,11 @@ import engine.board as board
 from engine.search import search
 from engine.transposition_table import TranspositionTable
 from engine.evaluation import eval_pst
-from engine.data_structures import to_uci
+from engine.data_structures import to_uci, Board
 from engine.best_move import best_move
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.12.2"
+VERSION = f"{NAME} 0.12.3"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
@@ -41,6 +41,31 @@ def uci_parser(line):
 
     if tokens[0] == "moves":
         return [", ".join([to_uci(m) for m in board.moves(CURRENT_BOARD)])]
+
+    if tokens[0] == "perft":
+        total = 0
+        to_display = []
+
+        def execute(b: Board, depth: int):
+            if depth == 0:
+                return 1
+
+            if depth == 1:
+                return len(list(board.moves(b)))
+
+            nodes = 0
+            for move in board.moves(b):
+                curr_board = board.push(b, move)
+                nodes += execute(curr_board, depth - 1)
+
+            return nodes
+        for move in board.moves(CURRENT_BOARD):
+            b = board.push(CURRENT_BOARD, move)
+            nodes = execute(b, int(tokens[1]) - 1)
+            to_display.append(f"{to_uci(move)}: {nodes}")
+            total += nodes
+        to_display.append(f"Nodes: {total}")
+        return to_display
 
     if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "stats":
         stats = TRANSPOSITION_TABLE.stats()
