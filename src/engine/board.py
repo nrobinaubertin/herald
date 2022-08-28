@@ -1,9 +1,10 @@
 import collections
+from typing import Callable
 from array import array
 import hashlib
 from . import evaluation
 from .constants import PIECE, COLOR, ASCII_REP, CASTLE
-from .data_structures import Move, Board
+from .data_structures import Move, Board, SmartMove
 
 
 def invturn(b: Board) -> COLOR:
@@ -541,3 +542,13 @@ def pseudo_legal_moves(b: Board, quiescent: bool = False):
         if type == PIECE.PAWN:
             for move in pawn_moves(b, start, quiescent):
                 yield move
+
+
+def smart_moves(b: Board, eval_fn: Callable[[Board, Move, Board], int] | None = None, quiescent: bool = False):
+    for move in pseudo_legal_moves(b, quiescent):
+        curr_board = push(b, move)
+        yield SmartMove(
+            move=move,
+            board=curr_board,
+            eval=(eval_fn(b, move, curr_board) if eval_fn is not None else 0),
+        )
