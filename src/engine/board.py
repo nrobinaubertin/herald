@@ -268,7 +268,7 @@ def is_square_attacked(b: Board, square: int, color: COLOR) -> bool:
         if b.squares[square + depl] == PIECE.KNIGHT * color:
             return True
     for direction in [1, -1, 10, -10]:
-        for x in range(1, 7):
+        for x in range(1, 8):
             end = square + x * direction
             if (
                 b.squares[end] == PIECE.ROOK * color
@@ -279,7 +279,7 @@ def is_square_attacked(b: Board, square: int, color: COLOR) -> bool:
             if b.squares[end] != PIECE.EMPTY:
                 break
     for direction in [11, -11, 9, -9]:
-        for x in range(1, 7):
+        for x in range(1, 8):
             end = square + x * direction
             if (
                 b.squares[end] == PIECE.BISHOP * color
