@@ -155,7 +155,8 @@ def push(b: Board, move: Move) -> Board:
 
     # some hardcode for castling move of the rook
     if move.is_castle:
-        castling_rights = array('b', [0, 0, 0, 0])
+        castling_rights[CASTLE.KING_SIDE + b.turn] = 0
+        castling_rights[CASTLE.QUEEN_SIDE + b.turn] = 0
         if move.end == 97:
             squares[98] = PIECE.EMPTY
             squares[95] = PIECE.EMPTY
@@ -224,10 +225,21 @@ def king_square(b: Board, color: COLOR) -> int:
     return b.squares.index(PIECE.KING * color)
 
 
+def number_of(b: Board, type: PIECE, color: COLOR) -> int:
+    return b.squares.count(type * color)
+
+
 def moves(b: Board, quiescent: bool = False) -> list[Move]:
     moves = []
+
+    if number_of(b, PIECE.KING, b.turn) < 1:
+        return []
+
     for move in pseudo_legal_moves(b, quiescent):
         b2 = push(b, move)
+
+        if number_of(b2, PIECE.KING, b2.turn) < 1:
+            continue
 
         # the king should not be in check after the move
         if is_square_attacked(b2, king_square(b2, invturn(b2)), b2.turn):
