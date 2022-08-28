@@ -5,7 +5,6 @@ We test algorithms by comparing results to the minimax algorithm who's well know
 
 from collections import deque
 import unittest
-from itertools import product
 from .win_at_chess import win_at_chess
 import src.engine.board as board
 from src.engine.algorithms import minimax, alphabeta
