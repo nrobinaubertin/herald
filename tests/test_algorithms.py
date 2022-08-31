@@ -7,7 +7,7 @@ from collections import deque
 import unittest
 from .win_at_chess import win_at_chess
 import src.engine.board as board
-from src.engine.algorithms import minimax, alphabeta, aspiration_window, negac
+from src.engine.algorithms import minimax, alphabeta, aspiration_window
 from src.engine.constants import VALUE_MAX
 from src.engine.transposition_table import TranspositionTable
 from src.engine import move_ordering

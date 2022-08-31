@@ -60,46 +60,6 @@ def aspiration_window(
     )
 
 
-# negac*
-def negac(
-    b: Board,
-    min: int,
-    max: int,
-    depth: int,
-    pv: deque[Move],
-    transposition_table: TranspositionTable | None = None,
-    move_ordering_fn: Move_ordering_fn | None = None,
-) -> Node:
-
-    min_node = Node(
-        depth=depth,
-        value=min
-    )
-    max_node = Node(
-        depth=depth,
-        value=max,
-    )
-
-    current_node = min_node
-
-    while min_node.value < max_node.value:
-        alpha = (min_node.value + max_node.value + 1) // 2
-        node = alphabeta(
-            b,
-            alpha,
-            alpha + 100,
-            depth,
-            pv,
-            transposition_table,
-            move_ordering_fn,
-        )
-        current_node = node
-        if current_node.value > alpha:
-            min_node = current_node
-        else:
-            max_node = current_node
-    return current_node
-
 # alphabeta pruning (fail-soft)
 # with optional move ordering and transposition table
 def alphabeta(
