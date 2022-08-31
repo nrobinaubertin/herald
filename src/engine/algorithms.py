@@ -52,6 +52,7 @@ def aspiration_window(
             lower -= 100 * (iteration**2)
             continue
         break
+
     return Node(
         value=node.value,
         depth=node.depth,
@@ -84,10 +85,10 @@ def alphabeta(
         # check if we find a hit in the transposition table
         node = transposition_table.get(board.hash(b), depth)
         if node is not None:
-            if node.depth >= depth:
+            if node.depth > depth:
                 return Node(
                     value=node.value,
-                    pv=pv,
+                    pv=pv + node.pv[1:],
                     depth=node.depth,
                 )
 

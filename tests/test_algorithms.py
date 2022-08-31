@@ -17,6 +17,20 @@ class TestAlgorithms(unittest.TestCase):
     depth: int = 2
     fens = win_at_chess[:50]
 
+    def test_aspiration_window_mvv_lva_mo_tt(self):
+        for fen in self.fens:
+            minimax_result = minimax(board.from_fen(fen), self.depth, deque())
+            aspiration_window_result = aspiration_window(
+                board.from_fen(fen),
+                0,
+                self.depth,
+                deque(),
+                TranspositionTable({}),
+                move_ordering.mvv_lva,
+            )
+            self.assertEqual(minimax_result.value, aspiration_window_result.value)
+            self.assertEqual(minimax_result.pv, aspiration_window_result.pv)
+
     def test_aspiration_window_mvv_lva_mo(self):
         for fen in self.fens:
             minimax_result = minimax(board.from_fen(fen), self.depth, deque())
