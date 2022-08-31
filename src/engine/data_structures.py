@@ -16,9 +16,13 @@ Move = namedtuple("Move", [
 
 Node = namedtuple(
     "Node",
-    ["value", "depth", "pv", "type", "upper", "lower", "squares", "children"],
-    defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None, 0],
+    [
+        "value", "depth", "pv", "type",
+        "upper", "lower", "squares", "children", "full_move"
+    ],
+    defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None, 0, 0],
 )
+
 
 SmartMove = namedtuple("SmartMove", [
         "move",

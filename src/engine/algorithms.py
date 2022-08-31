@@ -35,6 +35,7 @@ def aspiration_window(
 
     while True:
         iteration += 1
+        assert len(pv) != 0, "There should be a least a move in pv"
         node = alphabeta(
             b,
             lower,
@@ -52,6 +53,9 @@ def aspiration_window(
             lower -= 100 * (iteration**2)
             continue
         break
+
+    if __debug__ and depth > 4 and transposition_table is not None:
+        print(transposition_table.stats())
 
     return Node(
         value=node.value,
@@ -78,24 +82,28 @@ def alphabeta(
         return Node(
             value=sum(b.eval, start=1),
             depth=0,
+            full_move=b.full_move,
             pv=pv,
         )
 
     if transposition_table is not None:
         # check if we find a hit in the transposition table
-        node = transposition_table.get(board.hash(b), depth)
+        node = transposition_table.get(b, depth)
         if node is not None:
-            if node.depth > depth:
-                return Node(
-                    value=node.value,
-                    pv=pv + node.pv[1:],
-                    depth=node.depth,
-                )
+            new_pv = node.pv.copy()
+            new_pv.popleft()  # remove first move as it's the same as last of pv
+            return Node(
+                value=node.value,
+                pv=pv + node.pv,
+                depth=node.depth,
+                full_move=node.full_move,
+            )
 
     # placeholder node meant to be replaced by a real one in the search
     best = Node(
         depth=depth,
         value=(VALUE_MAX + 1 if b.turn == COLOR.BLACK else -VALUE_MAX - 1),
+        full_move=b.full_move,
     )
 
     # count the number of children (direct and non direct)
@@ -115,6 +123,7 @@ def alphabeta(
             return Node(
                 value=VALUE_MAX * b.turn,
                 depth=depth,
+                full_move=b.full_move,
                 pv=pv,
             )
 
@@ -134,6 +143,7 @@ def alphabeta(
                 best = Node(
                     value=node.value,
                     depth=depth,
+                    full_move=node.full_move,
                     pv=node.pv,
                 )
             alpha = max(alpha, node.value)
@@ -144,6 +154,7 @@ def alphabeta(
                 best = Node(
                     value=node.value,
                     depth=depth,
+                    full_move=node.full_move,
                     pv=node.pv,
                 )
             beta = min(beta, node.value)
@@ -153,12 +164,13 @@ def alphabeta(
     if transposition_table is not None:
         # Save the resulting best node in the transposition table
         if best.depth > 0:
-            transposition_table.add(board.hash(b), best)
+            transposition_table.add(b, best)
 
     return Node(
         value=best.value,
         depth=best.depth,
         pv=best.pv,
+        full_move=best.full_move,
         children=children,
     )
 

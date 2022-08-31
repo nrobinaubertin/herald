@@ -1,7 +1,6 @@
 import collections
-from typing import Callable, Hashable, Iterable
+from typing import Callable, Iterable
 from array import array
-import hashlib
 from . import evaluation
 from .constants import PIECE, COLOR, ASCII_REP, CASTLE
 from .data_structures import Move, Board, SmartMove
@@ -45,18 +44,6 @@ def to_string(b: Board) -> str:
             continue
         rep += f"{ASCII_REP[b.squares[i]]} "
     return rep
-
-
-def hash(b: Board) -> Hashable:
-    data = array("b")
-    data.extend(b.squares)
-    data.append(b.turn)
-    data.extend(b.castling_rights)
-    data.append(b.en_passant)
-    data.append(b.king_en_passant)
-    # return data.tobytes()
-    # return data
-    return hashlib.sha256(data).hexdigest()
 
 
 def from_fen(fen: str) -> Board:
