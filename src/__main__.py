@@ -190,7 +190,8 @@ def uci_parser(line: str) -> list[str]:
                 max_time = btime
                 inc_time = binc
 
-            max_time = min(40000, max_time)
+            # Herald doesn't effectively use a lot of time for now
+            max_time = min(15000, max_time)
 
             process = multiprocessing.Process(
                 target=best_move,
