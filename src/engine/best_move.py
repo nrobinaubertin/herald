@@ -58,6 +58,7 @@ def best_move(
     if max_time != 0:
         start_time = time.time_ns()
 
+        last_search: Search | None = None
         for i in range((10 if max_depth == 0 else max_depth)):
 
             # we create a queue to be able to stop the search when there's no time left
@@ -74,7 +75,6 @@ def best_move(
             )
             process.start()
 
-            last_search: Search | None = None
             current_search: Search | None = None
             while current_search is None:
 
