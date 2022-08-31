@@ -8,7 +8,7 @@ import engine.board as board
 from engine.search import search
 from engine.transposition_table import TranspositionTable
 from engine.evaluation import eval_pst
-from engine.data_structures import to_uci, Board
+from engine.data_structures import to_uci, Board, Search
 from engine.best_move import best_move
 
 NAME = "Herald"
@@ -19,13 +19,13 @@ CURRENT_PROCESS = None
 TRANSPOSITION_TABLE = None
 
 
-def stop_calculating():
+def stop_calculating() -> None:
     global CURRENT_PROCESS
     if CURRENT_PROCESS is not None:
         CURRENT_PROCESS.terminate()
 
 
-def uci_parser(line):
+def uci_parser(line: str) -> list[str]:
     global CURRENT_BOARD
     global TRANSPOSITION_TABLE
     tokens = line.strip().split()
@@ -46,7 +46,7 @@ def uci_parser(line):
         total = 0
         to_display = []
 
-        def execute(b: Board, depth: int):
+        def execute(b: Board, depth: int) -> int:
             if depth == 0:
                 return 1
 
@@ -68,26 +68,32 @@ def uci_parser(line):
         return to_display
 
     if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "stats":
-        stats = TRANSPOSITION_TABLE.stats()
-        stats_str = (
-            f"SHALLOW_HITS: {stats['SHALLOW_HITS']}, "
-            f"HITS: {stats['HITS']}, "
-            f"REQ: {stats['REQ']}, "
-            f"LEN: {stats['LEN']}, "
-            f"ADD: {stats['ADD']}, "
-            f"ADD_BETTER: {stats['ADD_BETTER']}"
-        )
-        return [stats_str]
+        if TRANSPOSITION_TABLE is not None:
+            stats = TRANSPOSITION_TABLE.stats()
+            stats_str = (
+                f"SHALLOW_HITS: {stats['SHALLOW_HITS']}, "
+                f"HITS: {stats['HITS']}, "
+                f"REQ: {stats['REQ']}, "
+                f"LEN: {stats['LEN']}, "
+                f"ADD: {stats['ADD']}, "
+                f"ADD_BETTER: {stats['ADD_BETTER']}"
+            )
+            return [stats_str]
+        else:
+            return [""]
 
     if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "export":
         if len(tokens) > 2 and tokens[2] != "":
             filename = tokens[2]
-        output = TRANSPOSITION_TABLE.export(filename)
+        output = ""
+        if TRANSPOSITION_TABLE is not None:
+            output = TRANSPOSITION_TABLE.export(filename)
         return [output]
 
     if len(tokens) > 2 and tokens[0] == "tt" and tokens[1] == "import":
         filename = tokens[2]
-        TRANSPOSITION_TABLE.import_table(filename)
+        if TRANSPOSITION_TABLE is not None:
+            TRANSPOSITION_TABLE.import_table(filename)
         return []
 
     if len(tokens) == 1 and tokens[0] == "uci":
@@ -140,8 +146,8 @@ def uci_parser(line):
             next_token = 7
         b = board.from_fen(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
-            for move in tokens[next_token + 1:]:
-                b = board.push(b, board.from_uci(b, move))
+            for move_str in tokens[next_token + 1:]:
+                b = board.push(b, board.from_uci(b, move_str))
         CURRENT_BOARD = b
 
     if len(tokens) > 1 and tokens[0] == "go":
@@ -246,6 +252,7 @@ if __name__ == "__main__":
         if len(sys.argv) > 4 and sys.argv[3] == "--from":
             transposition_table.import_table(sys.argv[4])
 
+        best: Search | None = None
         for j in range(depth + 1):
             for i in range(5):
                 best = search(
@@ -253,23 +260,25 @@ if __name__ == "__main__":
                     depth=i,
                     transposition_table=transposition_table,
                 )
-                print(
-                    ""
-                    + f"info depth {best.depth} "
-                    + f"score cp {best.score} "
-                    + f"time {int(best.time // 1e9)} "
-                    + f"nodes {best.nodes} "
-                    + (
-                        "nps "
-                        + str(int(best.nodes * 1e9 // max(0.0001, best.time)))
-                        + " "
-                        if best.time > 0
-                        else ""
+                if best is not None:
+                    print(
+                        ""
+                        + f"info depth {best.depth} "
+                        + f"score cp {best.score} "
+                        + f"time {int(best.time // 1e9)} "
+                        + f"nodes {best.nodes} "
+                        + (
+                            "nps "
+                            + str(int(best.nodes * 1e9 // max(0.0001, best.time)))
+                            + " "
+                            if best.time > 0
+                            else ""
+                        )
+                        + f"pv {' '.join([to_uci(x) for x in best.pv])}"
                     )
-                    + f"pv {' '.join([to_uci(x) for x in best.pv])}"
-                )
-            print(f"--> {to_uci(best.move)}")
-            board.push(b, best.move)
+            if best is not None:
+                print(f"--> {to_uci(best.move)}")
+                board.push(b, best.move)
 
         output = transposition_table.export_table("memory")
         print(output)

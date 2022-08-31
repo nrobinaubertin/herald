@@ -2,10 +2,9 @@ from collections import deque
 import time
 import random
 from .constants import COLOR, VALUE_MAX
-from .board import Board
 from . import board
-from .algorithms import alphabeta
-from .data_structures import Node, Search
+from .algorithms import alphabeta, negac, aspiration_window
+from .data_structures import Node, Search, Board
 from .transposition_table import TranspositionTable
 from . import move_ordering
 
@@ -15,7 +14,8 @@ def search(
     depth: int,
     rand_count: int = 1,
     transposition_table: TranspositionTable | None = None,
-):
+    eval_guess: int = 0,
+) -> Search | None:
 
     start_time = time.time_ns()
 
@@ -46,10 +46,9 @@ def search(
 
     for move in possible_moves:
         curr_board = board.push(b, move)
-        node = alphabeta(
+        node = aspiration_window(
             curr_board,
-            -VALUE_MAX,
-            VALUE_MAX,
+            eval_guess,
             depth,
             deque([move]),
             transposition_table,
