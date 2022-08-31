@@ -67,7 +67,7 @@ Search = namedtuple("Search", [
 )
 
 
-def decompose_square(square: int):
+def decompose_square(square: int) -> tuple[int, int]:
     row = 10 - (square // 10 - 2) - 2
     column = square - (square // 10) * 10
     return (row, column)

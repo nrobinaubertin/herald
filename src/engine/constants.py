@@ -1,17 +1,17 @@
-import enum
+from enum import IntEnum
 
 
-class CASTLE(enum.IntEnum):
+class CASTLE(IntEnum):
     KING_SIDE = 1
     QUEEN_SIDE = 2
 
 
-class COLOR(enum.IntEnum):
+class COLOR(IntEnum):
     WHITE = 1
     BLACK = -1
 
 
-class PIECE(enum.IntEnum):
+class PIECE(IntEnum):
     EMPTY = 0
     PAWN = 1
     KNIGHT = 2
@@ -22,7 +22,7 @@ class PIECE(enum.IntEnum):
     INVALID = 7
 
 
-ASCII_REP = {
+ASCII_REP: dict[int, str] = {
     0: ".",
     (PIECE.PAWN * COLOR.WHITE): "P",
     (PIECE.KNIGHT * COLOR.WHITE): "N",
@@ -38,4 +38,4 @@ ASCII_REP = {
     (PIECE.KING * COLOR.BLACK): "k",
 }
 
-VALUE_MAX = 1_000_000
+VALUE_MAX: int = 1_000_000

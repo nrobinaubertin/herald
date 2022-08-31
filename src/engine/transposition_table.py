@@ -1,11 +1,15 @@
 import os
 import datetime
 import pickle
+import multiprocessing
+import multiprocessing.managers
+from typing import Hashable
 from .data_structures import Node
 
 
 class TranspositionTable:
-    def __init__(self, table: dict = {}):
+    # def __init__(self, table: dict[Hashable, Node] | multiprocessing.managers.DictProxy[Hashable, Node] = {}) -> None:
+    def __init__(self, table={}) -> None:
         self.table = table
         # debug statistics
         self.hits = 0
@@ -14,21 +18,24 @@ class TranspositionTable:
         self.nodes_added = 0
         self.better_nodes_added = 0
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.table)
 
-    def get(self, board_hash, depth: int = 0) -> Node:
-        if __debug__:
-            self.reqs += 1
-        ret = self.table.get(board_hash, None)
-        if __debug__:
-            if ret is not None:
-                self.hits += 1
-                if depth != 0 and ret.depth < depth:
-                    self.shallow_hits += 1
-        return ret
+    def get(self, board_hash: Hashable, depth: int = 0) -> Node | None:
+        try:
+            if __debug__:
+                self.reqs += 1
+            ret = self.table.get(board_hash, None)
+            if __debug__:
+                if ret is not None:
+                    self.hits += 1
+                    if depth != 0 and ret.depth < depth:
+                        self.shallow_hits += 1
+            return ret
+        except:
+            return None
 
-    def add(self, board_hash, node: Node):
+    def add(self, board_hash: Hashable, node: Node) -> None:
         if __debug__:
             self.nodes_added += 1
         if board_hash not in self.table:
@@ -38,26 +45,32 @@ class TranspositionTable:
             if __debug__:
                 self.better_nodes_added += 1
 
-    def import_table(self, filename):
+    def import_table(self, filename: str) -> None:
         """import a file as the table"""
-        input = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", filename)
+        input = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)),
+            "..",
+            filename,
+        )
         with open(input, "rb") as input_pickle:
             self.table = pickle.load(input_pickle)
 
-    def export_table(self, filename=""):
+    def export_table(self, filename: str = "") -> str:
         """export the table to a file"""
         if filename == "":
             filename = (
-                f"memory_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+                f"memory_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
             )
         output = os.path.join(
-            os.path.abspath(os.path.dirname(__file__)), "..", filename
+            os.path.abspath(os.path.dirname(__file__)),
+            "..",
+            filename,
         )
         with open(output, "wb") as output_pickle:
             pickle.dump(self.table, output_pickle)
         return output
 
-    def stats(self):
+    def stats(self) -> dict[str, int]:
         return {
             "LEN": len(self.table),
             "REQ": self.reqs,

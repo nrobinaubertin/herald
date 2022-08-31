@@ -1,5 +1,5 @@
 import collections
-from typing import Callable
+from typing import Callable, Hashable, Iterable
 from array import array
 import hashlib
 from . import evaluation
@@ -47,7 +47,7 @@ def to_string(b: Board) -> str:
     return rep
 
 
-def hash(b: Board):
+def hash(b: Board) -> Hashable:
     data = array("b")
     data.extend(b.squares)
     data.append(b.turn)
@@ -78,27 +78,28 @@ def from_fen(fen: str) -> Board:
     squares = array("b", [PIECE.INVALID] * 120)
     s = 19
     for row in rep.split("/"):
-        squares[s := s + 1] = PIECE.INVALID
+        squares[(s := s + 1)] = PIECE.INVALID
         for c in row:
             piece = None
+            color = COLOR.BLACK if c.islower() else COLOR.WHITE
             if c.lower() == "r":
-                piece = PIECE.ROOK * (COLOR.BLACK if c.islower() else COLOR.WHITE)
+                piece = PIECE.ROOK * color
             if c.lower() == "n":
-                piece = PIECE.KNIGHT * (COLOR.BLACK if c.islower() else COLOR.WHITE)
+                piece = PIECE.KNIGHT * color
             if c.lower() == "b":
-                piece = PIECE.BISHOP * (COLOR.BLACK if c.islower() else COLOR.WHITE)
+                piece = PIECE.BISHOP * color
             if c.lower() == "q":
-                piece = PIECE.QUEEN * (COLOR.BLACK if c.islower() else COLOR.WHITE)
+                piece = PIECE.QUEEN * color
             if c.lower() == "k":
-                piece = PIECE.KING * (COLOR.BLACK if c.islower() else COLOR.WHITE)
+                piece = PIECE.KING * color
             if c.lower() == "p":
-                piece = PIECE.PAWN * (COLOR.BLACK if c.islower() else COLOR.WHITE)
+                piece = PIECE.PAWN * color
             if piece is not None:
-                squares[s := s + 1] = piece
+                squares[(s := s + 1)] = piece
             elif int(c) > 0:
                 for _ in range(int(c)):
-                    squares[s := s + 1] = PIECE.EMPTY
-        squares[s := s + 1] = PIECE.INVALID
+                    squares[(s := s + 1)] = PIECE.EMPTY
+        squares[(s := s + 1)] = PIECE.INVALID
 
     b = Board(
         squares=squares,
@@ -221,12 +222,18 @@ def push(b: Board, move: Move) -> Board:
     )
 
 
-def king_square(b: Board, color: COLOR) -> int:
-    return b.squares.index(PIECE.KING * color)
+def king_square(b: Board, color: COLOR) -> int | None:
+    try:
+        return int(b.squares.index(PIECE.KING * color))
+    except:
+        return None
 
 
 def number_of(b: Board, type: PIECE, color: COLOR) -> int:
-    return b.squares.count(type * color)
+    try:
+        return int(b.squares.count(type * color))
+    except:
+        return 0
 
 
 def moves(b: Board, quiescent: bool = False) -> list[Move]:
@@ -238,11 +245,12 @@ def moves(b: Board, quiescent: bool = False) -> list[Move]:
     for move in pseudo_legal_moves(b, quiescent):
         b2 = push(b, move)
 
-        if number_of(b2, PIECE.KING, b2.turn) < 1:
+        # the king should not be in check after the move
+        ks = king_square(b2, invturn(b2))
+        if ks is None:
             continue
 
-        # the king should not be in check after the move
-        if is_square_attacked(b2, king_square(b2, invturn(b2)), b2.turn):
+        if is_square_attacked(b2, ks, b2.turn):
             continue
 
         # the king_en_passant square should not be in check
@@ -252,10 +260,14 @@ def moves(b: Board, quiescent: bool = False) -> list[Move]:
         ):
             continue
 
+        ks = king_square(b, b.turn)
+        if ks is None:
+            continue
+
         # a castling move is only acceptable if the king is not in check
         if (
             move.is_castle
-            and is_square_attacked(b, king_square(b, b.turn), invturn(b))
+            and is_square_attacked(b, ks, invturn(b))
         ):
             continue
 
@@ -296,11 +308,14 @@ def is_square_attacked(b: Board, square: int, color: COLOR) -> bool:
 
 
 # filter out squares with pieces of given type and color
-def pieces(b: Board, type: PIECE | None = None, color: COLOR | None = None):
-    squares = range(120)
+def pieces(
+    b: Board,
+    type: PIECE | None = None,
+    color: COLOR | None = None,
+) -> Iterable[int]:
     squares = filter(
         lambda x: abs(b.squares[x]) != PIECE.INVALID and b.squares[x] != PIECE.EMPTY,
-        squares
+        range(120)
     )
     if type is not None:
         squares = filter(
@@ -315,7 +330,11 @@ def pieces(b: Board, type: PIECE | None = None, color: COLOR | None = None):
     return squares
 
 
-def knight_moves(b: Board, start: int, quiescent: bool = False):
+def knight_moves(
+    b: Board,
+    start: int,
+    quiescent: bool = False,
+) -> Iterable[Move]:
     for depl in [21, 12, -8, -19, -21, -12, 8, 19]:
         end = start + depl
         is_capture = (
@@ -340,7 +359,11 @@ def knight_moves(b: Board, start: int, quiescent: bool = False):
             )
 
 
-def rook_moves(b: Board, start: int, quiescent: bool = False):
+def rook_moves(
+    b: Board,
+    start: int,
+    quiescent: bool = False,
+) -> Iterable[Move]:
     for direction in [1, -1, 10, -10]:
         for x in range(1, 8):
             end = start + x * direction
@@ -401,7 +424,11 @@ def rook_moves(b: Board, start: int, quiescent: bool = False):
                 break
 
 
-def bishop_moves(b: Board, start: int, quiescent: bool = False):
+def bishop_moves(
+    b: Board,
+    start: int,
+    quiescent: bool = False,
+) -> Iterable[Move]:
     for direction in [11, -11, 9, -9]:
         for x in range(1, 8):
             end = start + x * direction
@@ -429,7 +456,11 @@ def bishop_moves(b: Board, start: int, quiescent: bool = False):
                 break
 
 
-def queen_moves(b: Board, start: int, quiescent: bool = False):
+def queen_moves(
+    b: Board,
+    start: int,
+    quiescent: bool = False,
+) -> Iterable[Move]:
     for direction in [11, -11, 9, -9, 1, -1, 10, -10]:
         for x in range(1, 8):
             end = start + x * direction
@@ -457,7 +488,11 @@ def queen_moves(b: Board, start: int, quiescent: bool = False):
                 break
 
 
-def king_moves(b: Board, start: int, quiescent: bool = False):
+def king_moves(
+    b: Board,
+    start: int,
+    quiescent: bool = False,
+) -> Iterable[Move]:
     for depl in [11, -11, 9, -9, 1, -1, 10, -10]:
         end = start + depl
         is_capture = (
@@ -482,7 +517,11 @@ def king_moves(b: Board, start: int, quiescent: bool = False):
             )
 
 
-def pawn_moves(b: Board, start: int, quiescent: bool = False):
+def pawn_moves(
+    b: Board,
+    start: int,
+    quiescent: bool = False,
+) -> Iterable[Move]:
     if not quiescent:
         depls = [(10 if b.turn == COLOR.BLACK else -10)]
         if start // 10 == (3 if b.turn == COLOR.BLACK else 8):
@@ -529,7 +568,10 @@ def pawn_moves(b: Board, start: int, quiescent: bool = False):
             )
 
 
-def pseudo_legal_moves(b: Board, quiescent: bool = False):
+def pseudo_legal_moves(
+    b: Board,
+    quiescent: bool = False,
+) -> Iterable[Move]:
     for start, piece in filter(
         lambda x: x[1] != PIECE.INVALID and x[1] * b.turn > 0,
         enumerate(b.squares[20:100])
@@ -556,7 +598,11 @@ def pseudo_legal_moves(b: Board, quiescent: bool = False):
                 yield move
 
 
-def smart_moves(b: Board, eval_fn: Callable[[Board, Move, Board], int] | None = None, quiescent: bool = False):
+def smart_moves(
+    b: Board,
+    eval_fn: Callable[[Board, Move, Board], int] | None = None,
+    quiescent: bool = False,
+) -> Iterable[SmartMove]:
     for move in pseudo_legal_moves(b, quiescent):
         curr_board = push(b, move)
         yield SmartMove(

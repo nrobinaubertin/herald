@@ -78,12 +78,12 @@ PIECE_SQUARE_TABLE = {
 
 # arrange pst to match our mailbox
 PIECE_SQUARE_TABLE_MAILBOX = {
-    PIECE.PAWN: None,
-    PIECE.KNIGHT: None,
-    PIECE.BISHOP: None,
-    PIECE.ROOK: None,
-    PIECE.QUEEN: None,
-    PIECE.KING: None,
+    PIECE.PAWN: array('b'),
+    PIECE.KNIGHT: array('b'),
+    PIECE.BISHOP: array('b'),
+    PIECE.ROOK: array('b'),
+    PIECE.QUEEN: array('b'),
+    PIECE.KING: array('b'),
 }
 
 # Initialize PIECE_SQUARE_TABLE_MAILBOX
