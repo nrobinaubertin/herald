@@ -28,3 +28,11 @@ python3 -m zipapp src \
   -o "herald-$(git log -n1 --format=%h).pyz" \
   -p "/usr/bin/env python3"
 ```
+
+## Run a test suite
+
+You can run a test suite by using the following command:
+
+```sh
+python3 -m unittest tests/<test_name>
+```
