@@ -14,93 +14,70 @@ from src.engine import move_ordering
 
 
 class TestAlgorithms(unittest.TestCase):
-    depth: int = 2
     fens = win_at_chess[:50]
 
-    def test_aspiration_window_mvv_lva_mo_tt(self):
-        for fen in self.fens:
-            minimax_result = minimax(board.from_fen(fen), self.depth, deque())
-            aspiration_window_result = aspiration_window(
-                board.from_fen(fen),
-                0,
-                self.depth,
-                deque(),
-                TranspositionTable({}),
-                move_ordering.mvv_lva,
-            )
-            self.assertEqual(minimax_result.value, aspiration_window_result.value)
-            self.assertEqual(minimax_result.pv, aspiration_window_result.pv)
-
+    # # This test equivalence between aspiration window on alphabeta with mvv_lva move ordering and without the aspiration window
     def test_aspiration_window_mvv_lva_mo(self):
+        depth = 4
         for fen in self.fens:
-            minimax_result = minimax(board.from_fen(fen), self.depth, deque())
+            alphabeta_mvv_lva_result = alphabeta(
+                board.from_fen(fen),
+                -VALUE_MAX,
+                VALUE_MAX,
+                depth,
+                deque(),
+                None,
+                move_ordering.mvv_lva,
+            )
             aspiration_window_result = aspiration_window(
                 board.from_fen(fen),
                 0,
-                self.depth,
+                depth,
                 deque(),
                 None,
                 move_ordering.mvv_lva,
             )
-            self.assertEqual(minimax_result.value, aspiration_window_result.value)
-            self.assertEqual(minimax_result.pv, aspiration_window_result.pv)
+            self.assertEqual(alphabeta_mvv_lva_result.value, aspiration_window_result.value)
+            self.assertEqual(alphabeta_mvv_lva_result.pv, aspiration_window_result.pv)
 
-    def test_alphabeta_mvv_lva_mo_tt(self):
-        for fen in self.fens:
-            minimax_result = minimax(board.from_fen(fen), self.depth, deque())
-            alphabeta_result = alphabeta(
-                board.from_fen(fen),
-                -VALUE_MAX,
-                VALUE_MAX,
-                self.depth,
-                deque(),
-                TranspositionTable({}),
-                move_ordering.mvv_lva,
-            )
-            self.assertEqual(minimax_result.value, alphabeta_result.value)
-            self.assertEqual(minimax_result.pv, alphabeta_result.pv)
-
-    def test_alphabeta_simple_mo_tt(self):
-        for fen in self.fens:
-            minimax_result = minimax(board.from_fen(fen), self.depth, deque())
-            alphabeta_result = alphabeta(
-                board.from_fen(fen),
-                -VALUE_MAX,
-                VALUE_MAX,
-                self.depth,
-                deque(),
-                TranspositionTable({}),
-                move_ordering.simple,
-            )
-            self.assertEqual(minimax_result.value, alphabeta_result.value)
-            self.assertEqual(minimax_result.pv, alphabeta_result.pv)
-
+    # This test equivalence between raw alphabeta and alphabeta with mvv_lva move ordering
     def test_alphabeta_mvv_lva_mo(self):
+        depth = 4
         for fen in self.fens:
-            minimax_result = minimax(board.from_fen(fen), self.depth, deque())
             alphabeta_result = alphabeta(
                 board.from_fen(fen),
                 -VALUE_MAX,
                 VALUE_MAX,
-                self.depth,
+                depth,
+                deque(),
+                None,
+                None,
+            )
+            alphabeta_mvv_lva_result = alphabeta(
+                board.from_fen(fen),
+                -VALUE_MAX,
+                VALUE_MAX,
+                depth,
                 deque(),
                 None,
                 move_ordering.mvv_lva,
             )
-            self.assertEqual(minimax_result.value, alphabeta_result.value)
-            self.assertEqual(minimax_result.pv, alphabeta_result.pv)
+            self.assertEqual(alphabeta_mvv_lva_result.value, alphabeta_result.value)
+            self.assertEqual(alphabeta_mvv_lva_result.pv, alphabeta_result.pv)
 
-    def test_alphabeta_simple_mo(self):
+    # This test equivalence between raw alphabeta and minimax
+    def test_alphabeta(self):
+        depth = 3
         for fen in self.fens:
-            minimax_result = minimax(board.from_fen(fen), self.depth, deque())
+            minimax_result = minimax(board.from_fen(fen), depth, deque())
             alphabeta_result = alphabeta(
                 board.from_fen(fen),
                 -VALUE_MAX,
                 VALUE_MAX,
-                self.depth,
+                depth,
                 deque(),
                 None,
-                move_ordering.simple,
+                None,
             )
             self.assertEqual(minimax_result.value, alphabeta_result.value)
             self.assertEqual(minimax_result.pv, alphabeta_result.pv)
