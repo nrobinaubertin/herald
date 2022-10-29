@@ -52,7 +52,7 @@ def mvv_lva(b: Board, tt: TranspositionTable | None = None) -> Iterable[SmartMov
                 + PIECE_VALUE[abs(b.squares[m.end])] * 1000
                 - PIECE_VALUE[abs(b.squares[m.start])]
             ) * b.turn
-            + sum(nb.eval, start=1)
+            # + sum(nb.eval, start=1) # there's something wrong in using nb
         )
     )
 
@@ -60,12 +60,4 @@ def mvv_lva(b: Board, tt: TranspositionTable | None = None) -> Iterable[SmartMov
         smart_moves,
         key=lambda x: x.eval,
         reverse=b.turn == COLOR.WHITE
-    )
-
-
-def simple(b: Board, tt: TranspositionTable | None = None) -> Iterable[SmartMove]:
-    return sorted(
-        board.smart_moves(b, lambda b, m, nb: sum(nb.eval, start=1)),
-        key=lambda x: int(x.move.is_capture) * 1000 + x.eval,
-        reverse=b.turn == COLOR.WHITE,
     )
