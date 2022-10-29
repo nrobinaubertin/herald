@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 
-import os
 import sys
 import multiprocessing
 from engine.constants import COLOR
 import engine.board as board
-from engine.search import search
 from engine.transposition_table import TranspositionTable
 from engine.evaluation import eval_pst
-from engine.data_structures import to_uci, Board, Search
+from engine.data_structures import to_uci, Board
 from engine.best_move import best_move
 
 NAME = "Herald"
@@ -82,20 +80,6 @@ def uci_parser(line: str) -> list[str]:
         else:
             return [""]
 
-    if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "export":
-        if len(tokens) > 2 and tokens[2] != "":
-            filename = tokens[2]
-        output = ""
-        if TRANSPOSITION_TABLE is not None:
-            output = TRANSPOSITION_TABLE.export(filename)
-        return [output]
-
-    if len(tokens) > 2 and tokens[0] == "tt" and tokens[1] == "import":
-        filename = tokens[2]
-        if TRANSPOSITION_TABLE is not None:
-            TRANSPOSITION_TABLE.import_table(filename)
-        return []
-
     if len(tokens) == 1 and tokens[0] == "uci":
         return [
             f"{VERSION} by {AUTHOR}",
@@ -126,10 +110,17 @@ def uci_parser(line: str) -> list[str]:
             "readyok",
         ]
 
-    if tokens[0] == "nott":
+    if tokens[0] == "remove_tt":
         TRANSPOSITION_TABLE = None
         return [
             "tt removed",
+        ]
+
+    if tokens[0] == "init_tt":
+        with multiprocessing.Manager() as manager:
+            TRANSPOSITION_TABLE = TranspositionTable(manager.dict())
+        return [
+            "tt initialized",
         ]
 
     if len(tokens) > 1 and tokens[0] == "position":
@@ -223,75 +214,22 @@ def uci_parser(line: str) -> list[str]:
 
 if __name__ == "__main__":
 
-    if len(sys.argv) == 1 or sys.argv[1] == "--import-memory":
-        with multiprocessing.Manager() as manager:
-            TRANSPOSITION_TABLE = TranspositionTable(manager.dict())
-
-            # check if standard path for memory exists
-            memory = os.path.join(os.path.abspath(os.path.dirname(__file__)), "memory")
-            filename = sys.argv[2] if len(sys.argv) > 2 else ""
-            if os.path.exists(memory) and filename == "":
-                filename = "memory"
-
-            if filename != "":
-                TRANSPOSITION_TABLE.import_table(filename)
-
-            while True:
-                line = input()
-                for line in uci_parser(line):
-                    print(line)
+    if len(sys.argv) == 1:
+        while True:
+            line = input()
+            for line in uci_parser(line):
+                print(line)
 
     if sys.argv[1] == "--version":
         print(f"{VERSION}")
-        sys.exit()
-
-    if sys.argv[1] == "--prepare-memory":
-        depth = int(sys.argv[2])
-        b = board.from_fen("startpos")
-        transposition_table = TranspositionTable({})
-
-        if len(sys.argv) > 4 and sys.argv[3] == "--from":
-            transposition_table.import_table(sys.argv[4])
-
-        best: Search | None = None
-        for j in range(depth + 1):
-            for i in range(5):
-                best = search(
-                    b,
-                    depth=i,
-                    transposition_table=transposition_table,
-                )
-                if best is not None:
-                    print(
-                        ""
-                        + f"info depth {best.depth} "
-                        + f"score cp {best.score} "
-                        + f"time {int(best.time // 1e9)} "
-                        + f"nodes {best.nodes} "
-                        + (
-                            "nps "
-                            + str(int(best.nodes * 1e9 // max(0.0001, best.time)))
-                            + " "
-                            if best.time > 0
-                            else ""
-                        )
-                        + f"pv {' '.join([to_uci(x) for x in best.pv])}"
-                    )
-            if best is not None:
-                print(f"--> {to_uci(best.move)}")
-                board.push(b, best.move)
-
-        output = transposition_table.export_table("memory")
-        print(output)
         sys.exit()
 
     # if we don't know what to do, print the help
     print(
         (
             "Usage:\n"
-            "   run.py [--import-memory <filename>]\n"
-            "   run.py --prepare-memory <depth> [--from <filename>]\n"
-            "   run.py (-h | --help | --version)\n"
+            f"  {sys.argv[0]}\n"
+            f"  {sys.argv[0]} (-h | --help | --version)\n"
         )
     )
     sys.exit()
