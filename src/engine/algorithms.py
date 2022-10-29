@@ -35,7 +35,7 @@ def aspiration_window(
 
     while True:
         iteration += 1
-        assert len(pv) != 0, "There should be a least a move in pv"
+        # assert len(pv) != 0, "There should be a least a move in pv"
         node = alphabeta(
             b,
             lower,
@@ -46,10 +46,10 @@ def aspiration_window(
             move_ordering_fn,
         )
         children += node.children + 1
-        if node.value > upper:
+        if node.value >= upper:
             upper += 100 * (iteration**2)
             continue
-        if node.value < lower:
+        if node.value <= lower:
             lower -= 100 * (iteration**2)
             continue
         break
@@ -61,6 +61,7 @@ def aspiration_window(
         value=node.value,
         depth=node.depth,
         pv=node.pv,
+        full_move=node.full_move,
         children=children,
     )
 
