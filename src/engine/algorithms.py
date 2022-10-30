@@ -16,6 +16,60 @@ from .move_ordering import Move_ordering_fn
 from .transposition_table import TranspositionTable
 
 
+def negac(
+    b: Board,
+    min: int,
+    max: int,
+    depth: int,
+    pv: deque[Move],
+    transposition_table: TranspositionTable | None = None,
+    move_ordering_fn: Move_ordering_fn | None = None,
+) -> Node:
+
+    min_node = Node(
+        depth=depth,
+        value=min
+    )
+    max_node = Node(
+        depth=depth,
+        value=max,
+    )
+
+    current_node = None
+
+    while abs(min_node.value - max_node.value) > 99:
+        current_value = (min_node.value + max_node.value) // 2
+        node = alphabeta(
+            b,
+            current_value - 50,
+            current_value + 50,
+            depth,
+            pv,
+            transposition_table,
+            move_ordering_fn,
+        )
+        current_node = node
+        if current_node.value > current_value:
+            min_node = current_node
+        else:
+            max_node = current_node
+        # print(f"{current_node.value} [{current_value}, {min_node.value}, {max_node.value}]")
+
+    current_value = (min_node.value + max_node.value) // 2
+    node = alphabeta(
+        b,
+        current_value - 50,
+        current_value + 50,
+        depth,
+        pv,
+        transposition_table,
+        move_ordering_fn,
+    )
+    current_node = node
+
+    return current_node
+
+
 def aspiration_window(
     b: Board,
     guess: int,

@@ -3,7 +3,7 @@ import time
 import random
 from .constants import COLOR, VALUE_MAX
 from . import board
-from .algorithms import aspiration_window
+from .algorithms import negac
 from .data_structures import Node, Search, Board
 from .transposition_table import TranspositionTable
 from . import move_ordering
@@ -46,9 +46,10 @@ def search(
 
     for move in possible_moves:
         curr_board = board.push(b, move)
-        node = aspiration_window(
+        node = negac(
             curr_board,
-            eval_guess,
+            -VALUE_MAX,
+            VALUE_MAX,
             depth,
             deque([move]),
             transposition_table,
