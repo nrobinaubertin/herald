@@ -15,6 +15,7 @@ AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 TRANSPOSITION_TABLE = None
+MULTIPROCESSING_MANAGER = multiprocessing.Manager()
 
 
 def stop_calculating() -> None:
@@ -65,7 +66,12 @@ def uci_parser(line: str) -> list[str]:
         to_display.append(f"Nodes: {total}")
         return to_display
 
-    if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "stats":
+    if (
+        __debug__
+        and len(tokens) > 1
+        and tokens[0] == "tt"
+        and tokens[1] == "stats"
+    ):
         if TRANSPOSITION_TABLE is not None:
             stats = TRANSPOSITION_TABLE.stats()
             stats_str = (
@@ -79,6 +85,18 @@ def uci_parser(line: str) -> list[str]:
             return [stats_str]
         else:
             return [""]
+
+    if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "remove":
+        TRANSPOSITION_TABLE = None
+        return [
+            "tt removed",
+        ]
+
+    if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "init":
+        TRANSPOSITION_TABLE = TranspositionTable(MULTIPROCESSING_MANAGER.dict())
+        return [
+            "tt initialized",
+        ]
 
     if len(tokens) == 1 and tokens[0] == "uci":
         return [
@@ -108,19 +126,6 @@ def uci_parser(line: str) -> list[str]:
     if tokens[0] == "isready":
         return [
             "readyok",
-        ]
-
-    if tokens[0] == "remove_tt":
-        TRANSPOSITION_TABLE = None
-        return [
-            "tt removed",
-        ]
-
-    if tokens[0] == "init_tt":
-        with multiprocessing.Manager() as manager:
-            TRANSPOSITION_TABLE = TranspositionTable(manager.dict())
-        return [
-            "tt initialized",
         ]
 
     if len(tokens) > 1 and tokens[0] == "position":
