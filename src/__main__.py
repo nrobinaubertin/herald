@@ -117,6 +117,10 @@ def uci_parser(line: str) -> list[str]:
         stop_calculating()
         sys.exit()
 
+    if tokens[0] == "play":
+        move = board.from_uci(CURRENT_BOARD, tokens[1])
+        CURRENT_BOARD = board.push(CURRENT_BOARD, move)
+
     if tokens[0] == "ucinewgame":
         CURRENT_BOARD = board.from_fen(
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
