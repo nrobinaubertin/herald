@@ -3,7 +3,8 @@ import time
 import random
 from .constants import COLOR, VALUE_MAX
 from . import board
-from .algorithms import negac
+from .algorithms import negac, alphabeta
+from .evaluation import eval_simple, eval_quiescent
 from .data_structures import Node, Search, Board
 from .transposition_table import TranspositionTable
 from . import move_ordering
@@ -46,12 +47,13 @@ def search(
 
     for move in possible_moves:
         curr_board = board.push(b, move)
-        node = negac(
+        node = alphabeta(
             curr_board,
             -VALUE_MAX,
             VALUE_MAX,
             depth,
             deque([move]),
+            eval_simple,
             transposition_table,
             move_ordering.mvv_lva,
         )

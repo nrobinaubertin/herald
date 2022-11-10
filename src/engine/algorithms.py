@@ -1,11 +1,5 @@
 """
 Search alogrithms
-
-A "validated" algorithm is one that does give
-the same result as minimax (with full pv equality)
-
-_tt algorithms can be validated by only
-taking tt_nodes with the same depth as the current pass
 """
 
 from collections import deque
@@ -14,6 +8,7 @@ from . import board
 from .data_structures import Node, Board, Move
 from .move_ordering import Move_ordering_fn
 from .transposition_table import TranspositionTable
+from .evaluation import Eval_fn
 
 
 def negac(
@@ -22,50 +17,39 @@ def negac(
     max: int,
     depth: int,
     pv: deque[Move],
+    eval_fn: Eval_fn,
     transposition_table: TranspositionTable | None = None,
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
 
-    min_node = Node(
+    min_node: Node = Node(
         depth=depth,
         value=min
     )
-    max_node = Node(
+    max_node: Node = Node(
         depth=depth,
         value=max,
     )
+    current_node: Node = min_node
 
-    current_node = None
-
-    while abs(min_node.value - max_node.value) > 99:
-        current_value = (min_node.value + max_node.value) // 2
+    while min_node.value < max_node.value:
+        current_value = (min_node.value + max_node.value + 1) // 2
         node = alphabeta(
             b,
-            current_value - 50,
-            current_value + 50,
+            current_value - 1,
+            current_value + 1,
             depth,
             pv,
+            eval_fn,
             transposition_table,
             move_ordering_fn,
         )
         current_node = node
-        if current_node.value > current_value:
+        if current_node.value >= current_value:
             min_node = current_node
         else:
             max_node = current_node
         # print(f"{current_node.value} [{current_value}, {min_node.value}, {max_node.value}]")
-
-    current_value = (min_node.value + max_node.value) // 2
-    node = alphabeta(
-        b,
-        current_value - 50,
-        current_value + 50,
-        depth,
-        pv,
-        transposition_table,
-        move_ordering_fn,
-    )
-    current_node = node
 
     return current_node
 
@@ -75,6 +59,7 @@ def aspiration_window(
     guess: int,
     depth: int,
     pv: deque[Move],
+    eval_fn: Eval_fn,
     transposition_table: TranspositionTable | None = None,
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
@@ -96,6 +81,7 @@ def aspiration_window(
             upper,
             depth,
             pv,
+            eval_fn,
             transposition_table,
             move_ordering_fn,
         )
@@ -128,6 +114,7 @@ def alphabeta(
     beta: int,
     depth: int,
     pv: deque[Move],
+    eval_fn: Eval_fn,
     transposition_table: TranspositionTable | None = None,
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
@@ -145,14 +132,30 @@ def alphabeta(
         # check if we find a hit in the transposition table
         node = transposition_table.get(b, depth)
         if node is not None:
-            new_pv = node.pv.copy()
-            new_pv.popleft()  # remove first move as it's the same as last of pv
-            return Node(
-                value=node.value,
-                pv=pv + node.pv,
-                depth=node.depth,
-                full_move=node.full_move,
-            )
+            # if node.type == 2:
+            #     alpha = max(node.value, alpha)
+            # elif node.type == 3:
+            #     beta = min(node.value, beta)
+            if node.type == 1:
+                if __debug__:
+                    tt_node = node
+                else:
+                    return Node(
+                        value=node.value,
+                        pv=node.pv,
+                        depth=node.depth,
+                        full_move=node.full_move,
+                    )
+
+    # if we are on a terminal node, return the evaluation
+    if depth == 0:
+        return Node(
+            value=eval_fn(b, alpha, beta, transposition_table, 0),
+            depth=0,
+            full_move=b.full_move,
+            pv=pv,
+            board=b,
+        )
 
     # placeholder node meant to be replaced by a real one in the search
     best = Node(
@@ -188,6 +191,7 @@ def alphabeta(
             beta,
             depth - 1,
             curr_pv,
+            eval_fn,
             transposition_table,
             move_ordering_fn
         )
@@ -211,32 +215,65 @@ def alphabeta(
                     depth=depth,
                     full_move=node.full_move,
                     pv=node.pv,
+                    board=b,
+                    type=get_node_type(node, alpha, beta),
                 )
             beta = min(beta, node.value)
+            if __debug__:
+                print(f"({node_id}) beta changed to {beta}")
             if node.value <= alpha:
                 break
 
     if transposition_table is not None:
         # Save the resulting best node in the transposition table
-        if best.depth > 0:
+        if best.depth > 0 and best.type == 1:
             transposition_table.add(b, best)
+            # # Organize node types
+            # # https://www.chessprogramming.org/Node_Types
+            # if alpha < best.value and best.value < beta:
+            #     # this is a PV-node
+            #     transposition_table.add(b, best)
+            # if best.value >= beta:
+            #     # this is a Cut-node
+            #     pass
+            # if best.value <= alpha:
+            #     # this is a All-node
+            #     pass
 
-    return Node(
+    node = Node(
         value=best.value,
         depth=best.depth,
         pv=best.pv,
         full_move=best.full_move,
         children=children,
+        board=b,
     )
+
+    if __debug__ and tt_node is not None and tt_node.value != node.value:
+        print("")
+        print(f"({node_id})")
+        print(f"[tt] {tt_node.value}, {tt_node.depth}, {' '.join([to_uci(x) for x in tt_node.pv])}")
+        print(board.to_fen(tt_node.board))
+        print(board.to_string(tt_node.board))
+        print(f"[best] {node.value}, {node.depth}, {' '.join([to_uci(x) for x in node.pv])}")
+        print(board.to_string(node.board))
+        print(board.to_fen(node.board))
+        breakpoint()
+    return node
 
 
 # Simple minimax
-def minimax(b: Board, depth: int, pv: deque[Move]) -> Node:
+def minimax(
+    b: Board,
+    depth: int,
+    pv: deque[Move],
+    eval_fn: Eval_fn,
+) -> Node:
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=sum(b.eval, start=1),
+            value=eval_fn(b),
             depth=0,
             pv=pv,
         )
@@ -264,7 +301,7 @@ def minimax(b: Board, depth: int, pv: deque[Move]) -> Node:
                 pv=pv,
             )
 
-        node = minimax(curr_board, depth - 1, curr_pv)
+        node = minimax(curr_board, depth - 1, curr_pv, eval_fn)
         children += node.children + 1
         if b.turn == COLOR.WHITE:
             if node.value > best.value:

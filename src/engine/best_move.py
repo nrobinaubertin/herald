@@ -57,8 +57,6 @@ def best_move(
     print_uci: bool = True,
 ) -> Search | None:
 
-    current_move = None
-
     if max_time != 0:
         start_time = time.time_ns()
 
@@ -94,7 +92,7 @@ def best_move(
                         # This is not strictly UCI but helps for evaluation/versus.py
                         if print_uci:
                             print("bestmove nomove")
-                        return
+                        return None
 
                 except:
                     current_search = None
@@ -155,7 +153,7 @@ def best_move(
                 # This is not strictly UCI but helps for evaluation/versus.py
                 if print_uci:
                     print("bestmove nomove")
-                return
+                return None
 
             if print_uci:
                 print(
