@@ -49,7 +49,6 @@ def negac(
             min_node = current_node
         else:
             max_node = current_node
-        # print(f"{current_node.value} [{current_value}, {min_node.value}, {max_node.value}]")
 
     return current_node
 
@@ -131,21 +130,27 @@ def alphabeta(
     if transposition_table is not None:
         # check if we find a hit in the transposition table
         node = transposition_table.get(b, depth)
-        if node is not None:
+        if isinstance(node, Node):
+            return Node(
+                value=node.value,
+                pv=node.pv,
+                depth=node.depth,
+                full_move=node.full_move,
+            )
             # if node.type == 2:
             #     alpha = max(node.value, alpha)
             # elif node.type == 3:
             #     beta = min(node.value, beta)
-            if node.type == 1:
-                if __debug__:
-                    tt_node = node
-                else:
-                    return Node(
-                        value=node.value,
-                        pv=node.pv,
-                        depth=node.depth,
-                        full_move=node.full_move,
-                    )
+            # if node.type == 1:
+            #     if __debug__:
+            #         tt_node = node
+            #     else:
+            #         return Node(
+            #             value=node.value,
+            #             pv=node.pv,
+            #             depth=node.depth,
+            #             full_move=node.full_move,
+            #         )
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
@@ -154,7 +159,6 @@ def alphabeta(
             depth=0,
             full_move=b.full_move,
             pv=pv,
-            board=b,
         )
 
     # placeholder node meant to be replaced by a real one in the search
@@ -215,12 +219,12 @@ def alphabeta(
                     depth=depth,
                     full_move=node.full_move,
                     pv=node.pv,
-                    board=b,
-                    type=get_node_type(node, alpha, beta),
+                    # board=b,
+                    # type=get_node_type(node, alpha, beta),
                 )
             beta = min(beta, node.value)
-            if __debug__:
-                print(f"({node_id}) beta changed to {beta}")
+            # if __debug__:
+            #     print(f"({node_id}) beta changed to {beta}")
             if node.value <= alpha:
                 break
 
@@ -246,19 +250,19 @@ def alphabeta(
         pv=best.pv,
         full_move=best.full_move,
         children=children,
-        board=b,
+        # board=b,
     )
 
-    if __debug__ and tt_node is not None and tt_node.value != node.value:
-        print("")
-        print(f"({node_id})")
-        print(f"[tt] {tt_node.value}, {tt_node.depth}, {' '.join([to_uci(x) for x in tt_node.pv])}")
-        print(board.to_fen(tt_node.board))
-        print(board.to_string(tt_node.board))
-        print(f"[best] {node.value}, {node.depth}, {' '.join([to_uci(x) for x in node.pv])}")
-        print(board.to_string(node.board))
-        print(board.to_fen(node.board))
-        breakpoint()
+    # if __debug__ and tt_node is not None and tt_node.value != node.value:
+    #     print("")
+    #     print(f"({node_id})")
+    #     print(f"[tt] {tt_node.value}, {tt_node.depth}, {' '.join([to_uci(x) for x in tt_node.pv])}")
+    #     print(board.to_fen(tt_node.board))
+    #     print(board.to_string(tt_node.board))
+    #     print(f"[best] {node.value}, {node.depth}, {' '.join([to_uci(x) for x in node.pv])}")
+    #     print(board.to_string(node.board))
+    #     print(board.to_fen(node.board))
+    #     breakpoint()
     return node
 
 
