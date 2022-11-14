@@ -32,11 +32,14 @@ def negac(
     )
     current_node: Node = min_node
 
-    while min_node.value < max_node.value:
+    # -50 is combined with the +/- 25 at the last evaluation as a safety
+    # mecanism to ensure equivalence with pure alphabeta
+    # TODO: tweak those values to evaluate less nodes
+    while min_node.value < max_node.value - 50:
         current_value = (min_node.value + max_node.value + 1) // 2
-        node = alphabeta(
+        current_node = alphabeta(
             b,
-            current_value - 1,
+            current_value,
             current_value + 1,
             depth,
             pv,
@@ -44,11 +47,21 @@ def negac(
             transposition_table,
             move_ordering_fn,
         )
-        current_node = node
-        if current_node.value >= current_value:
+        if current_node.value > current_value:
             min_node = current_node
-        else:
+        if current_node.value <= current_value:
             max_node = current_node
+
+    current_node = alphabeta(
+        b,
+        min_node.value - 25,
+        max_node.value + 25,
+        depth,
+        pv,
+        eval_fn,
+        transposition_table,
+        move_ordering_fn,
+    )
 
     return current_node
 
@@ -127,7 +140,7 @@ def alphabeta(
             pv=pv,
         )
 
-    if transposition_table is not None:
+    if isinstance(transposition_table, TranspositionTable):
         # check if we find a hit in the transposition table
         node = transposition_table.get(b, depth)
         if isinstance(node, Node):
