@@ -3,8 +3,8 @@ import time
 import random
 from .constants import COLOR, VALUE_MAX
 from . import board
-from .algorithms import negac, alphabeta
-from .evaluation import eval_simple, eval_quiescent
+from .algorithms import Alg_fn
+from .evaluation import eval_simple
 from .data_structures import Node, Search, Board
 from .transposition_table import TranspositionTable
 from . import move_ordering
@@ -13,6 +13,7 @@ from . import move_ordering
 def search(
     b: Board,
     depth: int,
+    alg_fn: Alg_fn,
     rand_count: int = 1,
     transposition_table: TranspositionTable | None = None,
     eval_guess: int = 0,
@@ -47,13 +48,13 @@ def search(
 
     for move in possible_moves:
         curr_board = board.push(b, move)
-        node = alphabeta(
+        node = alg_fn(
             curr_board,
-            -VALUE_MAX,
-            VALUE_MAX,
             depth,
             deque([move]),
             eval_simple,
+            -VALUE_MAX,
+            VALUE_MAX,
             transposition_table,
             move_ordering.mvv_lva,
         )

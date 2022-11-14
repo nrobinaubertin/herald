@@ -8,14 +8,22 @@ from engine.transposition_table import TranspositionTable
 from engine.evaluation import eval_pst
 from engine.data_structures import to_uci, Board
 from engine.best_move import best_move
+from engine.algorithms import minimax, alphabeta, negac
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.12.3"
+VERSION = f"{NAME} 0.13.0"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 TRANSPOSITION_TABLE = None
 MULTIPROCESSING_MANAGER = multiprocessing.Manager()
+
+ALGS = {
+    "minimax": minimax,
+    "alphabeta": alphabeta,
+    "negac": negac,
+}
+CURRENT_ALG = "alphabeta"
 
 
 def stop_calculating() -> None:
@@ -25,12 +33,17 @@ def stop_calculating() -> None:
 
 
 def uci_parser(line: str) -> list[str]:
+    global CURRENT_ALG
     global CURRENT_BOARD
     global TRANSPOSITION_TABLE
     tokens = line.strip().split()
 
     if not tokens:
         return []
+
+    if tokens[0] == "alg":
+        CURRENT_ALG = tokens[1] if tokens[1] in ALGS else "alphabeta"
+        return [f"using {CURRENT_ALG}"]
 
     if tokens[0] == "eval":
         return [f"board: {eval_pst(CURRENT_BOARD)}"]
@@ -199,6 +212,7 @@ def uci_parser(line: str) -> list[str]:
                 kwargs={
                     "max_time": max_time // 1000,
                     "inc_time": inc_time // 1000,
+                    "alg_fn": CURRENT_ALG,
                     "eval_guess": current_eval,
                     "rand_count": max(1, 2 * (4 - CURRENT_BOARD.full_move)),
                     "transposition_table": TRANSPOSITION_TABLE,
@@ -211,6 +225,7 @@ def uci_parser(line: str) -> list[str]:
                 args=(CURRENT_BOARD,),
                 kwargs={
                     "max_depth": depth,
+                    "alg_fn": ALGS[CURRENT_ALG],
                     "eval_guess": current_eval,
                     "transposition_table": TRANSPOSITION_TABLE,
                 },

@@ -2,6 +2,7 @@ import time
 import multiprocessing
 from .search import search
 from .data_structures import to_uci, Search, Board
+from .algorithms import Alg_fn
 from .transposition_table import TranspositionTable
 
 
@@ -34,6 +35,7 @@ def search_wrapper(
     rand_count: int,
     transposition_table: TranspositionTable | None = None,
     eval_guess: int = 0,
+
 ) -> None:
     best = search(
         b,
@@ -48,6 +50,7 @@ def search_wrapper(
 
 def best_move(
     b: Board,
+    alg_fn: Alg_fn,
     max_time: int = 0,
     inc_time: int = 0,
     max_depth: int = 0,
@@ -72,6 +75,7 @@ def best_move(
                     "depth": i,
                     "rand_count": max(1, 2 * (5 - b.full_move)),
                     "transposition_table": transposition_table,
+                    "alg_fn": alg_fn,
                     # "eval_guess": (
                     #     last_search.score if last_search is not None else eval_guess
                     # ),
@@ -145,6 +149,7 @@ def best_move(
             current_search = search(
                 b,
                 depth=i,
+                alg_fn=alg_fn,
                 transposition_table=transposition_table,
             )
 

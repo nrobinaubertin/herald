@@ -9,15 +9,31 @@ from .data_structures import Node, Board, Move
 from .move_ordering import Move_ordering_fn
 from .transposition_table import TranspositionTable
 from .evaluation import Eval_fn
+from typing import Callable
+
+
+Alg_fn = Callable[
+    [
+        Board,
+        int,
+        deque[Move],
+        Eval_fn,
+        int | None,
+        int | None,
+        TranspositionTable | None,
+        Move_ordering_fn | None,
+    ],
+    Node
+]
 
 
 def negac(
     b: Board,
-    min: int,
-    max: int,
     depth: int,
     pv: deque[Move],
     eval_fn: Eval_fn,
+    min: int,
+    max: int,
     transposition_table: TranspositionTable | None = None,
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
@@ -39,11 +55,11 @@ def negac(
         current_value = (min_node.value + max_node.value + 1) // 2
         current_node = alphabeta(
             b,
-            current_value,
-            current_value + 1,
             depth,
             pv,
             eval_fn,
+            current_value,
+            current_value + 1,
             transposition_table,
             move_ordering_fn,
         )
@@ -54,11 +70,11 @@ def negac(
 
     current_node = alphabeta(
         b,
-        min_node.value - 25,
-        max_node.value + 25,
         depth,
         pv,
         eval_fn,
+        min_node.value - 25,
+        max_node.value + 25,
         transposition_table,
         move_ordering_fn,
     )
@@ -89,11 +105,11 @@ def aspiration_window(
         # assert len(pv) != 0, "There should be a least a move in pv"
         node = alphabeta(
             b,
-            lower,
-            upper,
             depth,
             pv,
             eval_fn,
+            lower,
+            upper,
             transposition_table,
             move_ordering_fn,
         )
@@ -122,11 +138,11 @@ def aspiration_window(
 # with optional move ordering and transposition table
 def alphabeta(
     b: Board,
-    alpha: int,
-    beta: int,
     depth: int,
     pv: deque[Move],
     eval_fn: Eval_fn,
+    alpha: int,
+    beta: int,
     transposition_table: TranspositionTable | None = None,
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
@@ -204,11 +220,11 @@ def alphabeta(
 
         node = alphabeta(
             smart_move.board,
-            alpha,
-            beta,
             depth - 1,
             curr_pv,
             eval_fn,
+            alpha,
+            beta,
             transposition_table,
             move_ordering_fn
         )
@@ -285,6 +301,10 @@ def minimax(
     depth: int,
     pv: deque[Move],
     eval_fn: Eval_fn,
+    _1: int | None = None,
+    _2: int | None = None,
+    transposition_table: TranspositionTable | None = None,
+    move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
 
     # if we are on a terminal node, return the evaluation
@@ -318,7 +338,12 @@ def minimax(
                 pv=pv,
             )
 
-        node = minimax(curr_board, depth - 1, curr_pv, eval_fn)
+        node = minimax(
+            curr_board,
+            depth - 1,
+            curr_pv,
+            eval_fn
+        )
         children += node.children + 1
         if b.turn == COLOR.WHITE:
             if node.value > best.value:
