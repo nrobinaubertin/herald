@@ -154,32 +154,37 @@ def alphabeta(
             depth=0,
             full_move=b.full_move,
             pv=pv,
+            lower=alpha,
+            upper=beta,
         )
 
     if isinstance(transposition_table, TranspositionTable):
         # check if we find a hit in the transposition table
         node = transposition_table.get(b, depth)
-        if isinstance(node, Node):
-            return Node(
-                value=node.value,
-                pv=node.pv,
-                depth=node.depth,
-                full_move=node.full_move,
-            )
-            # if node.type == 2:
-            #     alpha = max(node.value, alpha)
-            # elif node.type == 3:
-            #     beta = min(node.value, beta)
-            # if node.type == 1:
-            #     if __debug__:
-            #         tt_node = node
-            #     else:
-            #         return Node(
-            #             value=node.value,
-            #             pv=node.pv,
-            #             depth=node.depth,
-            #             full_move=node.full_move,
-            #         )
+        if isinstance(node, Node) and node.depth >= depth:
+            # handle the found node as usual
+            if b.turn == COLOR.WHITE:
+                alpha = max(alpha, node.value)
+                if node.value >= beta:
+                    return Node(
+                        value=node.value,
+                        pv=node.pv,
+                        depth=node.depth,
+                        full_move=node.full_move,
+                        lower=alpha,
+                        upper=beta,
+                    )
+            else:
+                beta = min(beta, node.value)
+                if node.value <= alpha:
+                    return Node(
+                        value=node.value,
+                        pv=node.pv,
+                        depth=node.depth,
+                        full_move=node.full_move,
+                        lower=alpha,
+                        upper=beta,
+                    )
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
@@ -188,6 +193,8 @@ def alphabeta(
             depth=0,
             full_move=b.full_move,
             pv=pv,
+            lower=alpha,
+            upper=beta,
         )
 
     # placeholder node meant to be replaced by a real one in the search
@@ -195,6 +202,8 @@ def alphabeta(
         depth=depth,
         value=(VALUE_MAX + 1 if b.turn == COLOR.BLACK else -VALUE_MAX - 1),
         full_move=b.full_move,
+        lower=alpha,
+        upper=beta,
     )
 
     # count the number of children (direct and non direct)
@@ -216,6 +225,8 @@ def alphabeta(
                 depth=depth,
                 full_move=b.full_move,
                 pv=pv,
+                lower=alpha,
+                upper=beta,
             )
 
         node = alphabeta(
@@ -237,6 +248,8 @@ def alphabeta(
                     depth=depth,
                     full_move=node.full_move,
                     pv=node.pv,
+                    lower=alpha,
+                    upper=beta,
                 )
             alpha = max(alpha, node.value)
             if node.value >= beta:
@@ -248,6 +261,8 @@ def alphabeta(
                     depth=depth,
                     full_move=node.full_move,
                     pv=node.pv,
+                    lower=alpha,
+                    upper=beta,
                     # board=b,
                     # type=get_node_type(node, alpha, beta),
                 )
@@ -257,21 +272,10 @@ def alphabeta(
             if node.value <= alpha:
                 break
 
-    if transposition_table is not None:
+    if isinstance(transposition_table, TranspositionTable):
         # Save the resulting best node in the transposition table
-        if best.depth > 0 and best.type == 1:
+        if best.depth > 0:
             transposition_table.add(b, best)
-            # # Organize node types
-            # # https://www.chessprogramming.org/Node_Types
-            # if alpha < best.value and best.value < beta:
-            #     # this is a PV-node
-            #     transposition_table.add(b, best)
-            # if best.value >= beta:
-            #     # this is a Cut-node
-            #     pass
-            # if best.value <= alpha:
-            #     # this is a All-node
-            #     pass
 
     node = Node(
         value=best.value,
@@ -279,19 +283,8 @@ def alphabeta(
         pv=best.pv,
         full_move=best.full_move,
         children=children,
-        # board=b,
     )
 
-    # if __debug__ and tt_node is not None and tt_node.value != node.value:
-    #     print("")
-    #     print(f"({node_id})")
-    #     print(f"[tt] {tt_node.value}, {tt_node.depth}, {' '.join([to_uci(x) for x in tt_node.pv])}")
-    #     print(board.to_fen(tt_node.board))
-    #     print(board.to_string(tt_node.board))
-    #     print(f"[best] {node.value}, {node.depth}, {' '.join([to_uci(x) for x in node.pv])}")
-    #     print(board.to_string(node.board))
-    #     print(board.to_fen(node.board))
-    #     breakpoint()
     return node
 
 

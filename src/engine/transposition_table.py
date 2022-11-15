@@ -2,12 +2,8 @@ import os
 import datetime
 import pickle
 from array import array
-import hashlib
-import multiprocessing
-import multiprocessing.managers
 from typing import Hashable
 from .data_structures import Node, Board
-
 
 
 def hash(b: Board) -> Hashable:
@@ -18,20 +14,19 @@ def hash(b: Board) -> Hashable:
     data.append(b.en_passant)
     data.append(b.king_en_passant)
     return data.tobytes()
-    # return hashlib.sha256(data).hexdigest()
 
 
 class TranspositionTable:
-    # def __init__(self, table: dict[Hashable, Node] | multiprocessing.managers.DictProxy[Hashable, Node] = {}) -> None:
     def __init__(self, table={}) -> None:
         self.table = table
         # debug statistics
-        self.hits = 0
-        self.shallow_hits = 0
-        self.old_hits = 0
-        self.reqs = 0
-        self.nodes_added = 0
-        self.better_nodes_added = 0
+        self.table["hits"] = 0
+        self.table["shallow_hits"] = 0
+        self.table["old_hits"] = 0
+        self.table["reqs"] = 0
+        self.table["nodes_added"] = 0
+        self.table["better_nodes_added"] = 0
+        self.table["worse_nodes_added"] = 0
 
     def __str__(self) -> str:
         return str(self.table)
@@ -40,20 +35,13 @@ class TranspositionTable:
         try:
             board_hash = hash(b)
             if __debug__:
-                self.reqs += 1
+                self.table["reqs"] += 1
             ret = self.table.get(board_hash, None)
             if ret is not None:
                 if __debug__:
-                    self.hits += 1
-                if b.full_move < ret.full_move + ret.depth - 2:
-                    if __debug__:
-                        self.old_hits += 1
-                    del self.table[board_hash]
-                    return None
-                if depth != 0 and ret.depth < depth:
-                    if __debug__:
-                        self.shallow_hits += 1
-                    return None
+                    self.table["hits"] += 1
+                if __debug__ and ret.depth < depth:
+                    self.table["shallow_hits"] += 1
             return ret
         except:
             return None
@@ -61,13 +49,15 @@ class TranspositionTable:
     def add(self, b: Board, node: Node) -> None:
         board_hash = hash(b)
         if __debug__:
-            self.nodes_added += 1
+            self.table["nodes_added"] += 1
         if board_hash not in self.table:
             self.table[board_hash] = node
         elif self.table[board_hash].depth < node.depth:
             self.table[board_hash] = node
             if __debug__:
-                self.better_nodes_added += 1
+                self.table["better_nodes_added"] += 1
+        elif __debug__:
+            self.table["worse_nodes_added"] += 1
 
     def import_table(self, filename: str) -> None:
         """import a file as the table"""
@@ -96,11 +86,12 @@ class TranspositionTable:
 
     def stats(self) -> dict[str, int]:
         return {
-            "LEN": len(self.table),
-            "REQ": self.reqs,
-            "HITS": self.hits,
-            "SHALLOW_HITS": self.shallow_hits,
-            "OLD_HITS": self.old_hits,
-            "ADD": self.nodes_added,
-            "ADD_BETTER": self.better_nodes_added,
+            "LEN": len(self.table) - 6,
+            "REQ": self.table["reqs"],
+            "HITS": self.table["hits"],
+            "SHALLOW_HITS": self.table["shallow_hits"],
+            "OLD_HITS": self.table["old_hits"],
+            "ADD": self.table["nodes_added"],
+            "ADD_BETTER": self.table["better_nodes_added"],
+            "ADD_WORSE": self.table["worse_nodes_added"],
         }
