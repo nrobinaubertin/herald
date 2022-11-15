@@ -11,12 +11,12 @@ from engine.best_move import best_move
 from engine.algorithms import minimax, alphabeta, negac
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.13.0"
+VERSION = f"{NAME} 0.14.0"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
-TRANSPOSITION_TABLE = None
 MULTIPROCESSING_MANAGER = multiprocessing.Manager()
+TRANSPOSITION_TABLE = TranspositionTable(MULTIPROCESSING_MANAGER.dict())
 
 ALGS = {
     "minimax": minimax,
@@ -203,16 +203,13 @@ def uci_parser(line: str) -> list[str]:
                 max_time = btime
                 inc_time = binc
 
-            # Herald doesn't effectively use a lot of time for now
-            max_time = min(15000, max_time)
-
             process = multiprocessing.Process(
                 target=best_move,
                 args=(CURRENT_BOARD,),
                 kwargs={
                     "max_time": max_time // 1000,
                     "inc_time": inc_time // 1000,
-                    "alg_fn": CURRENT_ALG,
+                    "alg_fn": ALGS[CURRENT_ALG],
                     "eval_guess": current_eval,
                     "rand_count": max(1, 2 * (4 - CURRENT_BOARD.full_move)),
                     "transposition_table": TRANSPOSITION_TABLE,

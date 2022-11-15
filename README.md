@@ -26,7 +26,7 @@ You can create a zipapp with the following command:
 ```sh
 python3 -m zipapp src \
   -o "herald-$(git log -n1 --format=%h).pyz" \
-  -p "/usr/bin/env python3"
+  -p "/usr/bin/env -S python3 -O"
 ```
 
 ## Run a test suite

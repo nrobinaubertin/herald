@@ -4,3 +4,4 @@ uci_logs.txt
 memory_*
 config/
 *.pyz
+zipapps/

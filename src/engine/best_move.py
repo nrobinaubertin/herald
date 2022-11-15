@@ -10,6 +10,7 @@ from .transposition_table import TranspositionTable
 def is_there_time(
     used_time: int,
     remaining_time: int,
+    inc_time: int,
     print_uci: bool = False,
 ) -> bool:
 
@@ -19,7 +20,10 @@ def is_there_time(
             print("info no time left")
         return False
 
-    if remaining_time < used_time:
+    if (
+        (remaining_time - inc_time) // 20 < used_time - inc_time
+        and used_time + 1 > inc_time
+    ):
         if print_uci:
             print("info no time for next depth")
         return False
@@ -33,6 +37,7 @@ def search_wrapper(
     b: Board,
     depth: int,
     rand_count: int,
+    alg_fn: Alg_fn,
     transposition_table: TranspositionTable | None = None,
     eval_guess: int = 0,
 
@@ -42,7 +47,8 @@ def search_wrapper(
         depth=depth,
         rand_count=rand_count,
         transposition_table=transposition_table,
-        eval_guess=eval_guess
+        eval_guess=eval_guess,
+        alg_fn=alg_fn,
     )
     queue.put_nowait(best)
     queue.close()
@@ -58,7 +64,7 @@ def best_move(
     rand_count: int = 1,
     transposition_table: TranspositionTable | None = None,
     print_uci: bool = True,
-) -> Search | None:
+) -> None:
 
     if max_time != 0:
         start_time = time.time_ns()
@@ -134,15 +140,20 @@ def best_move(
                         queue.close()
                         if print_uci:
                             print(f"bestmove {to_uci(current_search.move)}")
-                        return current_search
+                        return None
 
                 # bail out if we have something and no time anymore
-                if not is_there_time(used_time, max_time - used_time, print_uci=print_uci):
+                if not is_there_time(
+                    used_time,
+                    max_time - used_time,
+                    inc_time,
+                    print_uci=print_uci
+                ):
                     process.terminate()
                     queue.close()
                     if last_search is not None and print_uci:
                         print(f"bestmove {to_uci(last_search.move)}")
-                    return last_search
+                    return None
     else:
         last_search = None
         for i in range(max_depth + 1):
@@ -187,4 +198,4 @@ def best_move(
 
         if last_search is not None and print_uci:
             print(f"bestmove {to_uci(last_search.move)}")
-        return last_search
+        return None
