@@ -98,7 +98,7 @@ def aspiration_window(
 
     # count the number of children (direct and non direct)
     # for info purposes
-    children = 0
+    children = 1
 
     while True:
         iteration += 1
@@ -113,7 +113,9 @@ def aspiration_window(
             transposition_table,
             move_ordering_fn,
         )
-        children += node.children + 1
+
+        children += node.children
+
         if node.value >= upper:
             upper += 100 * (iteration**2)
             continue
@@ -147,17 +149,6 @@ def alphabeta(
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
 
-    # if we are on a terminal node, return the evaluation
-    if depth == 0:
-        return Node(
-            value=sum(b.eval, start=1),
-            depth=0,
-            full_move=b.full_move,
-            pv=pv,
-            lower=alpha,
-            upper=beta,
-        )
-
     if isinstance(transposition_table, TranspositionTable):
         # check if we find a hit in the transposition table
         node = transposition_table.get(b, depth)
@@ -173,6 +164,7 @@ def alphabeta(
                         full_move=node.full_move,
                         lower=alpha,
                         upper=beta,
+                        children=1,
                     )
             else:
                 beta = min(beta, node.value)
@@ -184,6 +176,7 @@ def alphabeta(
                         full_move=node.full_move,
                         lower=alpha,
                         upper=beta,
+                        children=1,
                     )
 
     # if we are on a terminal node, return the evaluation
@@ -195,7 +188,12 @@ def alphabeta(
             pv=pv,
             lower=alpha,
             upper=beta,
+            children=1,
         )
+
+    # count the number of children (direct and non direct)
+    # for info purposes
+    children = 1
 
     # placeholder node meant to be replaced by a real one in the search
     best = Node(
@@ -204,11 +202,8 @@ def alphabeta(
         full_move=b.full_move,
         lower=alpha,
         upper=beta,
+        children=children,
     )
-
-    # count the number of children (direct and non direct)
-    # for info purposes
-    children = 0
 
     for smart_move in (
         move_ordering_fn(b, transposition_table)
@@ -227,6 +222,7 @@ def alphabeta(
                 pv=pv,
                 lower=alpha,
                 upper=beta,
+                children=children,
             )
 
         node = alphabeta(
@@ -239,7 +235,8 @@ def alphabeta(
             transposition_table,
             move_ordering_fn
         )
-        children += node.children + 1
+
+        children += node.children
 
         if b.turn == COLOR.WHITE:
             if node.value > best.value:
@@ -250,6 +247,7 @@ def alphabeta(
                     pv=node.pv,
                     lower=alpha,
                     upper=beta,
+                    children=children,
                 )
             alpha = max(alpha, node.value)
             if node.value >= beta:
@@ -263,12 +261,9 @@ def alphabeta(
                     pv=node.pv,
                     lower=alpha,
                     upper=beta,
-                    # board=b,
-                    # type=get_node_type(node, alpha, beta),
+                    children=children,
                 )
             beta = min(beta, node.value)
-            # if __debug__:
-            #     print(f"({node_id}) beta changed to {beta}")
             if node.value <= alpha:
                 break
 
@@ -306,17 +301,19 @@ def minimax(
             value=eval_fn(b),
             depth=0,
             pv=pv,
+            children=1,
         )
 
     # placeholder node meant to be replaced by a real one in the search
     best = Node(
         depth=depth,
         value=(VALUE_MAX + 1 if b.turn == COLOR.BLACK else -VALUE_MAX - 1),
+        children=1,
     )
 
     # count the number of children (direct and non direct)
     # for info purposes
-    children = 0
+    children = 1
 
     for move in board.pseudo_legal_moves(b):
         curr_board = board.push(b, move)
@@ -329,6 +326,7 @@ def minimax(
                 value=VALUE_MAX * b.turn,
                 depth=depth,
                 pv=pv,
+                children=children,
             )
 
         node = minimax(
@@ -337,13 +335,16 @@ def minimax(
             curr_pv,
             eval_fn
         )
-        children += node.children + 1
+
+        children += node.children
+
         if b.turn == COLOR.WHITE:
             if node.value > best.value:
                 best = Node(
                     value=node.value,
                     depth=depth,
                     pv=node.pv,
+                    children=children,
                 )
         else:
             if node.value < best.value:
@@ -351,6 +352,7 @@ def minimax(
                     value=node.value,
                     depth=depth,
                     pv=node.pv,
+                    children=children,
                 )
 
     return Node(
