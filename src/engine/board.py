@@ -3,11 +3,65 @@ from typing import Callable, Iterable
 from array import array
 from . import evaluation
 from .constants import PIECE, COLOR, ASCII_REP, CASTLE
-from .data_structures import Move, Board, SmartMove
+from .data_structures import Move, Board, SmartMove, to_normal_notation
 
 
 def invturn(b: Board) -> COLOR:
     return COLOR.WHITE if b.turn == COLOR.BLACK else COLOR.BLACK
+
+
+def to_fen(b: Board) -> str:
+
+    rep = ""
+    empty = 0
+    for i in range(120):
+        if i % 10 == 9 and i > 20 and i < 91:
+            if empty != 0:
+                rep += str(empty)
+                empty = 0
+            rep += "/"
+            continue
+        if b.squares[i] == PIECE.INVALID:
+            continue
+        if b.squares[i] == PIECE.EMPTY:
+            empty += 1
+            continue
+        if empty != 0:
+            rep += str(empty)
+            empty = 0
+        rep += f"{ASCII_REP[b.squares[i]]}"
+    if empty != 0:
+        rep += str(empty)
+
+    # color to move
+    if b.turn == COLOR.BLACK:
+        rep += " b"
+    else:
+        rep += " w"
+
+    rep += " "
+
+    # castling rights
+    if b.castling_rights[CASTLE.KING_SIDE + COLOR.WHITE] == 1:
+        rep += "K"
+    if b.castling_rights[CASTLE.QUEEN_SIDE + COLOR.WHITE] == 1:
+        rep += "Q"
+    if b.castling_rights[CASTLE.KING_SIDE + COLOR.BLACK] == 1:
+        rep += "k"
+    if b.castling_rights[CASTLE.QUEEN_SIDE + COLOR.BLACK] == 1:
+        rep += "q"
+
+    rep += " "
+
+    # en passant
+    if b.en_passant == -1:
+        rep += "-"
+    else:
+        rep += to_normal_notation(b.en_passant)
+
+    rep += f" {b.half_move} {b.full_move}"
+
+    return rep
 
 
 def from_uci(b: Board, uci: str) -> Move:

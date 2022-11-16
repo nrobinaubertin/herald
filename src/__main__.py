@@ -11,7 +11,7 @@ from engine.best_move import best_move
 from engine.algorithms import minimax, alphabeta, negac
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.14.0"
+VERSION = f"{NAME} 0.14.1"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
@@ -53,6 +53,9 @@ def uci_parser(line: str) -> list[str]:
 
     if tokens[0] == "moves":
         return [", ".join([to_uci(m) for m in board.moves(CURRENT_BOARD)])]
+
+    if tokens[0] == "fen":
+        return [board.to_fen(CURRENT_BOARD)]
 
     if tokens[0] == "perft":
         total = 0
