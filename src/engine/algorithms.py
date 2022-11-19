@@ -149,6 +149,8 @@ def alphabeta(
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
 
+    assert(depth >= 0)
+
     if isinstance(transposition_table, TranspositionTable):
         # check if we find a hit in the transposition table
         node = transposition_table.get(b, depth)
@@ -294,6 +296,8 @@ def minimax(
     transposition_table: TranspositionTable | None = None,
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
+
+    assert(depth >= 0)
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:

@@ -277,6 +277,43 @@ def number_of(b: Board, type: PIECE, color: COLOR) -> int:
         return 0
 
 
+def is_legal_move(b: Board, move: Move) -> bool:
+
+    # verify that the king of the player to move exists
+    if number_of(b, PIECE.KING, b.turn) < 1:
+        return False
+
+    b2 = push(b, move)
+
+    # the king should not be in check after the move
+    ks = king_square(b2, invturn(b2))
+    if ks is None:
+        return False
+
+    if is_square_attacked(b2, ks, b2.turn):
+        return False
+
+    # the king_en_passant square should not be in check
+    if (
+        b2.king_en_passant != -1
+        and is_square_attacked(b2, b2.king_en_passant, b2.turn)
+    ):
+        return False
+
+    ks = king_square(b, b.turn)
+    if ks is None:
+        return False
+
+    # a castling move is only acceptable if the king is not in check
+    if (
+        move.is_castle
+        and is_square_attacked(b, ks, invturn(b))
+    ):
+        return False
+
+    return True
+
+
 def moves(b: Board, quiescent: bool = False) -> list[Move]:
     moves = []
 
@@ -284,34 +321,8 @@ def moves(b: Board, quiescent: bool = False) -> list[Move]:
         return []
 
     for move in pseudo_legal_moves(b, quiescent):
-        b2 = push(b, move)
-
-        # the king should not be in check after the move
-        ks = king_square(b2, invturn(b2))
-        if ks is None:
+        if not is_legal_move(b, move):
             continue
-
-        if is_square_attacked(b2, ks, b2.turn):
-            continue
-
-        # the king_en_passant square should not be in check
-        if (
-            b2.king_en_passant != -1
-            and is_square_attacked(b2, b2.king_en_passant, b2.turn)
-        ):
-            continue
-
-        ks = king_square(b, b.turn)
-        if ks is None:
-            continue
-
-        # a castling move is only acceptable if the king is not in check
-        if (
-            move.is_castle
-            and is_square_attacked(b, ks, invturn(b))
-        ):
-            continue
-
         moves.append(move)
     return moves
 

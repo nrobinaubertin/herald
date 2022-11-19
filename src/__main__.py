@@ -9,14 +9,15 @@ from engine.evaluation import eval_pst
 from engine.data_structures import to_uci, Board
 from engine.best_move import best_move
 from engine.algorithms import minimax, alphabeta, negac
+from engine.time_management import target_movetime
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.14.1"
+VERSION = f"{NAME} 0.14.2"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 MULTIPROCESSING_MANAGER = multiprocessing.Manager()
-TRANSPOSITION_TABLE = TranspositionTable(MULTIPROCESSING_MANAGER.dict())
+TRANSPOSITION_TABLE = None
 
 ALGS = {
     "minimax": minimax,
@@ -169,16 +170,14 @@ def uci_parser(line: str) -> list[str]:
     if len(tokens) > 1 and tokens[0] == "go":
 
         depth = None
+        movetime = 0
         wtime = 0
         btime = 0
         winc = 0
         binc = 0
 
         if tokens[1] == "movetime":
-            wtime = int(tokens[2])
-            btime = int(tokens[2])
-            winc = 0
-            binc = 0
+            movetime = int(tokens[2])
 
         if len(tokens) > 8:
             if tokens[1] == "wtime":
@@ -200,18 +199,18 @@ def uci_parser(line: str) -> list[str]:
             CURRENT_PROCESS.terminate()
 
         if depth is None:
-            max_time = wtime
-            inc_time = winc
-            if CURRENT_BOARD.turn == COLOR.BLACK:
-                max_time = btime
-                inc_time = binc
-
             process = multiprocessing.Process(
                 target=best_move,
                 args=(CURRENT_BOARD,),
                 kwargs={
-                    "max_time": max_time // 1000,
-                    "inc_time": inc_time // 1000,
+                    "movetime": target_movetime(
+                        CURRENT_BOARD.turn,
+                        movetime,
+                        wtime,
+                        btime,
+                        winc,
+                        binc,
+                    ),
                     "alg_fn": ALGS[CURRENT_ALG],
                     "eval_guess": current_eval,
                     "rand_count": max(1, 2 * (4 - CURRENT_BOARD.full_move)),

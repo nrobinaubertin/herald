@@ -28,6 +28,14 @@ class Bot():
             self.process.expect_exact('\r\n')
             print(self.process.before.decode())
 
+    def fen(self):
+        self.process.sendline('fen')
+        self.process.expect('\\S+')
+        self.process.expect('[0-9rRbBnNqQkKpP\\/]+ [bw] [kKqQ]+ [a-z0-9-]+ [0-9]+ [0-9]+')
+        ret = self.process.after.decode()
+        self.process.expect_exact('\r\n')
+        return ret
+
     def godepth(self, depth: int) -> str:
         self.process.sendline(f"go depth {depth}")
         self.process.expect('bestmove \\w+')
@@ -93,7 +101,7 @@ if __name__ == "__main__":
         for i in range(50):
             try:
                 h[i % 2]["bot"].pos_moves(moves)
-                move = h[i % 2]["bot"].gotime(10)
+                move = h[i % 2]["bot"].gotime(3)
             except Exception as exc:
                 print(i, moves)
                 sys.exit(exc)
@@ -101,13 +109,15 @@ if __name__ == "__main__":
             if move == "nomove":
                 if args['--print']:
                     h[i % 2]["bot"].print()
+                    # if i % 2 == 1:
+                    #     print(h[i % 2]["bot"].fen())
                 if args['--print']:
                     print(f"eval: {evaluation}")
                 break
             moves.append(move)
             h[i % 2]["bot"].pos_moves(moves)
             if args['--print']:
-                h[i % 2]["bot"].print()
+                print(h[i % 2]["bot"].fen())
             evaluation = int(h[i % 2]["bot"].eval().split()[-1])
             if args['--print']:
                 print(f"eval: {evaluation}")

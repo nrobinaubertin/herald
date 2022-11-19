@@ -1,34 +1,9 @@
 import time
 import multiprocessing
-from .search import search
+from .search import search, better_search
 from .data_structures import to_uci, Search, Board
 from .algorithms import Alg_fn
 from .transposition_table import TranspositionTable
-
-
-# This function should evaluate if we have time to think deeper
-def is_there_time(
-    used_time: int,
-    remaining_time: int,
-    inc_time: int,
-    print_uci: bool = False,
-) -> bool:
-
-    # fail-safe if there's no time left
-    if remaining_time < 2:
-        if print_uci:
-            print("info no time left")
-        return False
-
-    if (
-        (remaining_time - inc_time) // 20 < used_time - inc_time
-        and used_time + 1 > inc_time
-    ):
-        if print_uci:
-            print("info no time for next depth")
-        return False
-
-    return True
 
 
 # wrapper around the search function to allow for multiprocess time management
@@ -42,7 +17,7 @@ def search_wrapper(
     eval_guess: int = 0,
 
 ) -> None:
-    best = search(
+    best = better_search(
         b,
         depth=depth,
         rand_count=rand_count,
@@ -57,8 +32,7 @@ def search_wrapper(
 def best_move(
     b: Board,
     alg_fn: Alg_fn,
-    max_time: int = 0,
-    inc_time: int = 0,
+    movetime: int = 0,
     max_depth: int = 0,
     eval_guess: int = 0,
     rand_count: int = 1,
@@ -66,7 +40,7 @@ def best_move(
     print_uci: bool = True,
 ) -> None:
 
-    if max_time != 0:
+    if movetime != 0:
         start_time = time.time_ns()
 
         last_search: Search | None = None
@@ -143,12 +117,7 @@ def best_move(
                         return None
 
                 # bail out if we have something and no time anymore
-                if not is_there_time(
-                    used_time,
-                    max_time - used_time,
-                    inc_time,
-                    print_uci=print_uci
-                ):
+                if used_time >= movetime:
                     process.terminate()
                     queue.close()
                     if last_search is not None and print_uci:
@@ -157,7 +126,7 @@ def best_move(
     else:
         last_search = None
         for i in range(max_depth + 1):
-            current_search = search(
+            current_search = better_search(
                 b,
                 depth=i,
                 alg_fn=alg_fn,
