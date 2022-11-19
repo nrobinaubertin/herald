@@ -314,7 +314,7 @@ def is_legal_move(b: Board, move: Move) -> bool:
     return True
 
 
-def moves(b: Board, quiescent: bool = False) -> list[Move]:
+def legal_moves(b: Board, quiescent: bool = False) -> list[Move]:
     moves = []
 
     if number_of(b, PIECE.KING, b.turn) < 1:
@@ -656,6 +656,20 @@ def smart_moves(
     quiescent: bool = False,
 ) -> Iterable[SmartMove]:
     for move in pseudo_legal_moves(b, quiescent):
+        curr_board = push(b, move)
+        yield SmartMove(
+            move=move,
+            board=curr_board,
+            eval=(eval_fn(b, move, curr_board) if eval_fn is not None else 0),
+        )
+
+
+def legal_smart_moves(
+    b: Board,
+    eval_fn: Callable[[Board, Move, Board], int] | None = None,
+    quiescent: bool = False,
+) -> Iterable[SmartMove]:
+    for move in legal_moves(b, quiescent):
         curr_board = push(b, move)
         yield SmartMove(
             move=move,

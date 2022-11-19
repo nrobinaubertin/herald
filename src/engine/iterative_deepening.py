@@ -29,7 +29,7 @@ def search_wrapper(
     queue.close()
 
 
-def best_move(
+def itdep(
     b: Board,
     alg_fn: Alg_fn,
     movetime: int = 0,
@@ -113,7 +113,7 @@ def best_move(
                         process.terminate()
                         queue.close()
                         if print_uci:
-                            print(f"bestmove {to_uci(last_search.move)}")
+                            print(f"bestmove {to_uci(current_search.move)}")
                         return last_search
 
                 # bail out if we have something and no time anymore
@@ -131,6 +131,7 @@ def best_move(
                 depth=i,
                 alg_fn=alg_fn,
                 transposition_table=transposition_table,
+                move_guess=(last_search.move if last_search is not None else None),
             )
 
             # if there is no move available

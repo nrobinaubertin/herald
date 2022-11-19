@@ -4,7 +4,7 @@ import random
 from .constants import COLOR, VALUE_MAX
 from . import board
 from .algorithms import Alg_fn
-from .evaluation import eval_simple
+from .evaluation import eval_simple, PIECE_VALUE
 from .data_structures import Node, Search, Board, Move
 from .transposition_table import TranspositionTable
 from . import move_ordering
@@ -29,7 +29,7 @@ def search(
     node_count = 0
     nodes = []
 
-    possible_moves = board.moves(b)
+    possible_moves = board.legal_moves(b)
 
     if len(possible_moves) == 0:
         return None
@@ -97,7 +97,7 @@ def better_search(
         value=(VALUE_MAX if b.turn == COLOR.BLACK else -VALUE_MAX),
     )
 
-    possible_moves = board.moves(b)
+    possible_moves = [x for x in board.legal_smart_moves(b)]
 
     if len(possible_moves) == 0:
         return None
@@ -119,13 +119,36 @@ def better_search(
     beta: int = VALUE_MAX
     children: int = 1
 
-    for move in possible_moves:
+    possible_moves = sorted(
+        possible_moves,
+        key=lambda x: (
+            int(x.move.is_capture)
+            * (
+                1000
+                + PIECE_VALUE[abs(b.squares[x.move.end])] * 1000
+                - PIECE_VALUE[abs(b.squares[x.move.start])]
+            ) * b.turn
+        ),
+        reverse=b.turn == COLOR.WHITE
+    )
+
+    # move move_guess to the first place
+    if isinstance(move_guess, Move):
+        for i, sm in enumerate(possible_moves):
+            if (
+                sm.move.start == move_guess.start
+                and sm.move.end == move_guess.end
+            ):
+                possible_moves = [possible_moves[i]] + possible_moves[:i] + possible_moves[i:]
+                break
+
+    for sm in possible_moves:
 
         # return immediatly if this is a king capture
-        if move.is_king_capture:
+        if sm.move.is_king_capture:
             return Search(
-                move=move,
-                pv=deque([move]),
+                move=sm.move,
+                pv=deque([sm.move]),
                 depth=1,
                 nodes=children,
                 score=VALUE_MAX * b.turn,
@@ -133,11 +156,10 @@ def better_search(
                 best_node=best,
             )
 
-        curr_board = board.push(b, move)
         node = alg_fn(
-            curr_board,
+            sm.board,
             depth,
-            deque([move]),
+            deque([sm.move]),
             eval_simple,
             alpha,
             beta,

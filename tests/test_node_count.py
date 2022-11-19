@@ -11,10 +11,39 @@ from src.engine.constants import VALUE_MAX
 from src.engine.transposition_table import TranspositionTable
 from src.engine import move_ordering
 from src.engine import evaluation
+from src.engine.best_move import best_move
+from src.engine.iterative_deepening import itdep
 
 
 class TestNodeCount(unittest.TestCase):
     fens = win_at_chess[:50]
+
+    def test_iterative_deepening(self):
+        depth = 5
+        tot_best_move = 0
+        tot_itdep = 0
+        for fen in self.fens:
+            best_move_result = best_move(
+                board.from_fen(fen),
+                alphabeta,
+                movetime=0,
+                max_depth=depth,
+                print_uci=False,
+            )
+            itdep_result = itdep(
+                board.from_fen(fen),
+                alphabeta,
+                movetime=0,
+                max_depth=depth,
+                print_uci=False,
+            )
+            tot_best_move += best_move_result.nodes
+            tot_itdep += itdep_result.nodes
+            print(f"{fen}: {best_move_result.nodes} | {itdep_result.nodes}")
+            # self.assertTrue(
+            #     negac_result.children <= mvv_lva_result.children
+            # )
+        print(f"TOTAL: {tot_best_move} | {tot_itdep}")
 
     def test_negac(self):
         depth = 3

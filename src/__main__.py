@@ -2,17 +2,16 @@
 
 import sys
 import multiprocessing
-from engine.constants import COLOR
 import engine.board as board
 from engine.transposition_table import TranspositionTable
 from engine.evaluation import eval_pst
 from engine.data_structures import to_uci, Board
-from engine.best_move import best_move
+from engine.iterative_deepening import itdep
 from engine.algorithms import minimax, alphabeta, negac
 from engine.time_management import target_movetime
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.14.2"
+VERSION = f"{NAME} 0.15.0"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
@@ -200,7 +199,7 @@ def uci_parser(line: str) -> list[str]:
 
         if depth is None:
             process = multiprocessing.Process(
-                target=best_move,
+                target=itdep,
                 args=(CURRENT_BOARD,),
                 kwargs={
                     "movetime": target_movetime(
@@ -220,7 +219,7 @@ def uci_parser(line: str) -> list[str]:
             )
         else:
             process = multiprocessing.Process(
-                target=best_move,
+                target=itdep,
                 args=(CURRENT_BOARD,),
                 kwargs={
                     "max_depth": depth,
