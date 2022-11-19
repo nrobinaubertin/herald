@@ -103,25 +103,24 @@ for piece in PIECE_SQUARE_TABLE:
     PIECE_SQUARE_TABLE_MAILBOX[piece] = new_table
 
 
-# return change in PST evaluation
-def eval_pst_inc(b: Board, move: Move) -> int:
+# return change in PST evaluation pre-move
+def eval_pst_inc_pre(squares, move: Move) -> int:
     value = 0
 
-    piece_start = b.squares[move.start]
+    piece_start = squares[move.start]
     assert piece_start != 0, "Moving piece cannot be empty"
     assert abs(piece_start) != 7, "Moving piece cannot be invalid"
     color_start = abs(piece_start) // piece_start
     assert color_start != 0, "Color of moving piece should not be empty"
 
+    value -= PIECE_VALUE[abs(piece_start)] * color_start
     if color_start == COLOR.WHITE:
         value -= PIECE_SQUARE_TABLE_MAILBOX[abs(piece_start)][move.start] * color_start
-        value += PIECE_SQUARE_TABLE_MAILBOX[abs(piece_start)][move.end] * color_start
     else:
         value -= PIECE_SQUARE_TABLE_MAILBOX[abs(piece_start)][120 - move.start] * color_start
-        value += PIECE_SQUARE_TABLE_MAILBOX[abs(piece_start)][120 - move.end] * color_start
 
     # simple capture move
-    piece_end = b.squares[move.end]
+    piece_end = squares[move.end]
     if piece_end != 0:
         color_end = abs(piece_end) // piece_end
         value -= PIECE_VALUE[abs(piece_end)] * color_end
@@ -129,6 +128,40 @@ def eval_pst_inc(b: Board, move: Move) -> int:
             value -= PIECE_SQUARE_TABLE_MAILBOX[abs(piece_end)][move.end] * color_end
         else:
             value -= PIECE_SQUARE_TABLE_MAILBOX[abs(piece_end)][120 - move.end] * color_end
+
+    return value
+
+
+# special function used for en_passant score changes
+def eval_pst_inc_en_passant(squares, target) -> int:
+    en_passant_score_change = 0
+    piece_target = squares[target]
+    color_target = abs(piece_target) // piece_target
+
+    en_passant_score_change -= PIECE_VALUE[abs(piece_target)] * color_target
+    if color_target == COLOR.WHITE:
+        en_passant_score_change -= PIECE_SQUARE_TABLE_MAILBOX[abs(piece_target)][target] * color_target
+    else:
+        en_passant_score_change -= PIECE_SQUARE_TABLE_MAILBOX[abs(piece_target)][120 - target] * color_target
+    return en_passant_score_change
+
+
+# return change in PST evaluation pre-move
+def eval_pst_inc_post(squares, move: Move) -> int:
+    value = 0
+
+    piece_end = squares[move.end]
+    assert piece_end != 0, "Moving piece cannot be empty"
+    assert abs(piece_end) != 7, "Moving piece cannot be invalid"
+    color_end = abs(piece_end) // piece_end
+    assert color_end != 0, "Color of moving piece should not be empty"
+
+    value += PIECE_VALUE[abs(piece_end)] * color_end
+    if color_end == COLOR.WHITE:
+        value += PIECE_SQUARE_TABLE_MAILBOX[abs(piece_end)][move.end] * color_end
+    else:
+        value += PIECE_SQUARE_TABLE_MAILBOX[abs(piece_end)][120 - move.end] * color_end
+
     return value
 
 

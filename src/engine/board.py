@@ -3,7 +3,7 @@ from typing import Callable, Iterable
 from array import array
 from . import evaluation
 from .constants import PIECE, COLOR, ASCII_REP, CASTLE
-from .data_structures import Move, Board, SmartMove, to_normal_notation
+from .data_structures import Move, Board, SmartMove, to_normal_notation, to_square_notation
 
 
 def invturn(b: Board) -> COLOR:
@@ -65,10 +65,8 @@ def to_fen(b: Board) -> str:
 
 
 def from_uci(b: Board, uci: str) -> Move:
-    uci = uci.lower()
-    digits = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8}
-    start = digits[uci[0]] + (10 - int(uci[1])) * 10
-    end = digits[uci[2]] + (10 - int(uci[3])) * 10
+    start = to_square_notation(uci[:2])
+    end = to_square_notation(uci[2:])
     return Move(
         start=start,
         end=end,
@@ -147,6 +145,7 @@ def from_fen(fen: str) -> Board:
         moves_history=collections.deque(),
         turn=COLOR.WHITE if turn == "w" else COLOR.BLACK,
         castling_rights=cr,
+        en_passant=(to_square_notation(en_passant) if en_passant != "-" else -1),
         half_move=int(half_move),
         full_move=int(full_move),
     )
@@ -167,11 +166,6 @@ def push(b: Board, move: Move) -> Board:
     assert b.squares[move.start] != PIECE.EMPTY, "Moving piece cannot be empty"
     assert abs(b.squares[move.start]) != PIECE.INVALID, "Moving piece cannot be invalid"
 
-    eval = array('l')
-    eval.append(1)
-    eval.append(b.eval[1] + evaluation.eval_pst_inc(b, move))
-    eval.append(0)
-
     piece_start = b.squares[move.start]
 
     # do the move
@@ -179,8 +173,10 @@ def push(b: Board, move: Move) -> Board:
     squares[move.end] = piece_start
 
     # special removal for "en passant" moves
+    en_passant_score_change = 0
     if move.end == b.en_passant and abs(piece_start) == PIECE.PAWN:
         target = move.end + (10 * b.turn)
+        en_passant_score_change = evaluation.eval_pst_inc_en_passant(b.squares, target)
         squares[target] = PIECE.EMPTY
 
     # declare en_passant square for the current board
@@ -249,6 +245,17 @@ def push(b: Board, move: Move) -> Board:
                 castling_rights[CASTLE.QUEEN_SIDE + COLOR.BLACK] = 0
 
     moves_history.append(move)
+
+    # evaluation
+    eval = array('l')
+    eval.append(1)
+    eval.append(
+        b.eval[1]
+        + evaluation.eval_pst_inc_pre(b.squares, move)
+        + evaluation.eval_pst_inc_post(squares, move)
+        + en_passant_score_change
+    )
+    eval.append(0)
 
     return Board(
         squares=squares,

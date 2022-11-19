@@ -77,6 +77,12 @@ def decompose_square(square: int) -> tuple[int, int]:
     return (row, column)
 
 
+def to_square_notation(uci: str) -> int:
+    uci = uci.lower()
+    digits = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8}
+    return digits[uci[0]] + (10 - int(uci[1])) * 10
+
+
 def to_normal_notation(square: int) -> str:
     row, column = decompose_square(square)
     letter = ({1: "a", 2: "b", 3: "c", 4: "d", 5: "e", 6: "f", 7: "g", 8: "h"})[column]
