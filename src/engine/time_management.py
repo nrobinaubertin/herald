@@ -13,11 +13,11 @@ def target_movetime(
         return movetime
 
     if turn == COLOR.WHITE:
-        time = min(wtime, wtime // 20 + winc * 2) // 1000
+        time = min(wtime, wtime // 40 + winc) // 1000
         print(time)
         return time
     else:
-        time = min(btime, btime // 20 + binc * 2) // 1000
+        time = min(btime, btime // 40 + binc) // 1000
         print(time)
         return time
 
