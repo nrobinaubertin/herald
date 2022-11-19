@@ -1,9 +1,10 @@
 import time
 import multiprocessing
-from .search import search, better_search
+from .search import better_search
 from .data_structures import to_uci, Search, Board
 from .algorithms import Alg_fn
 from .transposition_table import TranspositionTable
+from .constants import VALUE_MAX
 
 
 # wrapper around the search function to allow for multiprocess time management
@@ -115,6 +116,12 @@ def itdep(
                         if print_uci:
                             print(f"bestmove {to_uci(current_search.move)}")
                         return last_search
+
+                # bail out if we have a mate
+                if last_search is not None and abs(last_search.score) >= VALUE_MAX:
+                    if print_uci:
+                        print(f"bestmove {to_uci(last_search.move)}")
+                    return last_search
 
                 # bail out if we have something and no time anymore
                 if used_time >= movetime:
