@@ -170,7 +170,7 @@ def better_search(
         children += node.children
 
         if b.turn == COLOR.WHITE:
-            if node.value > best.value:
+            if node.value >= best.value:
                 best = Node(
                     value=node.value,
                     depth=depth,
@@ -184,7 +184,7 @@ def better_search(
             if node.value >= beta:
                 break
         else:
-            if node.value < best.value:
+            if node.value <= best.value:
                 best = Node(
                     value=node.value,
                     depth=depth,
