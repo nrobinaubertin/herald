@@ -94,5 +94,7 @@ def is_promotion(move: Move) -> bool:
     return abs(move.moving_piece) == PIECE.PAWN and (row in (8, 1))
 
 
-def to_uci(move: Move) -> str:
+def to_uci(move: SmartMove | Move) -> str:
+    if isinstance(move, SmartMove):
+        move = move.move
     return f"{to_normal_notation(move.start)}{to_normal_notation(move.end)}{'q' if is_promotion(move) else ''}"
