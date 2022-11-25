@@ -1,4 +1,4 @@
-FROM python:3.10.6-buster
+FROM python:3.11.0-buster
 
 COPY lichess-bot/requirements.txt /workdir/requirements.txt
 
