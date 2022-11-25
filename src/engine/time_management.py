@@ -1,5 +1,8 @@
 from .constants import COLOR
 
+# the engine doesn't perform well when thinking over 20s
+MAX_THINKING_TIME: int = 20000
+
 
 def target_movetime(
     turn: COLOR,
@@ -13,11 +16,19 @@ def target_movetime(
         return movetime // 1000
 
     if turn == COLOR.WHITE:
-        time = min(wtime, max(wtime // 40 + winc, 10)) // 1000
-        return time
+        time = min(
+            wtime,
+            wtime // 40 + 4 * winc,
+            MAX_THINKING_TIME,
+        ) // 1000
     else:
-        time = min(btime, max(btime // 40 + binc, 10)) // 1000
-        return time
+        time = min(
+            btime,
+            btime // 40 + 4 * binc,
+            MAX_THINKING_TIME,
+        ) // 1000
+
+    return time
 
 
 # This function should evaluate if we have time to think deeper
