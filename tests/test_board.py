@@ -12,10 +12,10 @@ from .win_at_chess import win_at_chess, wac_moves
 class TestAlgorithms(unittest.TestCase):
     def execute(self, b: Board, depth: int):
         if depth == 1:
-            return len(list(board.moves(b)))
+            return len(list(board.legal_moves(b)))
 
         nodes = 0
-        for move in board.moves(b):
+        for move in board.legal_moves(b):
             curr_board = board.push(b, move)
             nodes += self.execute(curr_board, depth - 1)
 
@@ -65,7 +65,7 @@ class TestAlgorithms(unittest.TestCase):
         self.maxDiff = None
         for i, fen in enumerate(win_at_chess):
             b = board.from_fen(fen)
-            self.assertEqual(",".join([to_uci(m) for m in board.moves(b)]), wac_moves[i])
+            self.assertEqual(",".join([to_uci(m) for m in board.legal_moves(b)]), wac_moves[i])
 
 
 if __name__ == "__main__":
