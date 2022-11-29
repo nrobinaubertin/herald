@@ -92,58 +92,6 @@ def negac(
     )
 
 
-def aspiration_window(
-    b: Board,
-    depth: int,
-    pv: deque[Move],
-    eval_fn: Eval_fn,
-    min: int,
-    max: int,
-    transposition_table: TranspositionTable | None = None,
-    move_ordering_fn: Move_ordering_fn | None = None,
-) -> Node:
-
-    lower = min
-    upper = max
-    iteration = 0
-
-    # count the number of children (direct and non direct)
-    # for info purposes
-    children = 1
-
-    while True:
-        iteration += 1
-        # assert len(pv) != 0, "There should be a least a move in pv"
-        node = alphabeta(
-            b,
-            depth,
-            pv,
-            eval_fn,
-            lower,
-            upper,
-            transposition_table,
-            move_ordering_fn,
-        )
-
-        children += node.children
-
-        if node.value >= upper:
-            upper += 100 * (iteration**2)
-            continue
-        if node.value <= lower:
-            lower -= 100 * (iteration**2)
-            continue
-        break
-
-    return Node(
-        value=node.value,
-        depth=node.depth,
-        pv=node.pv,
-        full_move=node.full_move,
-        children=children,
-    )
-
-
 # alphabeta pruning (fail-soft)
 # with optional move ordering and transposition table
 def alphabeta(
@@ -215,16 +163,16 @@ def alphabeta(
         children=children,
     )
 
-    for smart_move in (
+    for move in (
         move_ordering_fn(b, transposition_table)
         if move_ordering_fn is not None
-        else board.smart_moves(b)
+        else board.pseudo_legal_moves(b)
     ):
         curr_pv = deque(pv)
-        curr_pv.append(smart_move.move)
+        curr_pv.append(move)
 
         # return immediatly if this is a king capture
-        if smart_move.move.is_king_capture:
+        if move.is_king_capture:
             return Node(
                 value=VALUE_MAX * b.turn,
                 depth=depth,
@@ -235,8 +183,9 @@ def alphabeta(
                 children=children,
             )
 
+        nb = board.push(b, move)
         node = alphabeta(
-            smart_move.board,
+            nb,
             depth - 1,
             curr_pv,
             eval_fn,
@@ -327,7 +276,11 @@ def minimax(
     # for info purposes
     children = 1
 
-    for move in board.pseudo_legal_moves(b):
+    for move in (
+        move_ordering_fn(b, transposition_table)
+        if move_ordering_fn is not None
+        else board.pseudo_legal_moves(b)
+    ):
         curr_board = board.push(b, move)
         curr_pv = deque(pv)
         curr_pv.append(move)

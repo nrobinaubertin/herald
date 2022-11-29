@@ -39,7 +39,7 @@ def itdep(
         start_time = time.time_ns()
 
         last_search: Search | None = None
-        for i in range((10 if max_depth == 0 else max_depth)):
+        for i in range(10 if max_depth == 0 else max_depth):
 
             # we create a queue to be able to stop the search when there's no time left
             queue: multiprocessing.Queue[Search | None] = multiprocessing.Queue()

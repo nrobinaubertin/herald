@@ -1,11 +1,10 @@
 from collections import deque
 import time
-import random
 from .constants import COLOR, VALUE_MAX
 from . import board
 from .algorithms import Alg_fn
 from .evaluation import eval_simple, PIECE_VALUE
-from .data_structures import Node, Search, Board, Move
+from .data_structures import Node, Search, Board
 from .transposition_table import TranspositionTable
 from . import move_ordering
 
@@ -25,7 +24,7 @@ def search(
         value=(VALUE_MAX if b.turn == COLOR.BLACK else -VALUE_MAX),
     )
 
-    possible_moves = [x for x in board.legal_smart_moves(b)]
+    possible_moves = [x for x in board.legal_moves(b)]
 
     if len(possible_moves) == 0:
         return None
@@ -50,11 +49,11 @@ def search(
     possible_moves = sorted(
         possible_moves,
         key=lambda x: (
-            int(x.move.is_capture)
+            int(x.is_capture)
             * (
                 1000
-                + PIECE_VALUE[abs(b.squares[x.move.end])] * 1000
-                - PIECE_VALUE[abs(b.squares[x.move.start])]
+                + PIECE_VALUE[abs(b.squares[x.end])] * 1000
+                - PIECE_VALUE[abs(b.squares[x.start])]
             ) * b.turn
         ),
         reverse=b.turn == COLOR.WHITE
@@ -62,22 +61,22 @@ def search(
 
     # move move_guess to the first place
     if isinstance(last_search, Search):
-        for i, sm in enumerate(possible_moves):
+        for i, m in enumerate(possible_moves):
             if (
-                sm.move.start == last_search.move.start
-                and sm.move.end == last_search.move.end
+                m.start == last_search.move.start
+                and m.end == last_search.move.end
             ):
                 possible_moves = [possible_moves[i]] + \
                     possible_moves[:i] + possible_moves[i:]
                 break
 
-    for sm in possible_moves:
+    for move in possible_moves:
 
         # return immediatly if this is a king capture
-        if sm.move.is_king_capture:
+        if move.is_king_capture:
             return Search(
-                move=sm.move,
-                pv=deque([sm.move]),
+                move=move,
+                pv=deque([move]),
                 depth=1,
                 nodes=children,
                 score=VALUE_MAX * b.turn,
@@ -86,9 +85,9 @@ def search(
             )
 
         node = alg_fn(
-            sm.board,
+            board.push(b, move),
             depth,
-            deque([sm.move]),
+            deque([move]),
             eval_simple,
             alpha,
             beta,

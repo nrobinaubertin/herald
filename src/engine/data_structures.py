@@ -24,13 +24,6 @@ Node = namedtuple(
 )
 
 
-SmartMove = namedtuple("SmartMove", [
-        "move",
-        "board",
-        "eval",
-    ]
-)
-
 Board = namedtuple("Board", [
         # array of PIECE * COLOR
         # 120 squares for a 10*12 mailbox
@@ -94,7 +87,5 @@ def is_promotion(move: Move) -> bool:
     return abs(move.moving_piece) == PIECE.PAWN and (row in (8, 1))
 
 
-def to_uci(move: SmartMove | Move) -> str:
-    if isinstance(move, SmartMove):
-        move = move.move
+def to_uci(move: Move) -> str:
     return f"{to_normal_notation(move.start)}{to_normal_notation(move.end)}{'q' if is_promotion(move) else ''}"

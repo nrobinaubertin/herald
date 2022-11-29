@@ -3,7 +3,7 @@ from typing import Callable, Iterable
 from array import array
 from . import evaluation
 from .constants import PIECE, COLOR, ASCII_REP, CASTLE
-from .data_structures import Move, Board, SmartMove, to_normal_notation, to_square_notation
+from .data_structures import Move, Board, to_normal_notation, to_square_notation
 
 
 def invturn(b: Board) -> COLOR:
@@ -655,31 +655,3 @@ def pseudo_legal_moves(
         if type == PIECE.PAWN:
             for move in pawn_moves(b, start, quiescent):
                 yield move
-
-
-def smart_moves(
-    b: Board,
-    eval_fn: Callable[[Board, Move, Board], int] | None = None,
-    quiescent: bool = False,
-) -> Iterable[SmartMove]:
-    for move in pseudo_legal_moves(b, quiescent):
-        curr_board = push(b, move)
-        yield SmartMove(
-            move=move,
-            board=curr_board,
-            eval=(eval_fn(b, move, curr_board) if eval_fn is not None else 0),
-        )
-
-
-def legal_smart_moves(
-    b: Board,
-    eval_fn: Callable[[Board, Move, Board], int] | None = None,
-    quiescent: bool = False,
-) -> Iterable[SmartMove]:
-    for move in legal_moves(b, quiescent):
-        curr_board = push(b, move)
-        yield SmartMove(
-            move=move,
-            board=curr_board,
-            eval=(eval_fn(b, move, curr_board) if eval_fn is not None else 0),
-        )

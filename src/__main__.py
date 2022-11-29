@@ -11,7 +11,7 @@ from engine.algorithms import minimax, alphabeta, negac
 from engine.time_management import target_movetime
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.15.3"
+VERSION = f"{NAME} 0.15.4"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
