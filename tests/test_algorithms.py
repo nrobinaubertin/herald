@@ -23,20 +23,21 @@ class TestAlgorithms(unittest.TestCase):
         for fen in self.fens:
             negac_result = negac(
                 board.from_fen(fen),
-                -VALUE_MAX,
-                VALUE_MAX,
                 depth,
                 deque(),
+                eval_simple,
+                -VALUE_MAX,
+                VALUE_MAX,
                 None,
                 move_ordering.mvv_lva,
             )
             alphabeta_mvv_lva_result = alphabeta(
                 board.from_fen(fen),
-                -VALUE_MAX,
-                VALUE_MAX,
                 depth,
                 deque(),
                 eval_simple,
+                -VALUE_MAX,
+                VALUE_MAX,
                 None,
                 move_ordering.mvv_lva,
             )
@@ -49,39 +50,6 @@ class TestAlgorithms(unittest.TestCase):
                 f"{fen}: {','.join([to_uci(x) for x in alphabeta_mvv_lva_result.pv])}",
             )
 
-    # # This test equivalence between aspiration window on alphabeta
-    # # with mvv_lva move ordering and without the aspiration window
-    # def test_aspiration_window_mvv_lva_mo(self):
-    #     depth = 4
-    #     for fen in self.fens:
-    #         alphabeta_mvv_lva_result = alphabeta(
-    #             board.from_fen(fen),
-    #             -VALUE_MAX,
-    #             VALUE_MAX,
-    #             depth,
-    #             deque(),
-    #             eval_simple,
-    #             None,
-    #             move_ordering.mvv_lva,
-    #         )
-    #         aspiration_window_result = aspiration_window(
-    #             board.from_fen(fen),
-    #             0,
-    #             depth,
-    #             deque(),
-    #             eval_simple,
-    #             None,
-    #             move_ordering.mvv_lva,
-    #         )
-    #         self.assertEqual(
-    #             alphabeta_mvv_lva_result.value,
-    #             aspiration_window_result.value
-    #         )
-    #         self.assertEqual(
-    #             alphabeta_mvv_lva_result.pv,
-    #             aspiration_window_result.pv
-    #         )
-
     # This test equivalence between raw alphabeta
     # and alphabeta with mvv_lva move ordering
     def test_alphabeta_mvv_lva_mo(self):
@@ -89,21 +57,21 @@ class TestAlgorithms(unittest.TestCase):
         for fen in self.fens:
             alphabeta_result = alphabeta(
                 board.from_fen(fen),
-                -VALUE_MAX,
-                VALUE_MAX,
                 depth,
                 deque(),
                 eval_simple,
+                -VALUE_MAX,
+                VALUE_MAX,
                 None,
                 None,
             )
             alphabeta_mvv_lva_result = alphabeta(
                 board.from_fen(fen),
-                -VALUE_MAX,
-                VALUE_MAX,
                 depth,
                 deque(),
                 eval_simple,
+                -VALUE_MAX,
+                VALUE_MAX,
                 None,
                 move_ordering.mvv_lva,
             )
@@ -128,11 +96,11 @@ class TestAlgorithms(unittest.TestCase):
             )
             alphabeta_result = alphabeta(
                 board.from_fen(fen),
-                -VALUE_MAX,
-                VALUE_MAX,
                 depth,
                 deque(),
                 eval_simple,
+                -VALUE_MAX,
+                VALUE_MAX,
                 None,
                 None,
             )
