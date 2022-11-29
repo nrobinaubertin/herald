@@ -11,19 +11,18 @@ from engine.algorithms import minimax, alphabeta, negac
 from engine.time_management import target_movetime
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.15.2"
+VERSION = f"{NAME} 0.15.3"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
-MULTIPROCESSING_MANAGER = multiprocessing.Manager()
-TRANSPOSITION_TABLE = None
+TRANSPOSITION_TABLE = {}
 
 ALGS = {
     "minimax": minimax,
     "alphabeta": alphabeta,
     "negac": negac,
 }
-CURRENT_ALG = "alphabeta"
+CURRENT_ALG = "negac"
 
 
 def stop_calculating() -> None:
@@ -109,7 +108,7 @@ def uci_parser(line: str) -> list[str]:
         ]
 
     if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "init":
-        TRANSPOSITION_TABLE = TranspositionTable(MULTIPROCESSING_MANAGER.dict())
+        TRANSPOSITION_TABLE = TranspositionTable({})
         return [
             "tt initialized",
         ]
@@ -191,8 +190,6 @@ def uci_parser(line: str) -> list[str]:
         if tokens[1] == "depth":
             depth = int(tokens[2])
 
-        current_eval = eval_pst(CURRENT_BOARD)
-
         global CURRENT_PROCESS
         if CURRENT_PROCESS is not None:
             CURRENT_PROCESS.terminate()
@@ -211,8 +208,6 @@ def uci_parser(line: str) -> list[str]:
                         binc,
                     ),
                     "alg_fn": ALGS[CURRENT_ALG],
-                    "eval_guess": current_eval,
-                    "rand_count": max(1, 2 * (4 - CURRENT_BOARD.full_move)),
                     "transposition_table": TRANSPOSITION_TABLE,
                 },
                 daemon=False,
@@ -224,7 +219,6 @@ def uci_parser(line: str) -> list[str]:
                 kwargs={
                     "max_depth": depth,
                     "alg_fn": ALGS[CURRENT_ALG],
-                    "eval_guess": current_eval,
                     "transposition_table": TRANSPOSITION_TABLE,
                 },
                 daemon=False,

@@ -1,6 +1,6 @@
 import time
 import multiprocessing
-from .search import better_search
+from .search import search
 from .data_structures import to_uci, Search, Board
 from .algorithms import Alg_fn
 from .transposition_table import TranspositionTable
@@ -12,18 +12,14 @@ def search_wrapper(
     queue,
     b: Board,
     depth: int,
-    rand_count: int,
     alg_fn: Alg_fn,
     transposition_table: TranspositionTable | None = None,
-    eval_guess: int = 0,
 
 ) -> None:
-    best = better_search(
+    best = search(
         b,
         depth=depth,
-        rand_count=rand_count,
         transposition_table=transposition_table,
-        eval_guess=eval_guess,
         alg_fn=alg_fn,
     )
     queue.put_nowait(best)
@@ -35,8 +31,6 @@ def itdep(
     alg_fn: Alg_fn,
     movetime: int = 0,
     max_depth: int = 0,
-    eval_guess: int = 0,
-    rand_count: int = 1,
     transposition_table: TranspositionTable | None = None,
     print_uci: bool = True,
 ):
@@ -54,12 +48,8 @@ def itdep(
                 args=(queue, b),
                 kwargs={
                     "depth": i,
-                    "rand_count": max(1, 2 * (5 - b.full_move)),
                     "transposition_table": transposition_table,
                     "alg_fn": alg_fn,
-                    # "eval_guess": (
-                    #     last_search.score if last_search is not None else eval_guess
-                    # ),
                 },
                 daemon=False,
             )
@@ -133,12 +123,12 @@ def itdep(
     else:
         last_search = None
         for i in range(max_depth + 1):
-            current_search = better_search(
+            current_search = search(
                 b,
                 depth=i,
                 alg_fn=alg_fn,
                 transposition_table=transposition_table,
-                move_guess=(last_search.move if last_search is not None else None),
+                last_search=last_search,
             )
 
             # if there is no move available
