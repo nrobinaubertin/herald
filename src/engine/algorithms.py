@@ -38,6 +38,8 @@ def negac(
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
 
+    children: int = 0
+
     min_node: Node = Node(
         depth=depth,
         value=min
@@ -48,10 +50,10 @@ def negac(
     )
     current_node: Node = min_node
 
-    # -50 is combined with the +/- 25 at the last evaluation as a safety
-    # mecanism to ensure equivalence with pure alphabeta
-    # TODO: tweak those values to evaluate less nodes
-    while min_node.value < max_node.value - 50:
+    # we seem to evaluate less node w/ this roughness value
+    ROUGHNESS: int = 1000
+
+    while min_node.value < max_node.value - ROUGHNESS:
         current_value = (min_node.value + max_node.value + 1) // 2
         current_node = alphabeta(
             b,
@@ -63,6 +65,7 @@ def negac(
             transposition_table,
             move_ordering_fn,
         )
+        children += current_node.children
         if current_node.value > current_value:
             min_node = current_node
         if current_node.value <= current_value:
@@ -73,27 +76,35 @@ def negac(
         depth,
         pv,
         eval_fn,
-        min_node.value - 25,
-        max_node.value + 25,
+        min_node.value - ROUGHNESS//2,
+        max_node.value + ROUGHNESS//2,
         transposition_table,
         move_ordering_fn,
     )
+    children += current_node.children
 
-    return current_node
+    return Node(
+        value=current_node.value,
+        depth=current_node.depth,
+        pv=current_node.pv,
+        full_move=current_node.full_move,
+        children=children,
+    )
 
 
 def aspiration_window(
     b: Board,
-    guess: int,
     depth: int,
     pv: deque[Move],
     eval_fn: Eval_fn,
+    min: int,
+    max: int,
     transposition_table: TranspositionTable | None = None,
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
 
-    lower = guess - 50
-    upper = guess + 50
+    lower = min
+    upper = max
     iteration = 0
 
     # count the number of children (direct and non direct)
@@ -124,9 +135,6 @@ def aspiration_window(
             continue
         break
 
-    if __debug__ and depth > 4 and transposition_table is not None:
-        print(transposition_table.stats())
-
     return Node(
         value=node.value,
         depth=node.depth,
@@ -149,7 +157,7 @@ def alphabeta(
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
 
-    assert(depth >= 0)
+    assert depth >= 0, depth
 
     if isinstance(transposition_table, TranspositionTable):
         # check if we find a hit in the transposition table
@@ -297,7 +305,7 @@ def minimax(
     move_ordering_fn: Move_ordering_fn | None = None,
 ) -> Node:
 
-    assert(depth >= 0)
+    assert depth >= 0, depth
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
