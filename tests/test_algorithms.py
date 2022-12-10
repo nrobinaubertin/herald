@@ -52,7 +52,7 @@ class TestAlgorithms(unittest.TestCase):
 
     # This test equivalence between raw alphabeta
     # and alphabeta with mvv_lva move ordering
-    def test_alphabeta_mvv_lva_mo(self):
+    def test_mvv_lva(self):
         depth = 4
         for fen in self.fens:
             alphabeta_result = alphabeta(
