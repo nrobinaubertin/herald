@@ -100,6 +100,7 @@ def itdep(
                             + f"pv {' '.join([to_uci(x) for x in last_search.pv])}"
                         )
 
+                    # bail out if the search tells us to stop
                     if current_search.stop_search:
                         process.terminate()
                         queue.close()
@@ -113,13 +114,14 @@ def itdep(
                         print(f"bestmove {to_uci(last_search.move)}")
                     return last_search
 
-                # bail out if we have something and no time anymore
-                if used_time >= movetime:
+                # bail out if we have no time anymore
+                if used_time + 1 >= movetime:
                     process.terminate()
                     queue.close()
                     if last_search is not None and print_uci:
                         print(f"bestmove {to_uci(last_search.move)}")
-                    return last_search
+                        return last_search
+                    return None
     else:
         last_search = None
         for i in range(max_depth + 1):
