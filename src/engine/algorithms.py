@@ -107,6 +107,18 @@ def alphabeta(
 
     assert depth >= 0, depth
 
+    # test repetitions by returning it as a draw
+    if board.get_pos(b) in b.positions_history:
+        return Node(
+            value=0,
+            depth=0,
+            full_move=b.full_move,
+            pv=pv,
+            lower=alpha,
+            upper=beta,
+            children=1,
+        )
+
     if isinstance(transposition_table, TranspositionTable):
         # check if we find a hit in the transposition table
         node = transposition_table.get(b, depth)
@@ -255,6 +267,16 @@ def minimax(
 ) -> Node:
 
     assert depth >= 0, depth
+
+    # test repetitions by returning it as a draw
+    if board.get_pos(b) in b.positions_history:
+        return Node(
+            value=0,
+            depth=0,
+            full_move=b.full_move,
+            pv=pv,
+            children=1,
+        )
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:

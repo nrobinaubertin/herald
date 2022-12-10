@@ -31,6 +31,8 @@ Board = namedtuple("Board", [
         "squares",
         # move history
         "moves_history",
+        # positions history to check for repetition
+        "positions_history",
         # color of the player whos turn it is
         "turn",
         # array reprensenting castling rights (index CASTLE + COLOR)
