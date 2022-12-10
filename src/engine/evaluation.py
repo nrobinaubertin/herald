@@ -12,8 +12,15 @@ PIECE_VALUE = {
     PIECE.BISHOP: 320,
     PIECE.ROOK: 479,
     PIECE.QUEEN: 929,
-    PIECE.KING: 60_000,
 }
+
+# The king has more value than all the other pieces combined
+PIECE_VALUE[PIECE.KING] = (
+    PIECE_VALUE[PIECE.QUEEN] * 9
+    + PIECE_VALUE[PIECE.KNIGHT] * 2
+    + PIECE_VALUE[PIECE.BISHOP] * 2
+    + PIECE_VALUE[PIECE.ROOK] * 2
+)
 
 PIECE_SQUARE_TABLE = {
     PIECE.PAWN: (

@@ -38,4 +38,4 @@ ASCII_REP: dict[int, str] = {
     (PIECE.KING * COLOR.BLACK): "k",
 }
 
-VALUE_MAX: int = 1_000_000
+VALUE_MAX: int = 12_000
