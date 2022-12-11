@@ -2,20 +2,23 @@
 
 import sys
 import multiprocessing
+import json
 import engine.board as board
 from engine.transposition_table import TranspositionTable
 from engine.evaluation import eval_pst
 from engine.data_structures import to_uci, Board
 from engine.iterative_deepening import itdep
+from engine.analysis import fen_analysis
 from engine.algorithms import minimax, alphabeta, negac
 from engine.time_management import target_movetime
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.15.5"
+VERSION = f"{NAME} 0.16.0"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 TRANSPOSITION_TABLE = {}
+OPENING_BOOK = {}
 
 ALGS = {
     "minimax": minimax,
@@ -35,6 +38,8 @@ def uci_parser(line: str) -> list[str]:
     global CURRENT_ALG
     global CURRENT_BOARD
     global TRANSPOSITION_TABLE
+    global CURRENT_PROCESS
+    global OPENING_BOOK
     tokens = line.strip().split()
 
     if not tokens:
@@ -113,6 +118,11 @@ def uci_parser(line: str) -> list[str]:
             "tt initialized",
         ]
 
+    if len(tokens) == 2 and tokens[0] == "load_book":
+        with open(tokens[1], "r") as output_file:
+            OPENING_BOOK = json.load(output_file)
+
+
     if len(tokens) == 1 and tokens[0] == "uci":
         return [
             f"{VERSION} by {AUTHOR}",
@@ -146,6 +156,30 @@ def uci_parser(line: str) -> list[str]:
         return [
             "readyok",
         ]
+
+    if len(tokens) > 1 and tokens[0] == "analysis":
+
+        input = tokens[1]
+        output = tokens[2]
+        depth = int(tokens[3])
+        branch_factor = int(tokens[4])
+
+        if CURRENT_PROCESS is not None:
+            CURRENT_PROCESS.terminate()
+
+        process = multiprocessing.Process(
+            target=fen_analysis,
+            args=(input, output),
+            kwargs={
+                "alg_fn": ALGS[CURRENT_ALG],
+                "depth": depth,
+                "branch_factor": branch_factor,
+                "transposition_table": TRANSPOSITION_TABLE,
+            },
+            daemon=False,
+        )
+        process.start()
+        CURRENT_PROCESS = process
 
     if len(tokens) > 1 and tokens[0] == "position":
         if tokens[1] == "startpos":
@@ -190,7 +224,6 @@ def uci_parser(line: str) -> list[str]:
         if tokens[1] == "depth":
             depth = int(tokens[2])
 
-        global CURRENT_PROCESS
         if CURRENT_PROCESS is not None:
             CURRENT_PROCESS.terminate()
 
@@ -209,6 +242,7 @@ def uci_parser(line: str) -> list[str]:
                     ),
                     "alg_fn": ALGS[CURRENT_ALG],
                     "transposition_table": TRANSPOSITION_TABLE,
+                    "opening_book": OPENING_BOOK,
                 },
                 daemon=False,
             )
@@ -220,6 +254,7 @@ def uci_parser(line: str) -> list[str]:
                     "max_depth": depth,
                     "alg_fn": ALGS[CURRENT_ALG],
                     "transposition_table": TRANSPOSITION_TABLE,
+                    "opening_book": OPENING_BOOK,
                 },
                 daemon=False,
             )

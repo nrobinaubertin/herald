@@ -1,10 +1,12 @@
 import time
 import multiprocessing
+from collections import deque
 from .search import search
-from .data_structures import to_uci, Search, Board
+from .data_structures import to_uci, Search, Board, Move
 from .algorithms import Alg_fn
 from .transposition_table import TranspositionTable
 from .constants import VALUE_MAX
+from . import board
 
 
 # wrapper around the search function to allow for multiprocess time management
@@ -33,9 +35,34 @@ def itdep(
     max_depth: int = 0,
     transposition_table: TranspositionTable | None = None,
     print_uci: bool = True,
+    opening_book: dict = {}
 ):
 
     if movetime != 0:
+
+        if board.to_fen(b) in opening_book:
+            move = opening_book[board.to_fen(b)]["moves"][0]["move"]
+            move = Move(*[
+                int(move[0]),
+                int(move[1]),
+                int(move[2]),
+                bool(move[3]),
+                bool(move[4]),
+                int(move[5]),
+                bool(move[6])
+            ])
+            if print_uci:
+                print(f"bestmove book {to_uci(move)}")
+            return Search(
+                move=move,
+                pv=deque([move]),
+                depth=0,
+                nodes=1,
+                score=0,
+                time=1,
+                best_node=None,
+            )
+
         start_time = time.time_ns()
 
         last_search: Search | None = None
