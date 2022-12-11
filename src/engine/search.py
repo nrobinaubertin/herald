@@ -42,8 +42,14 @@ def search(
             stop_search=True,
         )
 
-    alpha: int = -VALUE_MAX
-    beta: int = VALUE_MAX
+    # Assume that we are not in zugzwang and that we can find a move that improves the situation
+    if b.turn == COLOR.WHITE:
+        alpha: int = eval_simple(b)
+        beta: int = VALUE_MAX
+    else:
+        alpha: int = -VALUE_MAX
+        beta: int = eval_simple(b)
+
     children: int = 1
 
     possible_moves = sorted(
