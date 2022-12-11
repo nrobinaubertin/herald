@@ -1,5 +1,5 @@
 import collections
-from typing import Callable, Iterable
+from typing import Iterable, Hashable
 from array import array
 from . import evaluation
 from .constants import PIECE, COLOR, ASCII_REP, CASTLE
@@ -8,6 +8,17 @@ from .data_structures import Move, Board, to_normal_notation, to_square_notation
 
 def invturn(b: Board) -> COLOR:
     return COLOR.WHITE if b.turn == COLOR.BLACK else COLOR.BLACK
+
+
+# get position as a byte object for comparison purposes
+def get_pos(b: Board) -> Hashable:
+    pos = array("b")
+    pos.extend(b.squares)
+    pos.append(b.turn)
+    pos.extend(b.castling_rights)
+    pos.append(b.en_passant)
+    pos.append(b.king_en_passant)
+    return pos.tobytes()
 
 
 def to_fen(b: Board) -> str:
@@ -143,6 +154,7 @@ def from_fen(fen: str) -> Board:
     b = Board(
         squares=squares,
         moves_history=collections.deque(),
+        positions_history=set(),
         turn=COLOR.WHITE if turn == "w" else COLOR.BLACK,
         castling_rights=cr,
         en_passant=(to_square_notation(en_passant) if en_passant != "-" else -1),
@@ -163,10 +175,15 @@ def push(b: Board, move: Move) -> Board:
     king_en_passant = b.king_en_passant
     castling_rights = array('b', b.castling_rights)
     moves_history = b.moves_history.copy()
+    half_move = b.half_move
     assert b.squares[move.start] != PIECE.EMPTY, "Moving piece cannot be empty"
     assert abs(b.squares[move.start]) != PIECE.INVALID, "Moving piece cannot be invalid"
 
     piece_start = b.squares[move.start]
+
+    # reset half_move count when condition is met
+    if move.is_capture or abs(piece_start) == PIECE.PAWN:
+        half_move = 0
 
     # do the move
     squares[move.start] = PIECE.EMPTY
@@ -260,11 +277,16 @@ def push(b: Board, move: Move) -> Board:
     return Board(
         squares=squares,
         moves_history=moves_history,
+        positions_history=(
+            b.positions_history | {get_pos(b)}
+            if half_move == 0
+            else {get_pos(b)}
+        ),
         turn=invturn(b),
         castling_rights=castling_rights,
         eval=eval,
         en_passant=en_passant,
-        half_move=b.half_move + 1,
+        half_move=half_move + 1,
         full_move=b.full_move + 1,
         king_en_passant=king_en_passant,
     )
