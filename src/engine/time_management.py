@@ -28,4 +28,4 @@ def target_movetime(
             MAX_THINKING_TIME,
         ) // 1000
 
-    return time
+    return time - 1
