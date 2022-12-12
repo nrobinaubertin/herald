@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import multiprocessing
 import json
@@ -13,7 +14,7 @@ from engine.algorithms import minimax, alphabeta, negac
 from engine.time_management import target_movetime
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.16.2"
+VERSION = f"{NAME} 0.17.0"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
@@ -25,7 +26,13 @@ ALGS = {
     "alphabeta": alphabeta,
     "negac": negac,
 }
-CURRENT_ALG = "negac"
+CURRENT_ALG = "alphabeta"
+
+
+# load opening book at default location
+if os.access("opening_book", os.R_OK):
+    with open("opening_book", "r") as output_file:
+        OPENING_BOOK = json.load(output_file)
 
 
 def stop_calculating() -> None:

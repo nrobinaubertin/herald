@@ -52,7 +52,7 @@ def itdep(
                 bool(move[6])
             ])
             if print_uci:
-                print(f"bestmove book {to_uci(move)}")
+                print(f"bestmove {to_uci(move)}")
             return Search(
                 move=move,
                 pv=deque([move]),
@@ -66,7 +66,7 @@ def itdep(
         start_time = time.time_ns()
 
         last_search: Search | None = None
-        for i in range(10 if max_depth == 0 else max_depth):
+        for i in range(1, 10 if max_depth == 0 else max_depth):
 
             # we create a queue to be able to stop the search when there's no time left
             queue: multiprocessing.Queue[Search | None] = multiprocessing.Queue()
@@ -151,7 +151,7 @@ def itdep(
                     return None
     else:
         last_search = None
-        for i in range(max_depth + 1):
+        for i in range(1, max_depth + 1):
             current_search = search(
                 b,
                 depth=i,

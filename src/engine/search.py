@@ -26,6 +26,7 @@ def search(
 
     possible_moves = [x for x in board.legal_moves(b)]
 
+    # return None if there is no possible move
     if len(possible_moves) == 0:
         return None
 
@@ -42,6 +43,19 @@ def search(
             stop_search=True,
         )
 
+    # return immediatly if there is a king capture
+    for move in possible_moves:
+        if move.is_king_capture:
+            return Search(
+                move=move,
+                pv=deque([move]),
+                depth=1,
+                nodes=1,
+                score=VALUE_MAX * b.turn,
+                time=(time.time_ns() - start_time),
+                best_node=best,
+            )
+
     # Assume that we are not in zugzwang and that we can find a move that improves the situation
     if b.turn == COLOR.WHITE:
         alpha: int = eval_simple(b)
@@ -52,95 +66,45 @@ def search(
 
     children: int = 1
 
-    possible_moves = sorted(
-        possible_moves,
-        key=lambda x: (
-            int(x.is_capture)
-            * (
-                1000
-                + PIECE_VALUE[abs(b.squares[x.end])] * 1000
-                - PIECE_VALUE[abs(b.squares[x.start])]
-            ) * b.turn
-        ),
-        reverse=b.turn == COLOR.WHITE
-    )
+    # we seem to evaluate less node w/ this roughness value
+    ROUGHNESS: int = 1000
 
-    # move move_guess to the first place
-    if isinstance(last_search, Search):
-        for i, m in enumerate(possible_moves):
-            if (
-                m.start == last_search.move.start
-                and m.end == last_search.move.end
-            ):
-                possible_moves = [possible_moves[i]] + \
-                    possible_moves[:i] + possible_moves[i:]
-                break
-
-    for move in possible_moves:
-
-        # return immediatly if this is a king capture
-        if move.is_king_capture:
-            return Search(
-                move=move,
-                pv=deque([move]),
-                depth=1,
-                nodes=children,
-                score=VALUE_MAX * b.turn,
-                time=(time.time_ns() - start_time),
-                best_node=best,
-            )
-
-        node = alg_fn(
-            board.push(b, move),
+    while alpha < beta - ROUGHNESS:
+        current_value = (alpha + beta + 1) // 2
+        current_node = alg_fn(
+            b,
             depth,
-            deque([move]),
+            deque([]),
             eval_simple,
-            alpha,
-            beta,
+            current_value,
+            current_value + 1,
             transposition_table,
             move_ordering.mvv_lva,
         )
+        children += current_node.children
+        if current_node.value > current_value:
+            alpha = current_node.value
+        if current_node.value <= current_value:
+            beta = current_node.value
 
-        children += node.children
-
-        if b.turn == COLOR.WHITE:
-            if node.value >= best.value:
-                best = Node(
-                    value=node.value,
-                    depth=depth,
-                    full_move=node.full_move,
-                    pv=node.pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=children,
-                )
-            alpha = max(alpha, node.value)
-            if node.value >= beta:
-                break
-        else:
-            if node.value <= best.value:
-                best = Node(
-                    value=node.value,
-                    depth=depth,
-                    full_move=node.full_move,
-                    pv=node.pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=children,
-                )
-            beta = min(beta, node.value)
-            if node.value <= alpha:
-                break
-
-    if best is None:
-        return None
+    current_node = alg_fn(
+        b,
+        depth,
+        deque([]),
+        eval_simple,
+        alpha - ROUGHNESS//2,
+        beta + ROUGHNESS//2,
+        transposition_table,
+        move_ordering.mvv_lva,
+    )
+    children += current_node.children
 
     return Search(
-        move=best.pv[0],
-        pv=best.pv,
-        depth=depth,
+        move=current_node.pv[0],
+        pv=current_node.pv,
+        depth=current_node.depth,
         nodes=children,
-        score=best.value,
+        score=current_node.value,
         time=(time.time_ns() - start_time),
-        best_node=best,
+        best_node=current_node,
     )
