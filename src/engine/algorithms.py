@@ -5,8 +5,8 @@ Search alogrithms
 from collections import deque
 from .constants import COLOR, VALUE_MAX
 from . import board
-from .data_structures import Node, Board, Move
-from .move_ordering import Move_ordering_fn
+from .data_structures import Node, Board, Move, MoveType
+from .move_ordering import Move_ordering_fn, no_ordering
 from .transposition_table import TranspositionTable
 from .evaluation import Eval_fn
 from typing import Callable
@@ -21,7 +21,8 @@ Alg_fn = Callable[
         int | None,
         int | None,
         TranspositionTable | None,
-        Move_ordering_fn | None,
+        Move_ordering_fn,
+        MoveType,
     ],
     Node
 ]
@@ -37,7 +38,8 @@ def alphabeta(
     alpha: int,
     beta: int,
     transposition_table: TranspositionTable | None = None,
-    move_ordering_fn: Move_ordering_fn | None = None,
+    move_ordering_fn: Move_ordering_fn = no_ordering,
+    move_type: MoveType = MoveType.PSEUDO_LEGAL,
 ) -> Node:
 
     assert depth >= 0, depth
@@ -110,11 +112,7 @@ def alphabeta(
         children=children,
     )
 
-    for move in (
-        move_ordering_fn(b, transposition_table)
-        if move_ordering_fn is not None
-        else board.pseudo_legal_moves(b)
-    ):
+    for move in move_ordering_fn(b, transposition_table, move_type):
         curr_pv = deque(pv)
         curr_pv.append(move)
 
@@ -139,7 +137,8 @@ def alphabeta(
             alpha,
             beta,
             transposition_table,
-            move_ordering_fn
+            move_ordering_fn,
+            MoveType.PSEUDO_LEGAL,
         )
 
         children += node.children
@@ -198,7 +197,8 @@ def minimax(
     _1: int | None = None,
     _2: int | None = None,
     transposition_table: TranspositionTable | None = None,
-    move_ordering_fn: Move_ordering_fn | None = None,
+    move_ordering_fn: Move_ordering_fn = no_ordering,
+    move_type: MoveType = MoveType.PSEUDO_LEGAL,
 ) -> Node:
 
     assert depth >= 0, depth
@@ -233,11 +233,7 @@ def minimax(
     # for info purposes
     children = 1
 
-    for move in (
-        move_ordering_fn(b, transposition_table)
-        if move_ordering_fn is not None
-        else board.pseudo_legal_moves(b)
-    ):
+    for move in move_ordering_fn(b, transposition_table, move_type):
         curr_board = board.push(b, move)
         curr_pv = deque(pv)
         curr_pv.append(move)

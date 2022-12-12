@@ -1,6 +1,15 @@
 from collections import deque, namedtuple
 from array import array
 from .constants import PIECE, VALUE_MAX
+from enum import IntEnum
+
+
+class MoveType(IntEnum):
+    INVALID = 0
+    PSEUDO_LEGAL = 1
+    LEGAL = 2
+    QUIESCENT = 3
+
 
 Move = namedtuple("Move", [
        "start",

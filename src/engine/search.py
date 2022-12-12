@@ -4,7 +4,7 @@ from .constants import COLOR, VALUE_MAX
 from . import board
 from .algorithms import Alg_fn
 from .evaluation import eval_simple
-from .data_structures import Node, Search, Board
+from .data_structures import Node, Search, Board, MoveType
 from .transposition_table import TranspositionTable
 from . import move_ordering
 
@@ -80,6 +80,7 @@ def search(
             current_value + 1,
             transposition_table,
             move_ordering.mvv_lva,
+            MoveType.LEGAL,
         )
         children += node.children
         if node.value > current_value:
@@ -96,6 +97,7 @@ def search(
         beta + ROUGHNESS//2,
         transposition_table,
         move_ordering.mvv_lva,
+        MoveType.LEGAL,
     )
 
     return Search(
