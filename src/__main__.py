@@ -10,11 +10,11 @@ from engine.evaluation import eval_pst
 from engine.data_structures import to_uci, Board
 from engine.iterative_deepening import itdep
 from engine.analysis import fen_analysis
-from engine.algorithms import minimax, alphabeta, negac
+from engine.algorithms import minimax, alphabeta
 from engine.time_management import target_movetime
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.17.0"
+VERSION = f"{NAME} 0.17.1"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
@@ -24,7 +24,6 @@ OPENING_BOOK = {}
 ALGS = {
     "minimax": minimax,
     "alphabeta": alphabeta,
-    "negac": negac,
 }
 CURRENT_ALG = "alphabeta"
 
@@ -128,7 +127,6 @@ def uci_parser(line: str) -> list[str]:
     if len(tokens) == 2 and tokens[0] == "load_book":
         with open(tokens[1], "r") as output_file:
             OPENING_BOOK = json.load(output_file)
-
 
     if len(tokens) == 1 and tokens[0] == "uci":
         return [

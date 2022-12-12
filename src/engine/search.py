@@ -3,7 +3,7 @@ import time
 from .constants import COLOR, VALUE_MAX
 from . import board
 from .algorithms import Alg_fn
-from .evaluation import eval_simple, PIECE_VALUE
+from .evaluation import eval_simple
 from .data_structures import Node, Search, Board
 from .transposition_table import TranspositionTable
 from . import move_ordering
@@ -71,7 +71,7 @@ def search(
 
     while alpha < beta - ROUGHNESS:
         current_value = (alpha + beta + 1) // 2
-        current_node = alg_fn(
+        node = alg_fn(
             b,
             depth,
             deque([]),
@@ -81,13 +81,13 @@ def search(
             transposition_table,
             move_ordering.mvv_lva,
         )
-        children += current_node.children
-        if current_node.value > current_value:
-            alpha = current_node.value
-        if current_node.value <= current_value:
-            beta = current_node.value
+        children += node.children
+        if node.value > current_value:
+            alpha = node.value
+        if node.value <= current_value:
+            beta = node.value
 
-    current_node = alg_fn(
+    node = alg_fn(
         b,
         depth,
         deque([]),
@@ -97,14 +97,13 @@ def search(
         transposition_table,
         move_ordering.mvv_lva,
     )
-    children += current_node.children
 
     return Search(
-        move=current_node.pv[0],
-        pv=current_node.pv,
-        depth=current_node.depth,
+        move=node.pv[0],
+        pv=node.pv,
+        depth=node.depth,
         nodes=children,
-        score=current_node.value,
+        score=node.value,
         time=(time.time_ns() - start_time),
-        best_node=current_node,
+        best_node=node,
     )
