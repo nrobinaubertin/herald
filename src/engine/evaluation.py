@@ -1,6 +1,6 @@
 from array import array
 from . import board
-from .constants import PIECE, COLOR, VALUE_MAX
+from .constants import PIECE, COLOR
 from .data_structures import Move, Board
 from .transposition_table import TranspositionTable
 from typing import Callable
@@ -175,10 +175,7 @@ def eval_pst_inc_post(squares, move: Move) -> int:
 Eval_fn = Callable[
     [
         Board,
-        int | None,
-        int | None,
         TranspositionTable | None,
-        int | None
     ],
     int
 ]
@@ -202,55 +199,6 @@ def eval_pst(b: Board) -> int:
 
 def eval_simple(
     b: Board,
-    alpha: int = -VALUE_MAX,
-    beta: int = VALUE_MAX,
     transposition_table: TranspositionTable | None = None,
-    depth: int = 0,
 ) -> int:
     return sum(b.eval, start=1)
-
-
-def eval_quiescent(
-    b: Board,
-    alpha: int,
-    beta: int,
-    transposition_table: TranspositionTable | None = None,
-    depth: int = 0,
-) -> int:
-
-    if transposition_table is not None:
-        # check if we find a hit in the transposition table
-        node = transposition_table.get(b, 0)
-        if node is not None:
-            return node.value
-
-    stand_pat: int = sum(b.eval, start=1)
-    if stand_pat >= beta:
-        return beta
-    if alpha < stand_pat:
-        alpha = stand_pat
-    # print(depth, stand_pat, alpha, beta)
-
-    for smart_move in board.smart_moves(b, None, True):
-
-        # return immediatly if this is a king capture
-        if smart_move.move.is_king_capture:
-            return VALUE_MAX * b.turn
-
-        score = eval_quiescent(
-            smart_move.board,
-            alpha,
-            beta,
-            transposition_table,
-            depth + 1,
-        )
-
-        if b.turn == COLOR.WHITE:
-            alpha = max(alpha, score)
-            if score >= beta:
-                break
-        else:
-            beta = min(beta, score)
-            if score <= alpha:
-                break
-    return alpha

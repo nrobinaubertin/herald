@@ -81,11 +81,12 @@ def search(
             transposition_table,
             move_ordering.mvv_lva,
             MoveType.LEGAL,
+            {},
         )
         children += node.children
         if node.value > current_value:
             alpha = node.value
-        if node.value <= current_value:
+        else:
             beta = node.value
 
     node = alg_fn(
@@ -98,6 +99,7 @@ def search(
         transposition_table,
         move_ordering.mvv_lva,
         MoveType.LEGAL,
+        {},
     )
 
     return Search(
