@@ -18,7 +18,7 @@ Move_ordering_fn = Callable[
 def mvv_lva(
     b: Board,
     tt: TranspositionTable | None = None,
-    move_type=MoveType.PSEUDO_LEGAL,
+    move_type: MoveType = MoveType.PSEUDO_LEGAL,
 ) -> Iterable[Move]:
 
     moves = []
@@ -28,6 +28,8 @@ def mvv_lva(
         moves: Iterable[Move] = board.legal_moves(b)
 
     def eval(b, m):
+        if m.is_null_move:
+            return 10000
         return (
             int(m.is_capture)
             * (

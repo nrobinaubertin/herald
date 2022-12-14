@@ -176,6 +176,23 @@ def push(b: Board, move: Move) -> Board:
     castling_rights = array('b', b.castling_rights)
     moves_history = b.moves_history.copy()
     half_move = b.half_move
+
+    moves_history.append(move)
+
+    if move.is_null_move:
+        return Board(
+            squares=squares,
+            moves_history=moves_history,
+            positions_history=b.positions_history,
+            turn=invturn(b),
+            castling_rights=castling_rights,
+            eval=b.eval,
+            en_passant=-1,
+            half_move=half_move + 1,
+            full_move=b.full_move + 1,
+            king_en_passant=-1,
+        )
+
     assert b.squares[move.start] != PIECE.EMPTY, "Moving piece cannot be empty"
     assert abs(b.squares[move.start]) != PIECE.INVALID, "Moving piece cannot be invalid"
 
@@ -260,8 +277,6 @@ def push(b: Board, move: Move) -> Board:
                 or move.start == 21
             ):
                 castling_rights[CASTLE.QUEEN_SIDE + COLOR.BLACK] = 0
-
-    moves_history.append(move)
 
     # evaluation
     eval = array('l')
