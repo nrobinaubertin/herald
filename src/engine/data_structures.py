@@ -5,10 +5,12 @@ from enum import IntEnum
 
 
 class MoveType(IntEnum):
-    INVALID = 0
-    PSEUDO_LEGAL = 1
-    LEGAL = 2
-    QUIESCENT = 3
+    UNKNOWN = 0
+    INVALID = 1
+    PSEUDO_LEGAL = 2
+    LEGAL = 3
+    QUIESCENT = 4
+    NULL = 5
 
 
 Move = namedtuple("Move", [

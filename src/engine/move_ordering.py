@@ -1,17 +1,16 @@
 from .constants import COLOR, PIECE
-from . import board
-from typing import Callable, Iterable
-from .data_structures import Board, Move, MoveType
+from typing import Callable, Iterable, Optional, List
+from .data_structures import Board, Move
 from .transposition_table import TranspositionTable
 from .evaluation import PIECE_VALUE
 
 Move_ordering_fn = Callable[
     [
         Board,
-        TranspositionTable | None,
-        MoveType,
+        Iterable[Move],
+        Optional[TranspositionTable],
     ],
-    list[Move]
+    List[Move]
 ]
 
 
@@ -34,20 +33,9 @@ def is_bad_capture(b: Board, move: Move) -> bool:
 
 def mvv_lva(
     b: Board,
+    moves: Iterable[Move],
     tt: TranspositionTable | None = None,
-    move_type: MoveType = MoveType.PSEUDO_LEGAL,
-) -> Iterable[Move]:
-
-    moves: Iterable[Move] = []
-    if move_type == MoveType.QUIESCENT:
-        moves = [
-            x for x in board.pseudo_legal_moves(b, quiescent=True)
-            if not is_bad_capture(b, x)
-        ]
-    if move_type == MoveType.PSEUDO_LEGAL:
-        moves = board.pseudo_legal_moves(b)
-    if move_type == MoveType.LEGAL:
-        moves = board.legal_moves(b)
+) -> List[Move]:
 
     def eval(b, m):
         if m.is_null_move:
@@ -72,19 +60,7 @@ def mvv_lva(
 
 def no_ordering(
     b: Board,
+    moves: Iterable[Move],
     tt: TranspositionTable | None = None,
-    move_type=MoveType.PSEUDO_LEGAL,
-) -> Iterable[Move]:
-
-    moves: Iterable[Move] = []
-    if move_type == MoveType.QUIESCENT:
-        moves = [
-            x for x in board.pseudo_legal_moves(b, quiescent=True)
-            if not is_bad_capture(b, x)
-        ]
-    if move_type == MoveType.PSEUDO_LEGAL:
-        moves = board.pseudo_legal_moves(b)
-    if move_type == MoveType.LEGAL:
-        moves = board.legal_moves(b)
-
+) -> List[Move]:
     return moves

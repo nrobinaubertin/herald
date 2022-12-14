@@ -5,12 +5,12 @@ Search alogrithms
 from collections import deque
 from .constants import COLOR, VALUE_MAX
 from . import board
-from .data_structures import Node, Board, Move, MoveType, to_uci
+from .data_structures import Node, Board, Move, MoveType
 from .move_ordering import Move_ordering_fn, no_ordering
 from .transposition_table import TranspositionTable
 from .evaluation import Eval_fn
 from .quiescence import quiescence
-from typing import Callable
+from typing import Callable, Iterable
 
 
 Alg_fn = Callable[
@@ -128,7 +128,12 @@ def alphabeta(
 
     best = None
 
-    for move in move_ordering_fn(b, transposition_table, move_type):
+    moves: Iterable[Move] = []
+    if move_type == MoveType.PSEUDO_LEGAL:
+        moves = board.pseudo_legal_moves(b)
+    if move_type == MoveType.LEGAL:
+        moves = board.legal_moves(b)
+    for move in move_ordering_fn(b, moves, transposition_table):
         curr_pv = deque(pv)
         curr_pv.append(move)
 
@@ -264,7 +269,12 @@ def minimax(
     # for info purposes
     children = 1
 
-    for move in move_ordering_fn(b, transposition_table, move_type):
+    moves: Iterable[Move] = []
+    if move_type == MoveType.PSEUDO_LEGAL:
+        moves = board.pseudo_legal_moves(b)
+    if move_type == MoveType.LEGAL:
+        moves = board.legal_moves(b)
+    for move in move_ordering_fn(b, moves, transposition_table):
         curr_board = board.push(b, move)
         curr_pv = deque(pv)
         curr_pv.append(move)

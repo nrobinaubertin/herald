@@ -14,11 +14,11 @@ from engine.algorithms import minimax, alphabeta
 from engine.time_management import target_movetime
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.18.0"
+VERSION = f"{NAME} 0.18.1"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
-TRANSPOSITION_TABLE = {}
+TRANSPOSITION_TABLE: TranspositionTable | None = TranspositionTable({})
 OPENING_BOOK = {}
 
 ALGS = {
@@ -76,15 +76,15 @@ def uci_parser(line: str) -> list[str]:
                 return 1
 
             if depth == 1:
-                return len(list(board.moves(b)))
+                return len(list(board.legal_moves(b)))
 
             nodes = 0
-            for move in board.moves(b):
+            for move in board.legal_moves(b):
                 curr_board = board.push(b, move)
                 nodes += execute(curr_board, depth - 1)
 
             return nodes
-        for move in board.moves(CURRENT_BOARD):
+        for move in board.legal_moves(CURRENT_BOARD):
             b = board.push(CURRENT_BOARD, move)
             nodes = execute(b, int(tokens[1]) - 1)
             to_display.append(f"{to_uci(move)}: {nodes}")
@@ -206,7 +206,7 @@ def uci_parser(line: str) -> list[str]:
 
     if len(tokens) > 1 and tokens[0] == "go":
 
-        depth = None
+        depth = 0
         movetime = 0
         wtime = 0
         btime = 0
@@ -232,7 +232,7 @@ def uci_parser(line: str) -> list[str]:
         if CURRENT_PROCESS is not None:
             CURRENT_PROCESS.terminate()
 
-        if depth is None:
+        if depth == 0:
             process = multiprocessing.Process(
                 target=itdep,
                 args=(CURRENT_BOARD,),
