@@ -1,11 +1,38 @@
 from collections import deque
-from .constants import COLOR, VALUE_MAX
+from .constants import COLOR, VALUE_MAX, PIECE
 from . import board
 from .data_structures import Node, Board, Move, MoveType, to_uci
 from .move_ordering import Move_ordering_fn, no_ordering
 from .transposition_table import TranspositionTable
-from .evaluation import Eval_fn
-from typing import Callable
+from .evaluation import Eval_fn, PIECE_VALUE
+from typing import Iterable
+
+
+def is_bad_capture(b: Board, move: Move) -> bool:
+
+    # a non-capture move is not a bad capture
+    if not move.is_capture:
+        return False
+
+    piece_start = b.squares[move.start]
+
+    if abs(piece_start) == PIECE.PAWN or abs(piece_start) == PIECE.KING:
+        return False
+
+    # captured piece is worth more than capturing piece
+    if PIECE_VALUE[abs(b.squares[move.end])] >= PIECE_VALUE[abs(b.squares[move.start])] - 50:
+        return False
+
+    # if the piece is defended by a pawn, then it's a bad capture
+    for depl in [9, 11] if b.turn == COLOR.WHITE else [-9, -11]:
+        if (
+            abs(b.squares[move.start + depl]) == PIECE.PAWN
+            and b.squares[move.start + depl] * b.turn < 0
+        ):
+            return True
+
+    # if we don't know, we have to try the move (we can't say that it's bad)
+    return False
 
 
 def quiescence(
@@ -17,28 +44,11 @@ def quiescence(
     beta: int,
     transposition_table: TranspositionTable | None = None,
     move_ordering_fn: Move_ordering_fn = no_ordering,
-    move_type: MoveType = MoveType.PSEUDO_LEGAL,
 ) -> Node:
     stand_pat: int = eval_fn(b, transposition_table)
 
-    # if we are already in a quiescent search,
-    # that means that we have hit the quiescent depth limit
-    if move_type == MoveType.QUIESCENT:
-        # print(f"{','.join([to_uci(x) for x in pv])}")
-        return Node(
-            value=stand_pat,
-            depth=0,
-            full_move=b.full_move,
-            pv=pv,
-            lower=alpha,
-            upper=beta,
-            children=1,
-        )
-
-    value = stand_pat
-
     if b.turn == COLOR.WHITE:
-        if value >= beta:
+        if stand_pat >= beta:
             return Node(
                 value=beta,
                 depth=0,
@@ -48,9 +58,9 @@ def quiescence(
                 upper=beta,
                 children=1,
             )
-        alpha = max(alpha, value)
+        alpha = max(alpha, stand_pat)
     else:
-        if value <= alpha:
+        if stand_pat <= alpha:
             return Node(
                 value=alpha,
                 depth=0,
@@ -60,18 +70,17 @@ def quiescence(
                 upper=beta,
                 children=1,
             )
-        beta = min(beta, value)
+        beta = min(beta, stand_pat)
 
     node = _search(
         b,
         depth,
         pv,
         eval_fn,
-        alpha,
-        beta,
+        -VALUE_MAX,
+        VALUE_MAX,
         transposition_table,
         move_ordering_fn,
-        MoveType.QUIESCENT,
     )
 
     return Node(
@@ -94,37 +103,18 @@ def _search(
     beta: int,
     transposition_table: TranspositionTable | None = None,
     move_ordering_fn: Move_ordering_fn = no_ordering,
-    move_type: MoveType = MoveType.PSEUDO_LEGAL,
 ) -> Node:
 
     assert depth >= 0, depth
 
-    if board.to_fen(b) == "r3k2r/pbpp2pp/3bpn2/2P5/3P4/4P2q/PP3PP1/RN1Q1RK1 w kq - 0 14":
-        breakpoint()
-
-    # test repetitions by returning it as a draw
-    if move_type != MoveType.QUIESCENT and board.get_pos(b) in b.positions_history:
-        return Node(
-            value=0,
-            depth=0,
-            full_move=b.full_move,
-            pv=pv,
-            lower=alpha,
-            upper=beta,
-            children=1,
-        )
-
-    # test repetitions of null move in quiescence search
+    # test null move in quiescence search
     if (
-        move_type == MoveType.QUIESCENT
-        and (
-            b.moves_history[-1].is_null_move
-            and b.moves_history[-2].is_null_move
-        )
+        b.moves_history[-1].is_null
     ):
+        value = eval_fn(b, transposition_table)
         return Node(
-            value=eval_fn(b, transposition_table),
-            depth=0,
+            value=value,
+            depth=depth,
             full_move=b.full_move,
             pv=pv,
             lower=alpha,
@@ -164,71 +154,15 @@ def _search(
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
-
-        stand_pat: int = eval_fn(b, transposition_table)
-
-        # if we are already in a quiescent search,
-        # that means that we have hit the quiescent depth limit
-        if move_type == MoveType.QUIESCENT:
-            # print(f"{','.join([to_uci(x) for x in pv])}")
-            return Node(
-                value=stand_pat,
-                depth=0,
-                full_move=b.full_move,
-                pv=pv,
-                lower=alpha,
-                upper=beta,
-                children=1,
-            )
-
-        value = stand_pat
-
-        if b.turn == COLOR.WHITE:
-            if value >= beta:
-                return Node(
-                    value=beta,
-                    depth=0,
-                    full_move=b.full_move,
-                    pv=pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=1,
-                )
-            alpha = max(alpha, value)
-        else:
-            if value <= alpha:
-                return Node(
-                    value=alpha,
-                    depth=0,
-                    full_move=b.full_move,
-                    pv=pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=1,
-                )
-            beta = min(beta, value)
-
-        QUIESCENT_DEPTH: int = 20
-        node = _search(
-            b,
-            QUIESCENT_DEPTH,
-            pv,
-            eval_fn,
-            alpha,
-            beta,
-            transposition_table,
-            move_ordering_fn,
-            MoveType.QUIESCENT,
-        )
-
+        value = eval_fn(b, transposition_table)
         return Node(
-            value=node.value,
+            value=value,
             depth=0,
             full_move=b.full_move,
-            pv=node.pv,
+            pv=pv,
             lower=alpha,
             upper=beta,
-            children=node.children,
+            children=1,
         )
 
     # count the number of children (direct and non direct)
@@ -237,10 +171,8 @@ def _search(
 
     best = None
 
-    # if len(move_ordering_fn(b, transposition_table, move_type)) == 0:
-    #     print(board.to_fen(b))
-
-    for move in move_ordering_fn(b, transposition_table, move_type):
+    moves: Iterable[Move] = [x for x in board.pseudo_legal_moves(b, True) if not is_bad_capture(b, x)]
+    for move in move_ordering_fn(b, moves, transposition_table):
         curr_pv = deque(pv)
         curr_pv.append(move)
 
@@ -266,7 +198,6 @@ def _search(
             beta,
             transposition_table,
             move_ordering_fn,
-            MoveType.PSEUDO_LEGAL if move_type == MoveType.LEGAL else move_type,
         )
 
         children += node.children
@@ -302,7 +233,7 @@ def _search(
 
     if isinstance(transposition_table, TranspositionTable):
         # Save the resulting best node in the transposition table
-        if best is not None and best.depth > 0 and move_type != MoveType.QUIESCENT:
+        if best is not None and best.depth > 0:
             transposition_table.add(b, best)
 
     if best is not None:
@@ -314,7 +245,6 @@ def _search(
             children=children,
         )
     else:
-        # breakpoint()
         # no "best" found
         node = Node(
             depth=depth,

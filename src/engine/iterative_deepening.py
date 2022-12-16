@@ -16,12 +16,14 @@ def search_wrapper(
     depth: int,
     alg_fn: Alg_fn,
     transposition_table: TranspositionTable | None = None,
+    qs_tt: TranspositionTable | None = None,
 
 ) -> None:
     best = search(
         b,
         depth=depth,
         transposition_table=transposition_table,
+        qs_tt=transposition_table,
         alg_fn=alg_fn,
     )
     queue.put_nowait(best)
@@ -34,6 +36,7 @@ def itdep(
     movetime: int = 0,
     max_depth: int = 0,
     transposition_table: TranspositionTable | None = None,
+    qs_tt: TranspositionTable | None = None,
     print_uci: bool = True,
     opening_book: dict = {}
 ):
@@ -76,6 +79,7 @@ def itdep(
                 kwargs={
                     "depth": i,
                     "transposition_table": transposition_table,
+                    "qs_tt": qs_tt,
                     "alg_fn": alg_fn,
                 },
                 daemon=False,
@@ -157,6 +161,7 @@ def itdep(
                 depth=i,
                 alg_fn=alg_fn,
                 transposition_table=transposition_table,
+                qs_tt=qs_tt,
                 last_search=last_search,
             )
 

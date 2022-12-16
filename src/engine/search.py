@@ -14,6 +14,7 @@ def search(
     depth: int,
     alg_fn: Alg_fn,
     transposition_table: TranspositionTable | None = None,
+    qs_tt: TranspositionTable | None = None,
     last_search: Search | None = None,
 ) -> Search | None:
 
@@ -56,57 +57,77 @@ def search(
                 best_node=best,
             )
 
-    # Assume that we are not in zugzwang and that we can find a move that improves the situation
-    if b.turn == COLOR.WHITE:
-        alpha: int = eval_simple(b)
-        beta: int = VALUE_MAX
-    else:
-        alpha: int = -VALUE_MAX
-        beta: int = eval_simple(b)
+    alpha: int = -VALUE_MAX
+    beta: int = VALUE_MAX
+
+    # # Assume that we are not in zugzwang and that we can find a move that improves the situation
+    # if b.turn == COLOR.WHITE:
+    #     alpha = eval_simple(b)
+    # else:
+    #     beta = eval_simple(b)
 
     children: int = 1
 
-    # we seem to evaluate less node w/ this roughness value
-    ROUGHNESS: int = 1000
+    options = {
+        "quiescence_search": True,
+        "quiescence_depth": 13,
+    }
 
-    while alpha < beta - ROUGHNESS:
-        current_value = (alpha + beta + 1) // 2
-        node = alg_fn(
-            b,
-            depth,
-            deque([]),
-            eval_simple,
-            current_value,
-            current_value + 1,
-            transposition_table,
-            move_ordering.mvv_lva,
-            MoveType.LEGAL,
-            {},
-        )
-        children += node.children
-        if node.value > current_value:
-            alpha = node.value
-        else:
-            beta = node.value
+    # # we seem to evaluate less node w/ this roughness value
+    # ROUGHNESS: int = 1000
+
+    # while alpha < beta - ROUGHNESS:
+    #     current_value = (alpha + beta + 1) // 2
+    #     node = alg_fn(
+    #         b,
+    #         depth,
+    #         deque([]),
+    #         eval_simple,
+    #         current_value,
+    #         current_value + 1,
+    #         transposition_table,
+    #         move_ordering.mvv_lva,
+    #         MoveType.LEGAL,
+    #         options,
+    #     )
+    #     children += node.children
+    #     if node.value > current_value:
+    #         alpha = node.value
+    #     else:
+    #         beta = node.value
+
+    # node = alg_fn(
+    #     b,
+    #     depth,
+    #     deque([]),
+    #     eval_simple,
+    #     alpha - ROUGHNESS//2,
+    #     beta + ROUGHNESS//2,
+    #     transposition_table,
+    #     move_ordering.mvv_lva,
+    #     MoveType.LEGAL,
+    #     options,
+    # )
 
     node = alg_fn(
         b,
         depth,
         deque([]),
         eval_simple,
-        alpha - ROUGHNESS//2,
-        beta + ROUGHNESS//2,
+        alpha,
+        beta,
         transposition_table,
+        qs_tt,
         move_ordering.mvv_lva,
         MoveType.LEGAL,
-        {},
+        options,
     )
 
     return Search(
         move=node.pv[0],
         pv=node.pv,
         depth=node.depth,
-        nodes=children,
+        nodes=node.children,
         score=node.value,
         time=(time.time_ns() - start_time),
         best_node=node,

@@ -21,9 +21,10 @@ Move = namedtuple("Move", [
        "is_castle",
        "en_passant",
        "is_king_capture",
-       "is_null_move",
+       "is_null",
+       "is_quiescent",
     ],
-    defaults=[0, False, False, -1, False, False],
+    defaults=[0, False, False, -1, False, False, False],
 )
 
 Node = namedtuple(
@@ -102,6 +103,6 @@ def is_promotion(move: Move) -> bool:
 
 
 def to_uci(move: Move) -> str:
-    if move.is_null_move:
+    if move.is_null:
         return "null"
-    return f"{to_normal_notation(move.start)}{to_normal_notation(move.end)}{'q' if is_promotion(move) else ''}"
+    return f"{to_normal_notation(move.start)}{to_normal_notation(move.end)}{'q' if is_promotion(move) else ''}{'*' if move.is_quiescent else ''}"

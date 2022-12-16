@@ -1,4 +1,4 @@
-from .constants import COLOR, PIECE
+from .constants import COLOR
 from typing import Callable, Iterable, Optional, List
 from .data_structures import Board, Move
 from .transposition_table import TranspositionTable
@@ -14,23 +14,6 @@ Move_ordering_fn = Callable[
 ]
 
 
-def is_bad_capture(b: Board, move: Move) -> bool:
-
-    if move.is_null_move:
-        return False
-
-    piece_start = b.squares[move.start]
-
-    if abs(piece_start) == PIECE.PAWN:
-        return False
-
-    # captured piece is worth more than capturing piece
-    if PIECE_VALUE[abs(b.squares[move.end])] >= PIECE_VALUE[abs(b.squares[move.start])]:
-        return False
-
-    return True
-
-
 def mvv_lva(
     b: Board,
     moves: Iterable[Move],
@@ -38,7 +21,7 @@ def mvv_lva(
 ) -> List[Move]:
 
     def eval(b, m):
-        if m.is_null_move:
+        if m.is_null:
             return 10000
         return (
             int(m.is_capture)

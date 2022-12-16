@@ -14,11 +14,12 @@ from engine.algorithms import minimax, alphabeta
 from engine.time_management import target_movetime
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.18.1"
+VERSION = f"{NAME} 0.18.2"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 TRANSPOSITION_TABLE: TranspositionTable | None = TranspositionTable({})
+QS_TRANSPOSITION_TABLE: TranspositionTable | None = TranspositionTable({})
 OPENING_BOOK = {}
 
 ALGS = {
@@ -44,6 +45,7 @@ def uci_parser(line: str) -> list[str]:
     global CURRENT_ALG
     global CURRENT_BOARD
     global TRANSPOSITION_TABLE
+    global QS_TRANSPOSITION_TABLE
     global CURRENT_PROCESS
     global OPENING_BOOK
     tokens = line.strip().split()
@@ -180,6 +182,7 @@ def uci_parser(line: str) -> list[str]:
                 "depth": depth,
                 "branch_factor": branch_factor,
                 "transposition_table": TRANSPOSITION_TABLE,
+                "qs_tt": QS_TRANSPOSITION_TABLE,
             },
             daemon=False,
         )
@@ -247,6 +250,7 @@ def uci_parser(line: str) -> list[str]:
                     ),
                     "alg_fn": ALGS[CURRENT_ALG],
                     "transposition_table": TRANSPOSITION_TABLE,
+                    "qs_tt": QS_TRANSPOSITION_TABLE,
                     "opening_book": OPENING_BOOK,
                 },
                 daemon=False,
@@ -259,6 +263,7 @@ def uci_parser(line: str) -> list[str]:
                     "max_depth": depth,
                     "alg_fn": ALGS[CURRENT_ALG],
                     "transposition_table": TRANSPOSITION_TABLE,
+                    "qs_tt": QS_TRANSPOSITION_TABLE,
                     "opening_book": OPENING_BOOK,
                 },
                 daemon=False,

@@ -22,6 +22,7 @@ Alg_fn = Callable[
         int | None,
         int | None,
         TranspositionTable | None,
+        TranspositionTable | None,
         Move_ordering_fn,
         MoveType,
         dict,
@@ -40,6 +41,7 @@ def alphabeta(
     alpha: int,
     beta: int,
     transposition_table: TranspositionTable | None = None,
+    qs_tt: TranspositionTable | None = None,
     move_ordering_fn: Move_ordering_fn = no_ordering,
     move_type: MoveType = MoveType.PSEUDO_LEGAL,
     options: dict = {},
@@ -105,13 +107,13 @@ def alphabeta(
                 eval_fn,
                 alpha,
                 beta,
-                transposition_table,
+                qs_tt,
                 move_ordering_fn,
-                MoveType.QUIESCENT,
             )
 
             children = node.children
             value = node.value
+            # uncomment next line if you want to search quiescent nodes
             pv = node.pv
         else:
             value = eval_fn(b, transposition_table)
@@ -158,8 +160,10 @@ def alphabeta(
             alpha,
             beta,
             transposition_table,
+            qs_tt,
             move_ordering_fn,
             MoveType.PSEUDO_LEGAL if move_type == MoveType.LEGAL else move_type,
+            options,
         )
 
         children += node.children

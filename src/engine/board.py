@@ -179,7 +179,7 @@ def push(b: Board, move: Move) -> Board:
 
     moves_history.append(move)
 
-    if move.is_null_move:
+    if move.is_null:
         return Board(
             squares=squares,
             moves_history=moves_history,
@@ -451,7 +451,8 @@ def knight_moves(
                 is_capture=is_capture,
                 is_castle=False,
                 en_passant=-1,
-                is_king_capture=is_king_capture
+                is_king_capture=is_king_capture,
+                is_quiescent=quiescent,
             )
 
 
@@ -486,6 +487,7 @@ def rook_moves(
                         is_castle=True,
                         en_passant=-1,
                         is_king_capture=False,
+                        is_quiescent=quiescent,
                     )
                 if (
                     b.castling_rights[CASTLE.QUEEN_SIDE + b.turn] == 1
@@ -500,6 +502,7 @@ def rook_moves(
                         is_castle=True,
                         en_passant=-1,
                         is_king_capture=False,
+                        is_quiescent=quiescent,
                     )
 
             if (
@@ -515,6 +518,7 @@ def rook_moves(
                     is_castle=False,
                     en_passant=-1,
                     is_king_capture=is_king_capture,
+                    is_quiescent=quiescent,
                 )
             if b.squares[end] != PIECE.EMPTY or is_capture:
                 break
@@ -547,6 +551,7 @@ def bishop_moves(
                     is_castle=False,
                     en_passant=-1,
                     is_king_capture=is_king_capture,
+                    is_quiescent=quiescent,
                 )
             if b.squares[end] != PIECE.EMPTY or is_capture:
                 break
@@ -579,6 +584,7 @@ def queen_moves(
                     is_castle=False,
                     en_passant=-1,
                     is_king_capture=is_king_capture,
+                    is_quiescent=quiescent,
                 )
             if b.squares[end] != PIECE.EMPTY or is_capture:
                 break
@@ -610,6 +616,7 @@ def king_moves(
                 is_castle=False,
                 en_passant=-1,
                 is_king_capture=is_king_capture,
+                is_quiescent=quiescent,
             )
 
 
@@ -637,6 +644,7 @@ def pawn_moves(
                     is_castle=False,
                     en_passant=en_passant,
                     is_king_capture=False,
+                    is_quiescent=quiescent,
                 )
             else:
                 # do not allow 2 squares move if there's a piece in the way
@@ -646,10 +654,7 @@ def pawn_moves(
         if (
             b.squares[end] != PIECE.INVALID
             and b.squares[end] * b.turn < 0
-            and (
-                (not quiescent) or end == b.king_en_passant
-            )  # quiescence check
-        ) or end == b.en_passant:
+        ) or end == b.en_passant or end == b.king_en_passant:
             is_king_capture = (
                 abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
             )
@@ -661,6 +666,7 @@ def pawn_moves(
                 is_castle=False,
                 en_passant=-1,
                 is_king_capture=is_king_capture,
+                is_quiescent=quiescent,
             )
 
 
@@ -668,6 +674,21 @@ def pseudo_legal_moves(
     b: Board,
     quiescent: bool = False,
 ) -> Iterable[Move]:
+
+    # null move
+    if quiescent:
+        yield Move(
+            start=0,
+            end=0,
+            moving_piece=0,
+            is_capture=False,
+            is_castle=False,
+            en_passant=-1,
+            is_king_capture=False,
+            is_null=True,
+            is_quiescent=quiescent,
+        )
+
     for start, piece in filter(
         lambda x: x[1] != PIECE.INVALID and x[1] * b.turn > 0,
         enumerate(b.squares[20:100])
