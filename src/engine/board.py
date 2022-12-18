@@ -1,7 +1,6 @@
 import collections
 from typing import Iterable, Hashable
 from array import array
-from . import evaluation
 from .constants import PIECE, COLOR, ASCII_REP, CASTLE
 from .data_structures import Move, Board, to_normal_notation, to_square_notation
 
@@ -162,9 +161,6 @@ def from_fen(fen: str) -> Board:
         full_move=int(full_move),
     )
 
-    eval = array('l', [1, evaluation.eval_pst(b), 0])
-    b._replace(eval=eval)
-
     return b
 
 
@@ -186,7 +182,6 @@ def push(b: Board, move: Move) -> Board:
             positions_history=b.positions_history,
             turn=invturn(b),
             castling_rights=castling_rights,
-            eval=b.eval,
             en_passant=-1,
             half_move=half_move + 1,
             full_move=b.full_move + 1,
@@ -207,10 +202,8 @@ def push(b: Board, move: Move) -> Board:
     squares[move.end] = piece_start
 
     # special removal for "en passant" moves
-    en_passant_score_change = 0
     if move.end == b.en_passant and abs(piece_start) == PIECE.PAWN:
         target = move.end + (10 * b.turn)
-        en_passant_score_change = evaluation.eval_pst_inc_en_passant(b.squares, target)
         squares[target] = PIECE.EMPTY
 
     # declare en_passant square for the current board
@@ -278,17 +271,6 @@ def push(b: Board, move: Move) -> Board:
             ):
                 castling_rights[CASTLE.QUEEN_SIDE + COLOR.BLACK] = 0
 
-    # evaluation
-    eval = array('l')
-    eval.append(1)
-    eval.append(
-        b.eval[1]
-        + evaluation.eval_pst_inc_pre(b.squares, move)
-        + evaluation.eval_pst_inc_post(squares, move)
-        + en_passant_score_change
-    )
-    eval.append(0)
-
     return Board(
         squares=squares,
         moves_history=moves_history,
@@ -299,7 +281,6 @@ def push(b: Board, move: Move) -> Board:
         ),
         turn=invturn(b),
         castling_rights=castling_rights,
-        eval=eval,
         en_passant=en_passant,
         half_move=half_move + 1,
         full_move=b.full_move + 1,
