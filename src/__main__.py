@@ -6,7 +6,7 @@ import multiprocessing
 import json
 import engine.board as board
 from engine.transposition_table import TranspositionTable
-from engine.evaluation import eval_pst
+from engine.evaluation import eval_simple
 from engine.data_structures import to_uci, Board
 from engine.iterative_deepening import itdep
 from engine.analysis import fen_analysis
@@ -14,7 +14,7 @@ from engine.algorithms import minimax, alphabeta
 from engine.time_management import target_movetime
 
 NAME = "Herald"
-VERSION = f"{NAME} 0.18.2"
+VERSION = f"{NAME} 0.18.3"
 AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
@@ -58,7 +58,7 @@ def uci_parser(line: str) -> list[str]:
         return [f"using {CURRENT_ALG}"]
 
     if tokens[0] == "eval":
-        return [f"board: {eval_pst(CURRENT_BOARD)}"]
+        return [f"board: {eval_simple(CURRENT_BOARD)}"]
 
     if tokens[0] == "print":
         return [board.to_string(CURRENT_BOARD)]

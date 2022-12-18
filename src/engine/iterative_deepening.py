@@ -153,6 +153,9 @@ def itdep(
                         print(f"bestmove {to_uci(last_search.move)}")
                         return last_search
                     return None
+        if last_search is not None and print_uci:
+            print(f"bestmove {to_uci(last_search.move)}")
+            return last_search
     else:
         last_search = None
         for i in range(1, max_depth + 1):
