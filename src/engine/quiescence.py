@@ -1,51 +1,21 @@
 from collections import deque
-from .constants import COLOR, VALUE_MAX, PIECE
+from .constants import COLOR, VALUE_MAX
 from . import board
-from .data_structures import Node, Board, Move, MoveType, to_uci
-from .move_ordering import Move_ordering_fn, no_ordering
-from .transposition_table import TranspositionTable
-from .evaluation import Eval_fn, PIECE_VALUE
+from .data_structures import Node, Board, Move
 from typing import Iterable
-
-
-def is_bad_capture(b: Board, move: Move) -> bool:
-
-    # a non-capture move is not a bad capture
-    if not move.is_capture:
-        return False
-
-    piece_start = b.squares[move.start]
-
-    if abs(piece_start) == PIECE.PAWN or abs(piece_start) == PIECE.KING:
-        return False
-
-    # captured piece is worth more than capturing piece
-    if PIECE_VALUE[abs(b.squares[move.end])] >= PIECE_VALUE[abs(b.squares[move.start])] - 50:
-        return False
-
-    # if the piece is defended by a pawn, then it's a bad capture
-    for depl in [9, 11] if b.turn == COLOR.WHITE else [-9, -11]:
-        if (
-            abs(b.squares[move.start + depl]) == PIECE.PAWN
-            and b.squares[move.start + depl] * b.turn < 0
-        ):
-            return True
-
-    # if we don't know, we have to try the move (we can't say that it's bad)
-    return False
+from .pruning import is_bad_capture
+from .configuration import Config
 
 
 def quiescence(
+    config: Config,
     b: Board,
     depth: int,
     pv: deque[Move],
-    eval_fn: Eval_fn,
     alpha: int,
     beta: int,
-    transposition_table: TranspositionTable | None = None,
-    move_ordering_fn: Move_ordering_fn = no_ordering,
 ) -> Node:
-    stand_pat: int = eval_fn(b, transposition_table)
+    stand_pat: int = config.eval_fn(b)
 
     if b.turn == COLOR.WHITE:
         if stand_pat >= beta:
@@ -73,14 +43,12 @@ def quiescence(
         beta = min(beta, stand_pat)
 
     node = _search(
+        config,
         b,
         depth,
         pv,
-        eval_fn,
         -VALUE_MAX,
         VALUE_MAX,
-        transposition_table,
-        move_ordering_fn,
     )
 
     return Node(
@@ -95,14 +63,12 @@ def quiescence(
 
 
 def _search(
+    config: Config,
     b: Board,
     depth: int,
     pv: deque[Move],
-    eval_fn: Eval_fn,
     alpha: int,
     beta: int,
-    transposition_table: TranspositionTable | None = None,
-    move_ordering_fn: Move_ordering_fn = no_ordering,
 ) -> Node:
 
     assert depth >= 0, depth
@@ -111,7 +77,7 @@ def _search(
     if (
         b.moves_history[-1].is_null
     ):
-        value = eval_fn(b, transposition_table)
+        value = config.eval_fn(b)
         return Node(
             value=value,
             depth=depth,
@@ -122,9 +88,9 @@ def _search(
             children=1,
         )
 
-    if isinstance(transposition_table, TranspositionTable):
+    if config.use_qs_transposition_table:
         # check if we find a hit in the transposition table
-        node = transposition_table.get(b, depth)
+        node = config.qs_transposition_table.get(b, depth)
         if isinstance(node, Node) and node.depth >= depth:
             # handle the found node as usual
             if b.turn == COLOR.WHITE:
@@ -154,7 +120,7 @@ def _search(
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
-        value = eval_fn(b, transposition_table)
+        value = config.eval_fn(b)
         return Node(
             value=value,
             depth=0,
@@ -171,8 +137,11 @@ def _search(
 
     best = None
 
-    moves: Iterable[Move] = [x for x in board.pseudo_legal_moves(b, True) if not is_bad_capture(b, x)]
-    for move in move_ordering_fn(b, moves, transposition_table):
+    moves: Iterable[Move] = [
+        x for x in board.pseudo_legal_moves(b, True)
+        if not is_bad_capture(b, x)
+    ]
+    for move in config.move_ordering_fn(b, moves):
         curr_pv = deque(pv)
         curr_pv.append(move)
 
@@ -190,14 +159,12 @@ def _search(
 
         nb = board.push(b, move)
         node = _search(
+            config,
             nb,
             depth - 1,
             curr_pv,
-            eval_fn,
             alpha,
             beta,
-            transposition_table,
-            move_ordering_fn,
         )
 
         children += node.children
@@ -231,10 +198,10 @@ def _search(
             if node.value <= alpha:
                 break
 
-    if isinstance(transposition_table, TranspositionTable):
+    if config.use_qs_transposition_table:
         # Save the resulting best node in the transposition table
         if best is not None and best.depth > 0:
-            transposition_table.add(b, best)
+            config.qs_transposition_table.add(b, best)
 
     if best is not None:
         node = Node(
@@ -248,7 +215,7 @@ def _search(
         # no "best" found
         node = Node(
             depth=depth,
-            value=eval_fn(b, transposition_table),
+            value=config.eval_fn(b),
             pv=pv,
             full_move=b.full_move,
             lower=alpha,

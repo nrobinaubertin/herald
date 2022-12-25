@@ -1,14 +1,12 @@
 from .constants import COLOR
-from typing import Callable, Iterable, Optional, List
+from typing import Callable, Iterable, List
 from .data_structures import Board, Move
-from .transposition_table import TranspositionTable
 from .evaluation import PIECE_VALUE
 
 Move_ordering_fn = Callable[
     [
         Board,
         Iterable[Move],
-        Optional[TranspositionTable],
     ],
     List[Move]
 ]
@@ -17,7 +15,6 @@ Move_ordering_fn = Callable[
 def mvv_lva(
     b: Board,
     moves: Iterable[Move],
-    tt: TranspositionTable | None = None,
 ) -> List[Move]:
 
     def eval(b, m):
@@ -44,6 +41,5 @@ def mvv_lva(
 def no_ordering(
     b: Board,
     moves: Iterable[Move],
-    tt: TranspositionTable | None = None,
 ) -> List[Move]:
-    return moves
+    return list(moves)

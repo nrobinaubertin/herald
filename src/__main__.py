@@ -5,34 +5,30 @@ import sys
 import multiprocessing
 import json
 import engine.board as board
-from engine.transposition_table import TranspositionTable
-from engine.evaluation import eval_simple
 from engine.data_structures import to_uci, Board
 from engine.iterative_deepening import itdep
 from engine.analysis import fen_analysis
-from engine.algorithms import minimax, alphabeta
 from engine.time_management import target_movetime
+from engine.configuration import Config
+from engine.evaluation import eval_simple
+from engine.move_ordering import no_ordering
+from engine.algorithms import alphabeta
 
-NAME = "Herald"
-VERSION = f"{NAME} 0.18.3"
-AUTHOR = "nrobinaubertin"
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
-TRANSPOSITION_TABLE: TranspositionTable | None = TranspositionTable({})
-QS_TRANSPOSITION_TABLE: TranspositionTable | None = TranspositionTable({})
-OPENING_BOOK = {}
 
-ALGS = {
-    "minimax": minimax,
-    "alphabeta": alphabeta,
-}
-CURRENT_ALG = "alphabeta"
-
+CONFIG = Config({
+    "alg_fn": alphabeta,
+    "move_ordering_fn": no_ordering,
+    "eval_fn": eval_simple,
+    "quiescence_search": True,
+    "quiescence_depth": 5,
+})
 
 # load opening book at default location
 if os.access("opening_book", os.R_OK):
     with open("opening_book", "r") as output_file:
-        OPENING_BOOK = json.load(output_file)
+        CONFIG.opening_book = json.load(output_file)
 
 
 def stop_calculating() -> None:
@@ -44,21 +40,14 @@ def stop_calculating() -> None:
 def uci_parser(line: str) -> list[str]:
     global CURRENT_ALG
     global CURRENT_BOARD
-    global TRANSPOSITION_TABLE
-    global QS_TRANSPOSITION_TABLE
     global CURRENT_PROCESS
-    global OPENING_BOOK
     tokens = line.strip().split()
 
     if not tokens:
         return []
 
-    if tokens[0] == "alg":
-        CURRENT_ALG = tokens[1] if tokens[1] in ALGS else "alphabeta"
-        return [f"using {CURRENT_ALG}"]
-
     if tokens[0] == "eval":
-        return [f"board: {eval_simple(CURRENT_BOARD)}"]
+        return [f"board: {CONFIG.eval_fn(CURRENT_BOARD)}"]
 
     if tokens[0] == "print":
         return [board.to_string(CURRENT_BOARD)]
@@ -94,47 +83,15 @@ def uci_parser(line: str) -> list[str]:
         to_display.append(f"Nodes: {total}")
         return to_display
 
-    if (
-        __debug__
-        and len(tokens) > 1
-        and tokens[0] == "tt"
-        and tokens[1] == "stats"
-    ):
-        if TRANSPOSITION_TABLE is not None:
-            stats = TRANSPOSITION_TABLE.stats()
-            stats_str = (
-                f"SHALLOW_HITS: {stats['SHALLOW_HITS']}, "
-                f"HITS: {stats['HITS']}, "
-                f"REQ: {stats['REQ']}, "
-                f"LEN: {stats['LEN']}, "
-                f"ADD: {stats['ADD']}, "
-                f"ADD_BETTER: {stats['ADD_BETTER']}"
-            )
-            return [stats_str]
-        else:
-            return [""]
-
-    if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "remove":
-        TRANSPOSITION_TABLE = None
-        return [
-            "tt removed",
-        ]
-
-    if len(tokens) > 1 and tokens[0] == "tt" and tokens[1] == "init":
-        TRANSPOSITION_TABLE = TranspositionTable({})
-        return [
-            "tt initialized",
-        ]
-
     if len(tokens) == 2 and tokens[0] == "load_book":
         with open(tokens[1], "r") as output_file:
-            OPENING_BOOK = json.load(output_file)
+            CONFIG.opening_book = json.load(output_file)
 
     if len(tokens) == 1 and tokens[0] == "uci":
         return [
-            f"{VERSION} by {AUTHOR}",
-            f"id name {NAME}",
-            f"id author {AUTHOR}",
+            f"{CONFIG.name} {CONFIG.version} by {CONFIG.author}",
+            f"id name {CONFIG.name}",
+            f"id author {CONFIG.author}",
             # fake some options
             "option name Hash type spin default 16 min 1 max 33554432",
             "option name Move Overhead type spin default 10 min 0 max 5000",
@@ -178,11 +135,8 @@ def uci_parser(line: str) -> list[str]:
             target=fen_analysis,
             args=(input, output),
             kwargs={
-                "alg_fn": ALGS[CURRENT_ALG],
                 "depth": depth,
                 "branch_factor": branch_factor,
-                "transposition_table": TRANSPOSITION_TABLE,
-                "qs_tt": QS_TRANSPOSITION_TABLE,
             },
             daemon=False,
         )
@@ -238,7 +192,7 @@ def uci_parser(line: str) -> list[str]:
         if depth == 0:
             process = multiprocessing.Process(
                 target=itdep,
-                args=(CURRENT_BOARD,),
+                args=(CURRENT_BOARD, CONFIG),
                 kwargs={
                     "movetime": target_movetime(
                         CURRENT_BOARD.turn,
@@ -248,23 +202,15 @@ def uci_parser(line: str) -> list[str]:
                         winc,
                         binc,
                     ),
-                    "alg_fn": ALGS[CURRENT_ALG],
-                    "transposition_table": TRANSPOSITION_TABLE,
-                    "qs_tt": QS_TRANSPOSITION_TABLE,
-                    "opening_book": OPENING_BOOK,
                 },
                 daemon=False,
             )
         else:
             process = multiprocessing.Process(
                 target=itdep,
-                args=(CURRENT_BOARD,),
+                args=(CURRENT_BOARD, CONFIG),
                 kwargs={
                     "max_depth": depth,
-                    "alg_fn": ALGS[CURRENT_ALG],
-                    "transposition_table": TRANSPOSITION_TABLE,
-                    "qs_tt": QS_TRANSPOSITION_TABLE,
-                    "opening_book": OPENING_BOOK,
                 },
                 daemon=False,
             )
@@ -282,7 +228,7 @@ if __name__ == "__main__":
                 print(line)
 
     if sys.argv[1] == "--version":
-        print(f"{VERSION}")
+        print(f"{CONFIG.version}")
         sys.exit()
 
     # if we don't know what to do, print the help

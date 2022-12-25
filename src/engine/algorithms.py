@@ -6,26 +6,21 @@ from collections import deque
 from .constants import COLOR, VALUE_MAX
 from . import board
 from .data_structures import Node, Board, Move, MoveType
-from .move_ordering import Move_ordering_fn, no_ordering
-from .transposition_table import TranspositionTable
-from .evaluation import Eval_fn
 from .quiescence import quiescence
+from .configuration import Config
+
 from typing import Callable, Iterable
 
 
 Alg_fn = Callable[
     [
+        Config,
         Board,
         int,
         deque[Move],
-        Eval_fn,
-        int | None,
-        int | None,
-        TranspositionTable | None,
-        TranspositionTable | None,
-        Move_ordering_fn,
         MoveType,
-        dict,
+        int | None,
+        int | None,
     ],
     Node
 ]
@@ -34,17 +29,13 @@ Alg_fn = Callable[
 # alphabeta pruning (fail-soft)
 # with optional move ordering and transposition table
 def alphabeta(
+    config: Config,
     b: Board,
     depth: int,
     pv: deque[Move],
-    eval_fn: Eval_fn,
-    alpha: int,
-    beta: int,
-    transposition_table: TranspositionTable | None = None,
-    qs_tt: TranspositionTable | None = None,
-    move_ordering_fn: Move_ordering_fn = no_ordering,
     move_type: MoveType = MoveType.PSEUDO_LEGAL,
-    options: dict = {},
+    alpha: int = -VALUE_MAX,
+    beta: int = VALUE_MAX,
 ) -> Node:
 
     assert depth >= 0, depth
@@ -61,9 +52,9 @@ def alphabeta(
             children=1,
         )
 
-    if isinstance(transposition_table, TranspositionTable):
+    if config.use_transposition_table:
         # check if we find a hit in the transposition table
-        node = transposition_table.get(b, depth)
+        node = config.transposition_table.get(b, depth)
         if isinstance(node, Node) and node.depth >= depth:
             # handle the found node as usual
             if b.turn == COLOR.WHITE:
@@ -99,24 +90,22 @@ def alphabeta(
     if depth == 0:
 
         value: int = 0
-        if options.get("quiescence_search", False):
+        if config.quiescence_search:
             node = quiescence(
+                config,
                 b,
-                options.get("quiescence_depth", 0),
+                config.quiescence_depth,
                 pv,
-                eval_fn,
                 alpha,
                 beta,
-                qs_tt,
-                move_ordering_fn,
             )
 
             children = node.children
             value = node.value
-            # uncomment next line if you want to search quiescent nodes
-            pv = node.pv
+            # uncomment next line if you want to display quiescent nodes
+            # pv = node.pv
         else:
-            value = eval_fn(b, transposition_table)
+            value = config.eval_fn(b)
 
         return Node(
             value=value,
@@ -135,7 +124,8 @@ def alphabeta(
         moves = board.pseudo_legal_moves(b)
     if move_type == MoveType.LEGAL:
         moves = board.legal_moves(b)
-    for move in move_ordering_fn(b, moves, transposition_table):
+
+    for move in config.move_ordering_fn(b, moves):
         curr_pv = deque(pv)
         curr_pv.append(move)
 
@@ -153,17 +143,17 @@ def alphabeta(
 
         nb = board.push(b, move)
         node = alphabeta(
+            config,
             nb,
             depth - 1,
             curr_pv,
-            eval_fn,
+            (
+                MoveType.PSEUDO_LEGAL
+                if move_type == MoveType.LEGAL
+                else move_type
+            ),
             alpha,
             beta,
-            transposition_table,
-            qs_tt,
-            move_ordering_fn,
-            MoveType.PSEUDO_LEGAL if move_type == MoveType.LEGAL else move_type,
-            options,
         )
 
         children += node.children
@@ -197,10 +187,10 @@ def alphabeta(
             if node.value <= alpha:
                 break
 
-    if isinstance(transposition_table, TranspositionTable):
+    if config.use_transposition_table:
         # Save the resulting best node in the transposition table
         if best is not None and best.depth > 0:
-            transposition_table.add(b, best)
+            config.transposition_table.add(b, best)
 
     if best is not None:
         node = Node(
@@ -216,7 +206,7 @@ def alphabeta(
         # no "best" found
         node = Node(
             depth=depth,
-            value=eval_fn(b, transposition_table),
+            value=config.eval_fn(b),
             pv=pv,
             full_move=b.full_move,
             lower=alpha,
@@ -229,16 +219,13 @@ def alphabeta(
 
 # Simple minimax
 def minimax(
+    config: Config,
     b: Board,
     depth: int,
     pv: deque[Move],
-    eval_fn: Eval_fn,
-    alpha: int | None = None,
-    beta: int | None = None,
-    transposition_table: TranspositionTable | None = None,
-    move_ordering_fn: Move_ordering_fn = no_ordering,
     move_type: MoveType = MoveType.PSEUDO_LEGAL,
-    options: dict = {},
+    alpha: int = 0,
+    beta: int = 0,
 ) -> Node:
 
     assert depth >= 0, depth
@@ -256,7 +243,7 @@ def minimax(
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=eval_fn(b, transposition_table),
+            value=config.eval_fn(b),
             depth=0,
             pv=pv,
             children=1,
@@ -278,7 +265,7 @@ def minimax(
         moves = board.pseudo_legal_moves(b)
     if move_type == MoveType.LEGAL:
         moves = board.legal_moves(b)
-    for move in move_ordering_fn(b, moves, transposition_table):
+    for move in config.move_ordering_fn(b, moves):
         curr_board = board.push(b, move)
         curr_pv = deque(pv)
         curr_pv.append(move)
@@ -293,14 +280,10 @@ def minimax(
             )
 
         node = minimax(
+            config,
             curr_board,
             depth - 1,
             curr_pv,
-            eval_fn,
-            None,
-            None,
-            transposition_table,
-            move_ordering_fn,
             MoveType.PSEUDO_LEGAL if move_type == MoveType.LEGAL else move_type,
         )
 

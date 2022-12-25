@@ -3,10 +3,9 @@ import multiprocessing
 from collections import deque
 from .search import search
 from .data_structures import to_uci, Search, Board, Move
-from .algorithms import Alg_fn
-from .transposition_table import TranspositionTable
 from .constants import VALUE_MAX
 from . import board
+from .configuration import Config
 
 
 # wrapper around the search function to allow for multiprocess time management
@@ -14,17 +13,12 @@ def search_wrapper(
     queue,
     b: Board,
     depth: int,
-    alg_fn: Alg_fn,
-    transposition_table: TranspositionTable | None = None,
-    qs_tt: TranspositionTable | None = None,
-
+    config: Config,
 ) -> None:
     best = search(
         b,
         depth=depth,
-        transposition_table=transposition_table,
-        qs_tt=transposition_table,
-        alg_fn=alg_fn,
+        config=config,
     )
     queue.put_nowait(best)
     queue.close()
@@ -32,19 +26,16 @@ def search_wrapper(
 
 def itdep(
     b: Board,
-    alg_fn: Alg_fn,
+    config: Config,
     movetime: int = 0,
     max_depth: int = 0,
-    transposition_table: TranspositionTable | None = None,
-    qs_tt: TranspositionTable | None = None,
     print_uci: bool = True,
-    opening_book: dict = {}
 ):
 
     if movetime != 0:
 
-        if board.to_fen(b) in opening_book:
-            move = opening_book[board.to_fen(b)]["moves"][0]["move"]
+        if board.to_fen(b) in config.opening_book:
+            move = config.opening_book[board.to_fen(b)]["moves"][0]["move"]
             move = Move(*[
                 int(move[0]),
                 int(move[1]),
@@ -78,9 +69,7 @@ def itdep(
                 args=(queue, b),
                 kwargs={
                     "depth": i,
-                    "transposition_table": transposition_table,
-                    "qs_tt": qs_tt,
-                    "alg_fn": alg_fn,
+                    "config": config,
                 },
                 daemon=False,
             )
@@ -162,10 +151,8 @@ def itdep(
             current_search = search(
                 b,
                 depth=i,
-                alg_fn=alg_fn,
-                transposition_table=transposition_table,
-                qs_tt=qs_tt,
                 last_search=last_search,
+                config=config,
             )
 
             # if there is no move available

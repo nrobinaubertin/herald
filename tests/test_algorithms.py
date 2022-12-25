@@ -1,6 +1,7 @@
 """
 TestAlgorithms
 We test algorithms by comparing results to the minimax algorithm who's well known.
+When comparing move ordering functions, we cannot 
 """
 
 from collections import deque
@@ -12,6 +13,7 @@ from src.engine.constants import VALUE_MAX
 from src.engine.evaluation import eval_simple
 from src.engine import move_ordering
 from src.engine.data_structures import to_uci, MoveType
+from src.engine.configuration import Config
 
 
 class TestAlgorithms(unittest.TestCase):
@@ -22,36 +24,32 @@ class TestAlgorithms(unittest.TestCase):
         depth = 3
         for fen in win_at_chess[:50]:
             alphabeta_result = alphabeta(
+                Config({
+                    "move_ordering_fn": move_ordering.no_ordering,
+                    "eval_fn": eval_simple,
+                }),
                 board.from_fen(fen),
                 depth,
                 deque(),
-                eval_simple,
+                MoveType.LEGAL,
                 -VALUE_MAX,
                 VALUE_MAX,
-                None,
-                move_ordering.no_ordering,
-                MoveType.LEGAL,
-                {},
             )
             alphabeta_mvv_lva_result = alphabeta(
+                Config({
+                    "move_ordering_fn": move_ordering.mvv_lva,
+                    "eval_fn": eval_simple,
+                }),
                 board.from_fen(fen),
                 depth,
                 deque(),
-                eval_simple,
+                MoveType.LEGAL,
                 -VALUE_MAX,
                 VALUE_MAX,
-                None,
-                move_ordering.mvv_lva,
-                MoveType.LEGAL,
-                {},
             )
             self.assertEqual(
                 alphabeta_mvv_lva_result.value,
                 alphabeta_result.value
-            )
-            self.assertEqual(
-                f"{fen}: {','.join([to_uci(x) for x in alphabeta_mvv_lva_result.pv])}",
-                f"{fen}: {','.join([to_uci(x) for x in alphabeta_result.pv])}",
             )
 
     # This test equivalence between raw alphabeta and minimax
@@ -59,25 +57,26 @@ class TestAlgorithms(unittest.TestCase):
         depth = 3
         for fen in win_at_chess[:50]:
             minimax_result = minimax(
+                Config({
+                    "move_ordering_fn": move_ordering.no_ordering,
+                    "eval_fn": eval_simple,
+                }),
                 board.from_fen(fen),
                 depth,
                 deque(),
-                eval_simple,
-                0, 0, None,
-                move_ordering.no_ordering,
                 MoveType.LEGAL,
             )
             alphabeta_result = alphabeta(
+                Config({
+                    "move_ordering_fn": move_ordering.no_ordering,
+                    "eval_fn": eval_simple,
+                }),
                 board.from_fen(fen),
                 depth,
                 deque(),
-                eval_simple,
+                MoveType.LEGAL,
                 -VALUE_MAX,
                 VALUE_MAX,
-                None,
-                move_ordering.no_ordering,
-                MoveType.LEGAL,
-                {},
             )
             self.assertEqual(minimax_result.value, alphabeta_result.value)
             self.assertEqual(
