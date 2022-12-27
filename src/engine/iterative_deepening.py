@@ -54,7 +54,6 @@ def itdep(
                 nodes=1,
                 score=0,
                 time=1,
-                best_node=None,
             )
 
         start_time = time.time_ns()

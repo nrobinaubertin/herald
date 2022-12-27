@@ -1,8 +1,8 @@
 from collections import deque
 import time
-from .constants import COLOR, VALUE_MAX
+from .constants import VALUE_MAX, PIECE
 from . import board
-from .data_structures import Node, Search, Board, MoveType
+from .data_structures import Search, Board, MoveType
 from .configuration import Config
 
 
@@ -14,11 +14,6 @@ def search(
 ) -> Search | None:
 
     start_time = time.time_ns()
-
-    best = Node(
-        depth=depth,
-        value=(VALUE_MAX if b.turn == COLOR.BLACK else -VALUE_MAX),
-    )
 
     possible_moves = [x for x in board.legal_moves(b)]
 
@@ -35,7 +30,6 @@ def search(
             nodes=1,
             score=0,
             time=(time.time_ns() - start_time),
-            best_node=Node(depth=0, value=0),
             stop_search=True,
         )
 
@@ -49,7 +43,6 @@ def search(
                 nodes=1,
                 score=VALUE_MAX * b.turn,
                 time=(time.time_ns() - start_time),
-                best_node=best,
             )
 
     children: int = 1
@@ -83,6 +76,14 @@ def search(
             continue
         break
 
+    if __debug__:
+        if len(node.pv) == 0:
+            breakpoint()
+        if b.squares[node.pv[0].start] == PIECE.EMPTY:
+            breakpoint()
+        if abs(b.squares[node.pv[0].start]) == PIECE.INVALID:
+            breakpoint()
+
     return Search(
         move=node.pv[0],
         pv=node.pv,
@@ -90,5 +91,4 @@ def search(
         nodes=node.children,
         score=node.value,
         time=(time.time_ns() - start_time),
-        best_node=node,
     )

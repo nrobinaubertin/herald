@@ -42,12 +42,10 @@ Board = namedtuple("Board", [
         # 120 squares for a 10*12 mailbox
         # https://www.chessprogramming.org/Mailbox
         "squares",
-        # move history
-        "moves_history",
-        # positions history to check for repetition
-        "positions_history",
         # color of the player whos turn it is
         "turn",
+        # positions history to check for repetition
+        "positions_history",
         # array reprensenting castling rights (index CASTLE + COLOR)
         "castling_rights",
         # the following values are ints with default values
@@ -66,7 +64,6 @@ Search = namedtuple("Search", [
         "score",
         "nodes",
         "time",
-        "best_node",
         "pv",
         "stop_search",
     ],

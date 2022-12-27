@@ -73,21 +73,6 @@ def _search(
 
     assert depth >= 0, depth
 
-    # test null move in quiescence search
-    if (
-        b.moves_history[-1].is_null
-    ):
-        value = config.eval_fn(b)
-        return Node(
-            value=value,
-            depth=depth,
-            full_move=b.full_move,
-            pv=pv,
-            lower=alpha,
-            upper=beta,
-            children=1,
-        )
-
     if config.use_qs_transposition_table:
         # check if we find a hit in the transposition table
         node = config.qs_transposition_table.get(b, depth)
@@ -157,15 +142,28 @@ def _search(
                 children=children,
             )
 
-        nb = board.push(b, move)
-        node = _search(
-            config,
-            nb,
-            depth - 1,
-            curr_pv,
-            alpha,
-            beta,
-        )
+        if move.is_null:
+            # don't go further if this is a null move
+            value = config.eval_fn(b)
+            node = Node(
+                value=value,
+                depth=depth,
+                full_move=b.full_move,
+                pv=pv,
+                lower=alpha,
+                upper=beta,
+                children=1,
+            )
+        else:
+            nb = board.push(b, move)
+            node = _search(
+                config,
+                nb,
+                depth - 1,
+                curr_pv,
+                alpha,
+                beta,
+            )
 
         children += node.children
 

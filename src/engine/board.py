@@ -152,7 +152,6 @@ def from_fen(fen: str) -> Board:
 
     b = Board(
         squares=squares,
-        moves_history=collections.deque(),
         positions_history=set(),
         turn=COLOR.WHITE if turn == "w" else COLOR.BLACK,
         castling_rights=cr,
@@ -170,15 +169,11 @@ def push(b: Board, move: Move) -> Board:
     en_passant = b.en_passant
     king_en_passant = b.king_en_passant
     castling_rights = array('b', b.castling_rights)
-    moves_history = b.moves_history.copy()
     half_move = b.half_move
-
-    moves_history.append(move)
 
     if move.is_null:
         return Board(
             squares=squares,
-            moves_history=moves_history,
             positions_history=b.positions_history,
             turn=invturn(b),
             castling_rights=castling_rights,
@@ -273,7 +268,6 @@ def push(b: Board, move: Move) -> Board:
 
     return Board(
         squares=squares,
-        moves_history=moves_history,
         positions_history=(
             b.positions_history | {get_pos(b)}
             if half_move == 0

@@ -6,7 +6,7 @@ class Config:
     def __init__(self, config_dict: dict = {}):
         self._config = config_dict
         self.name = "Herald"
-        self.version = "0.19.0"
+        self.version = "0.19.1"
         self.author = "nrobinaubertin"
         self.transposition_table = TranspositionTable({})
         self.qs_transposition_table = TranspositionTable({})

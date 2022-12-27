@@ -52,7 +52,7 @@ def alphabeta(
             children=1,
         )
 
-    if config.use_transposition_table:
+    if config.use_transposition_table and len(pv) > 0:
         # check if we find a hit in the transposition table
         node = config.transposition_table.get(b, depth)
         if isinstance(node, Node) and node.depth >= depth:
@@ -62,7 +62,7 @@ def alphabeta(
                 if node.value >= beta:
                     return Node(
                         value=node.value,
-                        pv=node.pv,
+                        pv=pv,
                         depth=node.depth,
                         full_move=node.full_move,
                         lower=alpha,
@@ -74,7 +74,7 @@ def alphabeta(
                 if node.value <= alpha:
                     return Node(
                         value=node.value,
-                        pv=node.pv,
+                        pv=pv,
                         depth=node.depth,
                         full_move=node.full_move,
                         lower=alpha,
@@ -249,12 +249,7 @@ def minimax(
             children=1,
         )
 
-    # placeholder node meant to be replaced by a real one in the search
-    best = Node(
-        depth=depth,
-        value=(VALUE_MAX + 1 if b.turn == COLOR.BLACK else -VALUE_MAX - 1),
-        children=1,
-    )
+    best = None
 
     # count the number of children (direct and non direct)
     # for info purposes
@@ -290,7 +285,7 @@ def minimax(
         children += node.children
 
         if b.turn == COLOR.WHITE:
-            if node.value > best.value:
+            if best is None or node.value > best.value:
                 best = Node(
                     value=node.value,
                     depth=depth,
@@ -298,7 +293,7 @@ def minimax(
                     children=children,
                 )
         else:
-            if node.value < best.value:
+            if best is None or node.value < best.value:
                 best = Node(
                     value=node.value,
                     depth=depth,
