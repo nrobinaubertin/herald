@@ -10,20 +10,28 @@ from engine.iterative_deepening import itdep
 from engine.analysis import fen_analysis
 from engine.time_management import target_movetime
 from engine.configuration import Config
-from engine.evaluation import eval_simple
-from engine.move_ordering import no_ordering
+from engine.evaluation import eval_simple, eval_pst, eval_new
+from engine.move_ordering import no_ordering, mvv_lva
 from engine.algorithms import alphabeta
 
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 
 CONFIG = Config({
+    "version": "0.19.3",
     "alg_fn": alphabeta,
-    "move_ordering_fn": no_ordering,
-    "eval_fn": eval_simple,
+    "move_ordering_fn": mvv_lva,
+    "eval_fn": eval_new,
     "quiescence_search": True,
     "quiescence_depth": 5,
+    "use_transposition_table": True,
+    "use_qs_transposition_table": True,
 })
+
+# load config at default location
+if os.access("config.json", os.R_OK):
+    with open("config.json", "r") as output_file:
+        CONFIG._config = json.load(output_file)
 
 # load opening book at default location
 if os.access("opening_book", os.R_OK):

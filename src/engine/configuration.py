@@ -6,7 +6,6 @@ class Config:
     def __init__(self, config_dict: dict = {}):
         self._config = config_dict
         self.name = "Herald"
-        self.version = "0.19.1"
         self.author = "nrobinaubertin"
         self.transposition_table = TranspositionTable({})
         self.qs_transposition_table = TranspositionTable({})
@@ -15,6 +14,10 @@ class Config:
     def clear_transposition_tables(self):
         self.transposition_table = TranspositionTable({})
         self.qs_transposition_table = TranspositionTable({})
+
+    @property
+    def version(self):
+        return self._config.get('version', True)
 
     @property
     def use_transposition_table(self):

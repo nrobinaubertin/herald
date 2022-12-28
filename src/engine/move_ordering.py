@@ -2,6 +2,7 @@ from .constants import COLOR
 from typing import Callable, Iterable, List
 from .data_structures import Board, Move
 from .evaluation import PIECE_VALUE
+from random import shuffle
 
 Move_ordering_fn = Callable[
     [
@@ -43,3 +44,12 @@ def no_ordering(
     moves: Iterable[Move],
 ) -> List[Move]:
     return list(moves)
+
+
+def random(
+    b: Board,
+    moves: Iterable[Move],
+) -> List[Move]:
+    moves = list(moves)
+    shuffle(moves)
+    return moves

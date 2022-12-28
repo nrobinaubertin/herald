@@ -138,7 +138,7 @@ def eval_pst(b: Board) -> int:
             evaluation += PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][square] * color
         else:
             evaluation += (
-                PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][120 - square] * color
+                PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][119 - square] * color
             )
     return evaluation
 
@@ -201,41 +201,41 @@ def eval_new(b: Board) -> int:
                 evaluation += PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][square] * color
             else:
                 evaluation += (
-                    PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][120 - square] * color
+                    PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][119 - square] * color
                 )
             if abs(piece) == PIECE.PAWN and pawn_in_file[x][color] > 0:
                 evaluation += DOUBLED_PAWN_PENALTY * color
                 if pawn_in_file[x][color] > 1:
                     evaluation += DOUBLED_PAWN_PENALTY * color
-            # if (
-            #     abs(piece) == PIECE.PAWN
-            #     and pawn_in_file[x][color * -1] == 0
-            #     and pawn_in_file[x + 1][color * -1] == 0
-            #     and pawn_in_file[x - 1][color * -1] == 0
-            # ):
-            #     # bonus for passed pawn
-            #     if color == COLOR.WHITE:
-            #         evaluation += PASSED_RANK[11 - y] * color
-            #     else:
-            #         evaluation += PASSED_RANK[y] * color
-            # if abs(piece) == PIECE.ROOK:
-            #     if pawn_in_file[x][color] == 0:
-            #         evaluation += ROOK_ON_FILE[0] * color
-            #         if pawn_in_file[x][color * -1] == 0:
-            #             evaluation += ROOK_ON_FILE[1] * color
-            # if abs(piece) == PIECE.KING:
-            #     # we like having pawns in front of our king
-            #     for depl in [10 * color, 10 * color + 1, 10 * color - 1]:
-            #         if (
-            #             abs(b.squares[square + depl]) == PIECE.PAWN
-            #             and b.squares[square + depl] * color > 0
-            #         ):
-            #             evaluation += 20 * color
-            #     for depl in [20 * color, 20 * color + 1, 20 * color - 1]:
-            #         if (
-            #             abs(b.squares[square + depl]) == PIECE.PAWN
-            #             and b.squares[square + depl] * color > 0
-            #         ):
-            #             evaluation += 5 * color
+            if (
+                abs(piece) == PIECE.PAWN
+                and pawn_in_file[x][color * -1] == 0
+                and pawn_in_file[x + 1][color * -1] == 0
+                and pawn_in_file[x - 1][color * -1] == 0
+            ):
+                # bonus for passed pawn
+                if color == COLOR.WHITE:
+                    evaluation += PASSED_RANK[11 - y] * color
+                else:
+                    evaluation += PASSED_RANK[y] * color
+            if abs(piece) == PIECE.ROOK:
+                if pawn_in_file[x][color] == 0:
+                    evaluation += ROOK_ON_FILE[0] * color
+                    if pawn_in_file[x][color * -1] == 0:
+                        evaluation += ROOK_ON_FILE[1] * color
+            if abs(piece) == PIECE.KING:
+                # we like having pawns in front of our king
+                for depl in [10 * color, 10 * color + 1, 10 * color - 1]:
+                    if (
+                        abs(b.squares[square + depl]) == PIECE.PAWN
+                        and b.squares[square + depl] * color > 0
+                    ):
+                        evaluation += 20 * color
+                for depl in [20 * color, 20 * color + 1, 20 * color - 1]:
+                    if (
+                        abs(b.squares[square + depl]) == PIECE.PAWN
+                        and b.squares[square + depl] * color > 0
+                    ):
+                        evaluation += 5 * color
 
     return evaluation
