@@ -121,12 +121,13 @@ def _search(
     children = 1
 
     best = None
-
-    moves: Iterable[Move] = [
-        x for x in board.pseudo_legal_moves(b, True)
-        if not is_bad_capture(b, x)
-    ]
-    for move in config.move_ordering_fn(b, moves):
+    for move in config.move_ordering_fn(
+        b,
+        filter(
+            lambda x: not is_bad_capture(b, x),
+            board.pseudo_legal_moves(b, True)
+        )
+    ):
         curr_pv = deque(pv)
         curr_pv.append(move)
 

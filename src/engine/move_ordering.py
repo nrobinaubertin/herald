@@ -1,3 +1,4 @@
+import collections
 from .constants import COLOR
 from typing import Callable, Iterable, List
 from .data_structures import Board, Move
@@ -11,6 +12,28 @@ Move_ordering_fn = Callable[
     ],
     List[Move]
 ]
+
+
+def fast_mvv_lva(
+    b: Board,
+    moves: Iterable[Move],
+) -> Iterable[Move]:
+
+    # priority collections
+    mem: collections.deque[Move] = collections.deque()
+    for m in moves:
+        if m.is_king_capture:
+            yield m
+        if m.is_null:
+            yield m
+        if m.is_capture:
+            if m.captured_piece < 2:
+                mem.appendleft(m)
+                continue
+            yield m
+        mem.append(m)
+    for m in mem:
+        yield m
 
 
 def mvv_lva(
@@ -30,13 +53,11 @@ def mvv_lva(
             ) * b.turn
         )
 
-    moves_evals = [(m, eval(b, m)) for m in moves]
-
-    return [x[0] for x in sorted(
-        moves_evals,
-        key=lambda x: x[1],
+    return sorted(
+        moves,
+        key=lambda x: eval(b, x),
         reverse=b.turn == COLOR.WHITE
-    )]
+    )
 
 
 def no_ordering(

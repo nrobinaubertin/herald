@@ -158,9 +158,34 @@ def from_fen(fen: str) -> Board:
         en_passant=(to_square_notation(en_passant) if en_passant != "-" else -1),
         half_move=int(half_move),
         full_move=int(full_move),
+        pawn_number=get_pawns_stats(squares)[0],
+        pawn_in_file=get_pawns_stats(squares)[1],
     )
 
     return b
+
+
+def get_pawns_stats(squares):
+
+    pawn_number = array('b', [0, 0])
+    pawn_in_file = array('b', [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0,
+    ])
+
+    for i in range(8):
+        for j in range(8):
+            square = (2 + j) * 10 + (i + 1)
+            piece = squares[square]
+            if piece == 0 or piece == 7:
+                continue
+            if abs(piece) == PIECE.PAWN:
+                color = abs(piece) // piece
+                pawn_number[(color + 1) // 2] += 1
+                pawn_in_file[i * 2 + (color + 1) // 2] += 1
+
+    return pawn_number, pawn_in_file
 
 
 def push(b: Board, move: Move) -> Board:
@@ -170,6 +195,8 @@ def push(b: Board, move: Move) -> Board:
     king_en_passant = b.king_en_passant
     castling_rights = array('b', b.castling_rights)
     half_move = b.half_move
+    pawn_number = array('b', b.pawn_in_file)
+    pawn_in_file = array('b', b.pawn_in_file)
 
     if move.is_null:
         return Board(
@@ -191,6 +218,14 @@ def push(b: Board, move: Move) -> Board:
     # reset half_move count when condition is met
     if move.is_capture or abs(piece_start) == PIECE.PAWN:
         half_move = 0
+        color = abs(squares[move.start]) // squares[move.start]
+        pawn_in_file[(move.start % 10) * 2 + (color + 1) // 2] -= 1
+        pawn_in_file[(move.end % 10) * 2 + (color + 1) // 2] += 1
+
+    if move.is_capture and abs(squares[move.end]) == PIECE.PAWN:
+        color = abs(squares[move.end]) // squares[move.end]
+        pawn_number[(color + 1) // 2] -= 1
+        pawn_in_file[(move.end % 10) * 2 + (color + 1) // 2] -= 1
 
     # do the move
     squares[move.start] = PIECE.EMPTY
@@ -199,7 +234,10 @@ def push(b: Board, move: Move) -> Board:
     # special removal for "en passant" moves
     if move.end == b.en_passant and abs(piece_start) == PIECE.PAWN:
         target = move.end + (10 * b.turn)
+        color = abs(squares[target]) // squares[target]
         squares[target] = PIECE.EMPTY
+        pawn_number[(color + 1) // 2] -= 1
+        pawn_in_file[(move.end % 10) * 2 + (color + 1) // 2] -= 1
 
     # declare en_passant square for the current board
     if move.en_passant != -1:
@@ -211,6 +249,9 @@ def push(b: Board, move: Move) -> Board:
     if abs(piece_start) == PIECE.PAWN and move.end // 10 == (
         2 if b.turn == COLOR.WHITE else 9
     ):
+        color = abs(squares[move.end]) // squares[move.end]
+        pawn_number[(color + 1) // 2] -= 1
+        pawn_in_file[(move.end % 10) * 2 + (color + 1) // 2] -= 1
         squares[move.end] = PIECE.QUEEN * b.turn
 
     # some hardcode for castling move of the rook
@@ -279,6 +320,8 @@ def push(b: Board, move: Move) -> Board:
         half_move=half_move + 1,
         full_move=b.full_move + 1,
         king_en_passant=king_en_passant,
+        pawn_number=pawn_number,
+        pawn_in_file=pawn_in_file,
     )
 
 
@@ -384,10 +427,10 @@ def pieces(
     type: PIECE | None = None,
     color: COLOR | None = None,
 ) -> Iterable[int]:
-    squares = filter(
-        lambda x: abs(b.squares[x]) != PIECE.INVALID and b.squares[x] != PIECE.EMPTY,
-        range(120)
-    )
+    squares: Iterable[int] = map(lambda x: x[0] + 20, filter(
+        lambda x: abs(x[1]) in [1, 2, 3, 4, 5, 6],
+        enumerate(b.squares[20:100])
+    ))
     if type is not None:
         squares = filter(
             lambda x: abs(b.squares[x]) == type,
@@ -423,6 +466,7 @@ def knight_moves(
                 start=start,
                 end=end,
                 moving_piece=PIECE.KNIGHT * b.turn,
+                captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
                 is_capture=is_capture,
                 is_castle=False,
                 en_passant=-1,
@@ -458,6 +502,7 @@ def rook_moves(
                         start=(95 if b.turn == COLOR.WHITE else 25),
                         end=(97 if b.turn == COLOR.WHITE else 27),
                         moving_piece=PIECE.KING * b.turn,
+                        captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
                         is_capture=False,
                         is_castle=True,
                         en_passant=-1,
@@ -473,6 +518,7 @@ def rook_moves(
                         start=(95 if b.turn == COLOR.WHITE else 25),
                         end=(93 if b.turn == COLOR.WHITE else 23),
                         moving_piece=PIECE.KING * b.turn,
+                        captured_piece=0,
                         is_capture=False,
                         is_castle=True,
                         en_passant=-1,
@@ -489,6 +535,7 @@ def rook_moves(
                     start=start,
                     end=end,
                     moving_piece=PIECE.ROOK * b.turn,
+                    captured_piece=abs(b.squares[end]),
                     is_capture=is_capture,
                     is_castle=False,
                     en_passant=-1,
@@ -522,6 +569,7 @@ def bishop_moves(
                     start=start,
                     end=end,
                     moving_piece=PIECE.BISHOP * b.turn,
+                    captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
                     is_capture=is_capture,
                     is_castle=False,
                     en_passant=-1,
@@ -555,6 +603,7 @@ def queen_moves(
                     start=start,
                     end=end,
                     moving_piece=PIECE.QUEEN * b.turn,
+                    captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
                     is_capture=is_capture,
                     is_castle=False,
                     en_passant=-1,
@@ -587,6 +636,7 @@ def king_moves(
                 start=start,
                 end=end,
                 moving_piece=PIECE.KING * b.turn,
+                captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
                 is_capture=is_capture,
                 is_castle=False,
                 en_passant=-1,
@@ -615,6 +665,7 @@ def pawn_moves(
                     start=start,
                     end=end,
                     moving_piece=PIECE.PAWN * b.turn,
+                    captured_piece=0,
                     is_capture=False,
                     is_castle=False,
                     en_passant=en_passant,
@@ -637,6 +688,7 @@ def pawn_moves(
                 start=start,
                 end=end,
                 moving_piece=PIECE.PAWN * b.turn,
+                captured_piece=1,  # don't take king_en_passant into account
                 is_capture=True,
                 is_castle=False,
                 en_passant=-1,

@@ -1,5 +1,5 @@
-from collections import deque, namedtuple
 from array import array
+from collections import deque, namedtuple
 from .constants import PIECE, VALUE_MAX
 from enum import IntEnum
 
@@ -17,6 +17,7 @@ Move = namedtuple("Move", [
        "start",
        "end",
        "moving_piece",
+       "captured_piece",
        "is_capture",
        "is_castle",
        "en_passant",
@@ -24,7 +25,7 @@ Move = namedtuple("Move", [
        "is_null",
        "is_quiescent",
     ],
-    defaults=[0, False, False, -1, False, False, False],
+    defaults=[0, 0, False, False, -1, False, False, False],
 )
 
 Node = namedtuple(
@@ -53,8 +54,10 @@ Board = namedtuple("Board", [
         "half_move",
         "full_move",
         "king_en_passant",
+        "pawn_number",
+        "pawn_in_file",
     ],
-    defaults=[-1, 0, 0, -1]
+    defaults=[-1, 0, 0, -1, array('b'), array('b')]
 )
 
 
