@@ -5,6 +5,9 @@ from array import array
 from typing import Hashable
 from .data_structures import Node, Board
 
+# The table size is the maximum number of elements in the transposition table.
+TABLE_SIZE = 1_000_000
+
 
 def hash(b: Board) -> Hashable:
     data = array("b")
@@ -47,6 +50,8 @@ class TranspositionTable:
             return None
 
     def add(self, b: Board, node: Node) -> None:
+        if len(self.table) > TABLE_SIZE:
+            self.table.clear()
         board_hash = hash(b)
         if __debug__:
             self.table["nodes_added"] += 1
