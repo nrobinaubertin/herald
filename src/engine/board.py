@@ -722,21 +722,21 @@ def pseudo_legal_moves(
     ):
         start = start + 20
         type = abs(piece)
+        if type == PIECE.PAWN:
+            for move in pawn_moves(b, start, quiescent):
+                yield move
         if type == PIECE.KNIGHT:
             for move in knight_moves(b, start, quiescent):
                 yield move
-        if type == PIECE.ROOK:
-            for move in rook_moves(b, start, quiescent):
-                yield move
         if type == PIECE.BISHOP:
             for move in bishop_moves(b, start, quiescent):
+                yield move
+        if type == PIECE.ROOK:
+            for move in rook_moves(b, start, quiescent):
                 yield move
         if type == PIECE.QUEEN:
             for move in queen_moves(b, start, quiescent):
                 yield move
         if type == PIECE.KING:
             for move in king_moves(b, start, quiescent):
-                yield move
-        if type == PIECE.PAWN:
-            for move in pawn_moves(b, start, quiescent):
                 yield move
