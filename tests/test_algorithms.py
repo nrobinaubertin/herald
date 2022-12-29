@@ -18,6 +18,76 @@ from src.engine.configuration import Config
 
 class TestAlgorithms(unittest.TestCase):
 
+    def test_fast_mvv_lva(self):
+        depth = 3
+        for fen in win_at_chess[:100]:
+            futility_result = alphabeta(
+                Config({
+                    "move_ordering_fn": move_ordering.fast_mvv_lva,
+                    "eval_fn": eval_simple,
+                }),
+                board.from_fen(fen),
+                depth,
+                deque(),
+                MoveType.LEGAL,
+                -VALUE_MAX,
+                VALUE_MAX,
+            )
+            base_result = alphabeta(
+                Config({
+                    "move_ordering_fn": move_ordering.fast_mvv_lva,
+                    "eval_fn": eval_simple,
+                }),
+                board.from_fen(fen),
+                depth,
+                deque(),
+                MoveType.LEGAL,
+                -VALUE_MAX,
+                VALUE_MAX,
+            )
+            self.assertEqual(
+                futility_result.value,
+                base_result.value
+            )
+
+    def test_futility(self):
+        depth = 4
+        for fen in win_at_chess[:50]:
+            futility_result = alphabeta(
+                Config({
+                    "move_ordering_fn": move_ordering.mvv_lva,
+                    "eval_fn": eval_simple,
+                    "futility_pruning": True,
+                    "futility_depth": 3,
+                }),
+                board.from_fen(fen),
+                depth,
+                deque(),
+                MoveType.LEGAL,
+                -VALUE_MAX,
+                VALUE_MAX,
+            )
+            base_result = alphabeta(
+                Config({
+                    "move_ordering_fn": move_ordering.mvv_lva,
+                    "eval_fn": eval_simple,
+                }),
+                board.from_fen(fen),
+                depth,
+                deque(),
+                MoveType.LEGAL,
+                -VALUE_MAX,
+                VALUE_MAX,
+            )
+            self.assertEqual(
+                futility_result.value,
+                base_result.value
+            )
+            self.assertEqual(
+                f"{fen}: {','.join([to_uci(x) for x in futility_result.pv])}",
+                f"{fen}: {','.join([to_uci(x) for x in base_result.pv])}",
+            )
+
     # This test equivalence between raw alphabeta
     # and alphabeta with mvv_lva move ordering
     def test_mvv_lva(self):
