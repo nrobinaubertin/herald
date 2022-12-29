@@ -140,8 +140,11 @@ def alphabeta(
         nb = board.push(b, move)
 
         # futility pruning
-        if pruning.is_futile(nb, depth, alpha, beta, config.eval_fn):
-            continue
+
+        # Only analyse nodes close to the horizon
+        if config.futility_pruning and depth < config.futility_depth:
+            if pruning.is_futile(nb, depth, alpha, beta, config.eval_fn):
+                continue
 
         node = alphabeta(
             config,

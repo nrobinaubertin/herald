@@ -6,10 +6,6 @@ from . import board
 
 def is_futile(b: Board, depth: int, alpha: int, beta: int, eval_fn):
 
-    # Only analyse nodes close to the horizon
-    if depth > 3:
-        return False
-
     static_eval = eval_fn(b)
 
     def futility_margin(depth):

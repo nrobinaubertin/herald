@@ -19,7 +19,7 @@ CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 
 CONFIG = Config({
-    "version": "0.19.7",
+    "version": "0.19.8",
     "alg_fn": alphabeta,
     "move_ordering_fn": mvv_lva,
     "eval_fn": eval_new,
@@ -27,6 +27,8 @@ CONFIG = Config({
     "quiescence_depth": 5,
     "use_transposition_table": True,
     "use_qs_transposition_table": True,
+    "futility_pruning": True,
+    "futility_depth": 3,
 })
 
 # load config at default location
