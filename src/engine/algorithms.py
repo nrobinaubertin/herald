@@ -7,6 +7,7 @@ from .constants import COLOR, VALUE_MAX
 from . import board
 from .data_structures import Node, Board, Move, MoveType
 from .quiescence import quiescence
+from . import pruning
 from .configuration import Config
 
 from typing import Callable, Iterable
@@ -137,6 +138,11 @@ def alphabeta(
             )
 
         nb = board.push(b, move)
+
+        # futility pruning
+        if pruning.is_futile(nb, depth, alpha, beta, config.eval_fn):
+            continue
+
         node = alphabeta(
             config,
             nb,

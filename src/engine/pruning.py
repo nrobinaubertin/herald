@@ -4,28 +4,24 @@ from .evaluation import PIECE_VALUE
 from . import board
 
 
-def is_futile_move(b: Board, move: Move) -> bool:
-    if is_bad_capture(b, move):
-        return True
+def is_futile(b: Board, depth: int, alpha: int, beta: int, eval_fn):
 
-    piece_start = b.squares[move.start]
+    # Only analyse nodes close to the horizon
+    if depth > 3:
+        return False
 
-    # we don't test bishops in corners
-    if (
-        abs(piece_start) == PIECE.BISHOP
-        and move.end in [21, 28, 91, 98]
-    ):
-        return True
+    static_eval = eval_fn(b)
 
-    # we don't want a knight on the edge
-    if (
-        abs(piece_start) == PIECE.KNIGHT
-        and (
-            move.end % 10 in [2, 9]
-            or move.end // 10 in [1, 8]
-        )
-    ):
-        return True
+    def futility_margin(depth):
+        return 165 * depth
+
+    # colors are inverted since this is a board resulting from our tested move
+    if b.turn == COLOR.BLACK:
+        if static_eval + futility_margin(depth) <= alpha:
+            return True
+    else:
+        if static_eval - futility_margin(depth) >= beta:
+            return True
 
     return False
 

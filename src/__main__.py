@@ -19,7 +19,7 @@ CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 
 CONFIG = Config({
-    "version": "0.19.6",
+    "version": "0.19.7",
     "alg_fn": alphabeta,
     "move_ordering_fn": mvv_lva,
     "eval_fn": eval_new,
