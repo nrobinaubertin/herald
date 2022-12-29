@@ -56,31 +56,26 @@ def alphabeta(
         # check if we find a hit in the transposition table
         node = config.transposition_table.get(b, depth)
         if isinstance(node, Node) and node.depth >= depth:
-            # handle the found node as usual
-            if b.turn == COLOR.WHITE:
+
+            # exact node
+            if node.lower < node.value < node.upper:
+                return Node(
+                    value=node.value,
+                    pv=pv,
+                    depth=node.depth,
+                    full_move=node.full_move,
+                    lower=alpha,
+                    upper=beta,
+                    children=1,
+                )
+
+            # if this is a cut-node
+            if node.value >= node.upper:
                 alpha = max(alpha, node.value)
-                if node.value >= beta:
-                    return Node(
-                        value=node.value,
-                        pv=pv,
-                        depth=node.depth,
-                        full_move=node.full_move,
-                        lower=alpha,
-                        upper=beta,
-                        children=1,
-                    )
-            else:
+
+            # if this is an all-node
+            if node.value <= node.lower:
                 beta = min(beta, node.value)
-                if node.value <= alpha:
-                    return Node(
-                        value=node.value,
-                        pv=pv,
-                        depth=node.depth,
-                        full_move=node.full_move,
-                        lower=alpha,
-                        upper=beta,
-                        children=1,
-                    )
 
     # count the number of children (direct and non direct)
     # for info purposes
