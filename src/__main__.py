@@ -13,6 +13,7 @@ from engine.configuration import Config
 from engine.evaluation import eval_simple, eval_pst, eval_new
 from engine.move_ordering import no_ordering, mvv_lva
 from engine.algorithms import alphabeta
+from engine.pruning import see
 
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
@@ -53,6 +54,9 @@ def uci_parser(line: str) -> list[str]:
 
     if not tokens:
         return []
+
+    if tokens[0] == "see":
+        return [f"SEE: {see(CURRENT_BOARD, int(tokens[1]), 0)}"]
 
     if tokens[0] == "eval":
         return [f"board: {CONFIG.eval_fn(CURRENT_BOARD)}"]
