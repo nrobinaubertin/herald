@@ -688,13 +688,194 @@ def pawn_moves(
                 start=start,
                 end=end,
                 moving_piece=PIECE.PAWN * b.turn,
-                captured_piece=1,  # don't take king_en_passant into account
+                captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
                 is_capture=True,
                 is_castle=False,
                 en_passant=-1,
                 is_king_capture=is_king_capture,
                 is_quiescent=quiescent,
             )
+
+
+# Special function to create moves that target a square
+# Useful for the SEE function
+def capture_moves(b: Board, target: int) -> Iterable[Move]:
+
+    is_king_capture = abs(b.squares[target]) == PIECE.KING
+    queen_moves: collections.deque[Move] = collections.deque()
+    king_moves: collections.deque[Move] = collections.deque()
+
+    # PAWN
+    for depl in [9, 11] if b.turn == COLOR.WHITE else [-9, -11]:
+        start = target + depl
+        if abs(b.squares[start]) == PIECE.PAWN and b.squares[start] * b.turn > 0:
+            yield Move(
+                start=start,
+                end=target,
+                moving_piece=PIECE.PAWN * b.turn,
+                captured_piece=abs(b.squares[target]),
+                is_capture=True,
+                is_castle=False,
+                en_passant=-1,
+                is_king_capture=is_king_capture,
+                is_quiescent=True,
+            )
+
+    # KNIGHT
+    for depl in [21, 12, -8, -19, -21, -12, 8, 19]:
+        start = target + depl
+        if abs(b.squares[start]) == PIECE.KNIGHT and b.squares[start] * b.turn > 0:
+            yield Move(
+                start=start,
+                end=target,
+                moving_piece=PIECE.KNIGHT * b.turn,
+                captured_piece=abs(b.squares[target]),
+                is_capture=True,
+                is_castle=False,
+                en_passant=-1,
+                is_king_capture=is_king_capture,
+                is_quiescent=True,
+            )
+
+    # BISHOP + QUEEN + KING
+    for direction in [11, -11, 9, -9]:
+        for x in range(1, 8):
+            start = target + x * direction
+
+            if (
+                abs(b.squares[start]) == PIECE.BISHOP
+                and b.squares[start] * b.turn > 0
+            ):
+                yield Move(
+                    start=start,
+                    end=target,
+                    moving_piece=PIECE.BISHOP * b.turn,
+                    captured_piece=abs(b.squares[target]),
+                    is_capture=True,
+                    is_castle=False,
+                    en_passant=-1,
+                    is_king_capture=is_king_capture,
+                    is_quiescent=True,
+                )
+
+            if (
+                abs(b.squares[start]) == PIECE.QUEEN
+                and b.squares[start] * b.turn > 0
+            ):
+                queen_moves.append(Move(
+                    start=start,
+                    end=target,
+                    moving_piece=PIECE.QUEEN * b.turn,
+                    captured_piece=abs(b.squares[target]),
+                    is_capture=True,
+                    is_castle=False,
+                    en_passant=-1,
+                    is_king_capture=is_king_capture,
+                    is_quiescent=True,
+                ))
+
+            if (
+                abs(b.squares[start]) == PIECE.KING
+                and b.squares[start] * b.turn > 0
+            ):
+                king_moves.append(Move(
+                    start=start,
+                    end=target,
+                    moving_piece=PIECE.KING * b.turn,
+                    captured_piece=abs(b.squares[target]),
+                    is_capture=True,
+                    is_castle=False,
+                    en_passant=-1,
+                    is_king_capture=is_king_capture,
+                    is_quiescent=True,
+                ))
+            if b.squares[start] != PIECE.EMPTY:
+                break
+
+    # ROOK + QUEEN + KING
+    for direction in [1, -1, 10, -10]:
+        for x in range(1, 8):
+            start = target + x * direction
+
+            if (
+                abs(b.squares[start]) == PIECE.ROOK
+                and b.squares[start] * b.turn > 0
+            ):
+                yield Move(
+                    start=start,
+                    end=target,
+                    moving_piece=PIECE.ROOK * b.turn,
+                    captured_piece=abs(b.squares[target]),
+                    is_capture=True,
+                    is_castle=False,
+                    en_passant=-1,
+                    is_king_capture=is_king_capture,
+                    is_quiescent=True,
+                )
+
+            if (
+                abs(b.squares[start]) == PIECE.QUEEN
+                and b.squares[start] * b.turn > 0
+            ):
+                queen_moves.append(Move(
+                    start=start,
+                    end=target,
+                    moving_piece=PIECE.QUEEN * b.turn,
+                    captured_piece=abs(b.squares[target]),
+                    is_capture=True,
+                    is_castle=False,
+                    en_passant=-1,
+                    is_king_capture=is_king_capture,
+                    is_quiescent=True,
+                ))
+
+            if (
+                abs(b.squares[start]) == PIECE.KING
+                and b.squares[start] * b.turn > 0
+            ):
+                king_moves.append(Move(
+                    start=start,
+                    end=target,
+                    moving_piece=PIECE.KING * b.turn,
+                    captured_piece=abs(b.squares[target]),
+                    is_capture=True,
+                    is_castle=False,
+                    en_passant=-1,
+                    is_king_capture=is_king_capture,
+                    is_quiescent=True,
+                ))
+            if b.squares[start] != PIECE.EMPTY:
+                break
+
+    # ROOK + QUEEN
+    for direction in [1, -1, 10, -10]:
+        for x in range(1, 8):
+            start = target + x * direction
+
+            if (
+                (
+                    abs(b.squares[start]) == PIECE.ROOK
+                    or abs(b.squares[start]) == PIECE.QUEEN
+                ) and b.squares[start] * b.turn > 0
+            ):
+                yield Move(
+                    start=start,
+                    end=target,
+                    moving_piece=abs(b.squares[start]) * b.turn,
+                    captured_piece=abs(b.squares[target]),
+                    is_capture=True,
+                    is_castle=False,
+                    en_passant=-1,
+                    is_king_capture=is_king_capture,
+                    is_quiescent=True,
+                )
+            if b.squares[start] != PIECE.EMPTY:
+                break
+
+    for m in queen_moves:
+        yield m
+    for m in king_moves:
+        yield m
 
 
 def pseudo_legal_moves(

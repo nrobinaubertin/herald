@@ -15,6 +15,8 @@ def search(
 
     start_time = time.time_ns()
 
+    config.set_depth(depth)
+
     possible_moves = [x for x in board.legal_moves(b)]
 
     # return None if there is no possible move

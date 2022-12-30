@@ -55,6 +55,10 @@ def itdep(
     max_depth: int = 10,
     print_uci: bool = True,
 ):
+    # clear transposition tables at each new search
+    # there seems to be collision issues that I don't have time to handle now
+    config.transposition_table.clear()
+    config.qs_transposition_table.clear()
 
     if movetime > 0:
 

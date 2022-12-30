@@ -116,13 +116,12 @@ def _search(
     children = 1
 
     best = None
-    for move in config.move_ordering_fn(
-        b,
-        filter(
-            lambda x: not is_bad_capture(b, x),
-            board.pseudo_legal_moves(b, True)
-        )
-    ):
+    moves = board.pseudo_legal_moves(b, True)
+    if depth > 1:
+        moves = filter(lambda x: not is_bad_capture(b, x, with_see=True), moves)
+    else:
+        moves = filter(lambda x: not is_bad_capture(b, x, with_see=False), moves)
+    for move in config.qs_move_ordering_fn(b, moves):
         curr_pv = deque(pv)
         curr_pv.append(move)
 

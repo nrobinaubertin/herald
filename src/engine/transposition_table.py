@@ -34,6 +34,16 @@ class TranspositionTable:
     def __str__(self) -> str:
         return str(self.table)
 
+    def clear(self):
+        self.table.clear()
+        self.table["hits"] = 0
+        self.table["shallow_hits"] = 0
+        self.table["old_hits"] = 0
+        self.table["reqs"] = 0
+        self.table["nodes_added"] = 0
+        self.table["better_nodes_added"] = 0
+        self.table["worse_nodes_added"] = 0
+
     def get(self, b: Board, depth: int = 0) -> Node | None:
         try:
             board_hash = hash(b)

@@ -31,7 +31,8 @@ def see(b: Board, target: int, score: int) -> int:
 
     # let's use the move that takes the target with
     # the least valuable attacker
-    for move in filter(lambda x: x.end == target, board.pseudo_legal_moves(b, True)):
+    # for move in filter(lambda x: x.end == target, board.pseudo_legal_moves(b, True)):
+    for move in board.capture_moves(b, target):
         value = PIECE_VALUE[abs(b.squares[target])] * b.turn
 
         if score != 0:
@@ -43,7 +44,7 @@ def see(b: Board, target: int, score: int) -> int:
     return score
 
 
-def is_bad_capture(b: Board, move: Move) -> bool:
+def is_bad_capture(b: Board, move: Move, with_see: bool = True) -> bool:
 
     # a non-capture move is not a bad capture
     if not move.is_capture:
@@ -66,9 +67,10 @@ def is_bad_capture(b: Board, move: Move) -> bool:
         ):
             return True
 
-    # if SEE is negative, then we don't attempt the move
-    if see(b, move.end, 0) * b.turn < 0:
-        return True
+    if with_see:
+        # if SEE is negative, then we don't attempt the move
+        if see(b, move.end, 0) * b.turn < 0:
+            return True
 
     # if we don't know, we have to try the move (we can't say that it's bad)
     return False

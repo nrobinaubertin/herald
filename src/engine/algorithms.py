@@ -90,7 +90,7 @@ def alphabeta(
             node = quiescence(
                 config,
                 b,
-                config.quiescence_depth,
+                min(config.quiescence_depth, config.depth),
                 pv,
                 alpha,
                 beta,
@@ -140,7 +140,6 @@ def alphabeta(
         nb = board.push(b, move)
 
         # futility pruning
-
         # Only analyse nodes close to the horizon
         if config.futility_pruning and depth < config.futility_depth:
             if pruning.is_futile(nb, depth, alpha, beta, config.eval_fn):

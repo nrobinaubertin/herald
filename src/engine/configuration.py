@@ -11,13 +11,16 @@ class Config:
         self.qs_transposition_table = TranspositionTable({})
         self.opening_book: dict = {}
 
-    def clear_transposition_tables(self):
-        self.transposition_table = TranspositionTable({})
-        self.qs_transposition_table = TranspositionTable({})
-
     @property
     def version(self):
         return self._config.get('version', True)
+
+    def set_depth(self, depth: int):
+        self._config['depth'] = depth
+
+    @property
+    def depth(self):
+        return self._config.get('depth', 0)
 
     @property
     def use_transposition_table(self):
@@ -50,6 +53,10 @@ class Config:
     @property
     def move_ordering_fn(self):
         return self._config['move_ordering_fn']
+
+    @property
+    def qs_move_ordering_fn(self):
+        return self._config['qs_move_ordering_fn']
 
     @property
     def alg_fn(self):
