@@ -10,8 +10,8 @@ from engine.iterative_deepening import itdep
 from engine.analysis import fen_analysis
 from engine.time_management import target_movetime
 from engine.configuration import Config
-from engine.evaluation import eval_simple, eval_pst, eval_new
-from engine.move_ordering import no_ordering, mvv_lva
+from engine.evaluation import eval_new
+from engine.move_ordering import fast_mvv_lva, qs_ordering
 from engine.algorithms import alphabeta
 from engine.pruning import see
 
@@ -19,9 +19,9 @@ CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 
 CONFIG = Config({
-    "version": "0.19.10",
+    "version": "0.19.11",
     "alg_fn": alphabeta,
-    "move_ordering_fn": mvv_lva,
+    "move_ordering_fn": fast_mvv_lva,
     "qs_move_ordering_fn": qs_ordering,
     "eval_fn": eval_new,
     "quiescence_search": True,

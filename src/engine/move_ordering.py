@@ -23,7 +23,6 @@ def qs_ordering(
     mem2: Move | None = None
     mem3: Move | None = None
     mem4: Move | None = None
-    mem5: Move | None = None
 
     for m in moves:
         if m.is_king_capture:
@@ -71,9 +70,11 @@ def fast_mvv_lva(
     # priority collections
     mem: collections.deque[Move] = collections.deque()
     for m in moves:
-        if m.is_king_capture:
-            yield m
-        if m.is_null:
+        if (
+            m.is_king_capture
+            or m.is_null
+            or m.is_castle
+        ):
             yield m
         if m.is_capture:
             if m.captured_piece < 2:
@@ -91,13 +92,15 @@ def mvv_lva(
 ) -> List[Move]:
 
     def eval(b, m):
+        if m.is_castle:
+            return 100000
         if m.is_null:
-            return 10000
+            return 100000
         return (
             int(m.is_capture)
             * (
-                1000
-                + PIECE_VALUE[abs(b.squares[m.end])] * 1000
+                100
+                + PIECE_VALUE[abs(b.squares[m.end])] * 100
                 - PIECE_VALUE[abs(b.squares[m.start])]
             ) * b.turn
         )
