@@ -170,11 +170,11 @@ def eval_new(b: Board) -> int:
     for i in range(8):
         for j in range(8):
             square = (2 + j) * 10 + (i + 1)
+            piece = b.squares[square]
+            if piece == PIECE.EMPTY:
+                continue
             x = i + 1
             y = 2 + j
-            piece = b.squares[square]
-            if piece == 0 or piece == 7:
-                continue
             color = abs(piece) // piece
             evaluation += PIECE_VALUE[abs(piece)] * color
             evaluation += PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER[abs(piece)][b.pawn_number[(color + 1) // 2]]
@@ -184,21 +184,21 @@ def eval_new(b: Board) -> int:
                 evaluation += (
                     PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][119 - square] * color
                 )
-            if abs(piece) == PIECE.PAWN and b.pawn_in_file[x*2 + (color + 1)//2] > 0:
-                evaluation += DOUBLED_PAWN_PENALTY * color
-                if b.pawn_in_file[x * 2 + (color + 1)//2] > 1:
+            if abs(piece) == PIECE.PAWN:
+                if b.pawn_in_file[x*2 + (color + 1)//2] > 0:
                     evaluation += DOUBLED_PAWN_PENALTY * color
-            if (
-                abs(piece) == PIECE.PAWN
-                and b.pawn_in_file[x * 2 + (color * -1 + 1)//2] == 0
-                and b.pawn_in_file[(x + 1) * 2 + (color * -1 +1)//2] == 0
-                and b.pawn_in_file[(x - 1) * 2 + (color * -1 +1)//2] == 0
-            ):
-                # bonus for passed pawn
-                if color == COLOR.WHITE:
-                    evaluation += PASSED_RANK[11 - y] * color
+                    if b.pawn_in_file[x * 2 + (color + 1)//2] > 1:
+                        evaluation += DOUBLED_PAWN_PENALTY * color
                 else:
-                    evaluation += PASSED_RANK[y] * color
+                    if (
+                        b.pawn_in_file[(x + 1) * 2 + (color * -1 +1)//2] == 0
+                        and b.pawn_in_file[(x - 1) * 2 + (color * -1 +1)//2] == 0
+                    ):
+                        # bonus for passed pawn
+                        if color == COLOR.WHITE:
+                            evaluation += PASSED_RANK[11 - y] * color
+                        else:
+                            evaluation += PASSED_RANK[y] * color
             if abs(piece) == PIECE.ROOK:
                 if b.pawn_in_file[x * 2 + (color +1) //2] == 0:
                     evaluation += ROOK_ON_FILE[0] * color
@@ -212,11 +212,5 @@ def eval_new(b: Board) -> int:
                         and b.squares[square + depl] * color > 0
                     ):
                         evaluation += 20 * color
-                for depl in [-20 * color, -20 * color + 1, -20 * color - 1]:
-                    if (
-                        abs(b.squares[square + depl]) == PIECE.PAWN
-                        and b.squares[square + depl] * color > 0
-                    ):
-                        evaluation += 5 * color
 
     return evaluation
