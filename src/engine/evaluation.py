@@ -206,13 +206,13 @@ def eval_new(b: Board) -> int:
                         evaluation += ROOK_ON_FILE[1] * color
             if abs(piece) == PIECE.KING:
                 # we like having pawns in front of our king
-                for depl in [10 * color, 10 * color + 1, 10 * color - 1]:
+                for depl in [-10 * color, -10 * color + 1, -10 * color - 1]:
                     if (
                         abs(b.squares[square + depl]) == PIECE.PAWN
                         and b.squares[square + depl] * color > 0
                     ):
                         evaluation += 20 * color
-                for depl in [20 * color, 20 * color + 1, 20 * color - 1]:
+                for depl in [-20 * color, -20 * color + 1, -20 * color - 1]:
                     if (
                         abs(b.squares[square + depl]) == PIECE.PAWN
                         and b.squares[square + depl] * color > 0
