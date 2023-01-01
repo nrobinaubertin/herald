@@ -304,9 +304,11 @@ def minimax(
                     children=children,
                 )
 
-    return Node(
-        value=best.value,
-        depth=best.depth,
-        pv=best.pv,
-        children=children,
-    )
+    if isinstance(best, Node):
+        return Node(
+            value=best.value,
+            depth=best.depth,
+            pv=best.pv,
+            children=children,
+        )
+    raise Exception("No best node could be found. This should not happen")

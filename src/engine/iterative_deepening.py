@@ -6,6 +6,7 @@ from .data_structures import to_uci, Search, Board, Move
 from .constants import VALUE_MAX
 from . import board
 from .configuration import Config
+import random
 
 
 def to_string(search: Search) -> str:
@@ -63,7 +64,8 @@ def itdep(
     if movetime > 0:
 
         if board.to_fen(b) in config.opening_book:
-            move = config.opening_book[board.to_fen(b)]["moves"][0]["move"]
+            moves = config.opening_book[board.to_fen(b)]["moves"]
+            move = random.choice(moves)["move"]
             move = Move(*[
                 int(move[0]),
                 int(move[1]),

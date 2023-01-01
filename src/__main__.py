@@ -19,7 +19,7 @@ CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 
 CONFIG = Config({
-    "version": "0.19.14",
+    "version": "0.19.15",
     "alg_fn": alphabeta,
     "move_ordering_fn": fast_mvv_lva,
     "qs_move_ordering_fn": qs_ordering,
@@ -148,7 +148,7 @@ def uci_parser(line: str) -> list[str]:
 
         process = multiprocessing.Process(
             target=fen_analysis,
-            args=(input, output),
+            args=(CONFIG, input, output),
             kwargs={
                 "depth": depth,
                 "branch_factor": branch_factor,

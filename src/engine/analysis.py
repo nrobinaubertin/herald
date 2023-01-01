@@ -1,21 +1,16 @@
 import json
-from .algorithms import Alg_fn
 from collections import deque
-from .transposition_table import TranspositionTable
 from .constants import COLOR, VALUE_MAX
 from . import board
-from .evaluation import eval_simple
-from .data_structures import Board, to_uci
-from . import move_ordering
+from .data_structures import Board, to_uci, MoveType
 
 
 def fen_analysis(
+    config,
     input,
     output,
-    alg_fn: Alg_fn,
     depth: int = 0,
     branch_factor: int = 1,
-    transposition_table: TranspositionTable | None = None,
 ):
     fens = []
     with open(input, "r") as input_file:
@@ -35,7 +30,7 @@ def fen_analysis(
         ):
             continue
         b = board.from_fen(fen)
-        moves = analysis(b, alg_fn, depth, branch_factor, transposition_table)
+        moves = analysis(config, b, depth, branch_factor)
         data[fen] = {
             "depth": depth,
             "moves": moves,
@@ -55,11 +50,10 @@ def fen_analysis(
 
 
 def analysis(
+    config,
     b: Board,
-    alg_fn: Alg_fn,
     depth: int = 0,
     branch_factor: int = 1,
-    transposition_table: TranspositionTable | None = None,
 ):
 
     results = []
@@ -77,27 +71,18 @@ def analysis(
         })
         return results
 
-    # Assume that we are not in zugzwang and that we can find a move that improves the situation
-    if b.turn == COLOR.WHITE:
-        alpha: int = eval_simple(b)
-        beta: int = VALUE_MAX
-    else:
-        alpha: int = -VALUE_MAX
-        beta: int = eval_simple(b)
-
     children: int = 1
 
     for move in possible_moves:
 
-        node = alg_fn(
+        node = config.alg_fn(
+            config,
             board.push(b, move),
-            depth,
+            depth - 1,
             deque([move]),
-            eval_simple,
-            alpha,
-            beta,
-            transposition_table,
-            move_ordering.mvv_lva,
+            MoveType.LEGAL,
+            -VALUE_MAX,
+            VALUE_MAX,
         )
 
         children += node.children
