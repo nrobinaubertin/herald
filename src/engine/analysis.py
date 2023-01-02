@@ -1,8 +1,9 @@
 import json
 from collections import deque
-from .constants import COLOR, VALUE_MAX
+
 from . import board
-from .data_structures import Board, to_uci, MoveType
+from .constants import COLOR, VALUE_MAX
+from .data_structures import Board, MoveType, to_uci
 
 
 def fen_analysis(
@@ -65,10 +66,12 @@ def analysis(
 
     # if there's only one move possible, return it immediately
     if len(possible_moves) == 1:
-        results.append({
-            "move": possible_moves[0],
-            "score": 0,
-        })
+        results.append(
+            {
+                "move": possible_moves[0],
+                "score": 0,
+            }
+        )
         return results
 
     children: int = 1
@@ -87,13 +90,13 @@ def analysis(
 
         children += node.children
 
-        results.append({
-            "move": node.pv[0],
-            "score": node.value,
-        })
+        results.append(
+            {
+                "move": node.pv[0],
+                "score": node.value,
+            }
+        )
 
-    return sorted(
-        results,
-        key=lambda x: x["score"],
-        reverse=(b.turn == COLOR.WHITE)
-    )[:branch_factor]
+    return sorted(results, key=lambda x: x["score"], reverse=(b.turn == COLOR.WHITE))[
+        :branch_factor
+    ]

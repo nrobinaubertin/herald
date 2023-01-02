@@ -4,9 +4,11 @@ We test our move generation using the perft algorithm
 """
 
 import unittest
+
 import src.engine.board as board
 from src.engine.data_structures import Board, to_uci
-from .win_at_chess import win_at_chess, wac_moves
+
+from .win_at_chess import wac_moves, win_at_chess
 
 
 class TestAlgorithms(unittest.TestCase):
@@ -30,7 +32,10 @@ class TestAlgorithms(unittest.TestCase):
     # https://www.chessprogramming.org/Perft_Results#Position_2
     def test_perft_pos2(self):
         # depth = 4 doesn't work because we don't have underpromotions
-        nodes = self.execute(board.from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0"), 3)
+        nodes = self.execute(
+            board.from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0"),
+            3,
+        )
         self.assertEqual(nodes, 97862)
 
     # https://www.chessprogramming.org/Perft_Results#Position_3
@@ -54,7 +59,12 @@ class TestAlgorithms(unittest.TestCase):
     # https://www.chessprogramming.org/Perft_Results#Position_6
     def test_perft_pos6(self):
         # too long for depth = 4
-        nodes = self.execute(board.from_fen("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10"), 3)
+        nodes = self.execute(
+            board.from_fen(
+                "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10"
+            ),
+            3,
+        )
         self.assertEqual(nodes, 89890)
 
     # testing the number of moves available

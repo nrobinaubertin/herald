@@ -1,7 +1,8 @@
 from array import array
 from collections import deque, namedtuple
-from .constants import PIECE, VALUE_MAX
 from enum import IntEnum
+
+from .constants import PIECE, VALUE_MAX
 
 
 class MoveType(IntEnum):
@@ -13,37 +14,38 @@ class MoveType(IntEnum):
     NULL = 5
 
 
-Move = namedtuple("Move", [
-       "start",
-       "end",
-       "moving_piece",
-       "captured_piece",
-       "is_capture",
-       "is_castle",
-       "en_passant",
-       "is_king_capture",
-       "is_null",
-       "is_quiescent",
+Move = namedtuple(
+    "Move",
+    [
+        "start",
+        "end",
+        "moving_piece",
+        "captured_piece",
+        "is_capture",
+        "is_castle",
+        "en_passant",
+        "is_king_capture",
+        "is_null",
+        "is_quiescent",
     ],
     defaults=[0, 0, False, False, -1, False, False, False],
 )
 
 Node = namedtuple(
     "Node",
-    [
-        "value", "depth", "pv", "type",
-        "upper", "lower", "squares", "children", "full_move"
-    ],
+    ["value", "depth", "pv", "type", "upper", "lower", "squares", "children", "full_move"],
     defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None, 0, 0],
 )
 
 
-Board = namedtuple("Board", [
+Board = namedtuple(
+    "Board",
+    [
         # array of PIECE * COLOR
         # 120 squares for a 10*12 mailbox
         # https://www.chessprogramming.org/Mailbox
         "squares",
-        # color of the player whos turn it is
+        # color of the player who's turn it is
         "turn",
         # positions history to check for repetition
         "positions_history",
@@ -57,11 +59,13 @@ Board = namedtuple("Board", [
         "pawn_number",
         "pawn_in_file",
     ],
-    defaults=[-1, 0, 0, -1, array('b'), array('b')]
+    defaults=[-1, 0, 0, -1, array("b"), array("b")],
 )
 
 
-Search = namedtuple("Search", [
+Search = namedtuple(
+    "Search",
+    [
         "move",
         "depth",
         "score",
@@ -70,7 +74,7 @@ Search = namedtuple("Search", [
         "pv",
         "stop_search",
     ],
-    defaults=[False]
+    defaults=[False],
 )
 
 

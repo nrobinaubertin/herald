@@ -1,17 +1,15 @@
 """
-Search alogrithms
+Search algorithms
 """
 
 from collections import deque
-from .constants import COLOR, VALUE_MAX
-from . import board
-from .data_structures import Node, Board, Move, MoveType
-from .quiescence import quiescence
-from . import pruning
-from .configuration import Config
-
 from typing import Callable, Iterable
 
+from . import board, pruning
+from .configuration import Config
+from .constants import COLOR, VALUE_MAX
+from .data_structures import Board, Move, MoveType, Node
+from .quiescence import quiescence
 
 Alg_fn = Callable[
     [
@@ -23,7 +21,7 @@ Alg_fn = Callable[
         int | None,
         int | None,
     ],
-    Node
+    Node,
 ]
 
 
@@ -125,7 +123,7 @@ def alphabeta(
         curr_pv = deque(pv)
         curr_pv.append(move)
 
-        # return immediatly if this is a king capture
+        # return immediately if this is a king capture
         if move.is_king_capture:
             return Node(
                 value=VALUE_MAX * b.turn,
@@ -150,11 +148,7 @@ def alphabeta(
             nb,
             depth - 1,
             curr_pv,
-            (
-                MoveType.PSEUDO_LEGAL
-                if move_type == MoveType.LEGAL
-                else move_type
-            ),
+            (MoveType.PSEUDO_LEGAL if move_type == MoveType.LEGAL else move_type),
             alpha,
             beta,
         )
@@ -268,7 +262,7 @@ def minimax(
         curr_pv = deque(pv)
         curr_pv.append(move)
 
-        # return immediatly if this is a king capture
+        # return immediately if this is a king capture
         if move.is_king_capture:
             return Node(
                 value=VALUE_MAX * b.turn,

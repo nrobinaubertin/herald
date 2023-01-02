@@ -3,16 +3,17 @@ TestTranspositionTable
 We test the transposition table by comparing results with and without it
 """
 
-from collections import deque
 import unittest
-from .win_at_chess import win_at_chess
+from collections import deque
+
 import src.engine.board as board
+from src.engine import evaluation, move_ordering
 from src.engine.algorithms import alphabeta, negac
 from src.engine.constants import VALUE_MAX
-from src.engine.transposition_table import TranspositionTable
-from src.engine import move_ordering
-from src.engine import evaluation
 from src.engine.data_structures import to_uci
+from src.engine.transposition_table import TranspositionTable
+
+from .win_at_chess import win_at_chess
 
 
 class TestTranspositionTable(unittest.TestCase):
@@ -42,12 +43,11 @@ class TestTranspositionTable(unittest.TestCase):
                 None,
             )
             self.assertEqual(
-                fen + ', ' + str(negac_tt_result.value),
-                fen + ', ' + str(negac_result.value)
+                fen + ", " + str(negac_tt_result.value), fen + ", " + str(negac_result.value)
             )
             self.assertEqual(
-                fen + ', ' + ' '.join([to_uci(x) for x in negac_tt_result.pv]),
-                fen + ', ' + ' '.join([to_uci(x) for x in negac_result.pv]),
+                fen + ", " + " ".join([to_uci(x) for x in negac_tt_result.pv]),
+                fen + ", " + " ".join([to_uci(x) for x in negac_result.pv]),
             )
 
     def test_alphabeta(self):
@@ -74,12 +74,12 @@ class TestTranspositionTable(unittest.TestCase):
                 None,
             )
             self.assertEqual(
-                fen + ', ' + str(alphabeta_tt_result.value),
-                fen + ', ' + str(alphabeta_result.value)
+                fen + ", " + str(alphabeta_tt_result.value),
+                fen + ", " + str(alphabeta_result.value),
             )
             self.assertEqual(
-                fen + ', ' + ' '.join([to_uci(x) for x in alphabeta_tt_result.pv]),
-                fen + ', ' + ' '.join([to_uci(x) for x in alphabeta_result.pv]),
+                fen + ", " + " ".join([to_uci(x) for x in alphabeta_tt_result.pv]),
+                fen + ", " + " ".join([to_uci(x) for x in alphabeta_result.pv]),
             )
 
 

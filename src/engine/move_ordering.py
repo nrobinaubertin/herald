@@ -1,16 +1,17 @@
 import collections
-from .constants import COLOR
+from random import shuffle
 from typing import Callable, Iterable, List
+
+from .constants import COLOR
 from .data_structures import Board, Move
 from .evaluation import PIECE_VALUE
-from random import shuffle
 
 Move_ordering_fn = Callable[
     [
         Board,
         Iterable[Move],
     ],
-    List[Move]
+    List[Move],
 ]
 
 
@@ -70,11 +71,7 @@ def fast_mvv_lva(
     # priority collections
     mem: collections.deque[Move] = collections.deque()
     for m in moves:
-        if (
-            m.is_king_capture
-            or m.is_null
-            or m.is_castle
-        ):
+        if m.is_king_capture or m.is_null or m.is_castle:
             yield m
         if m.is_capture:
             if m.captured_piece < 2:
@@ -90,7 +87,6 @@ def mvv_lva(
     b: Board,
     moves: Iterable[Move],
 ) -> List[Move]:
-
     def eval(b, m):
         if m.is_castle:
             return 100000
@@ -102,14 +98,11 @@ def mvv_lva(
                 100
                 + PIECE_VALUE[abs(b.squares[m.end])] * 100
                 - PIECE_VALUE[abs(b.squares[m.start])]
-            ) * b.turn
+            )
+            * b.turn
         )
 
-    return sorted(
-        moves,
-        key=lambda x: eval(b, x),
-        reverse=b.turn == COLOR.WHITE
-    )
+    return sorted(moves, key=lambda x: eval(b, x), reverse=b.turn == COLOR.WHITE)
 
 
 def no_ordering(

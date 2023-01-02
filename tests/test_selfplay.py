@@ -2,21 +2,22 @@
 TestSelfPlay
 """
 
-from collections import deque
 import unittest
-from .win_at_chess import win_at_chess
+from collections import deque
+
 import src.engine.board as board
-from src.engine.constants import COLOR
-from src.engine.algorithms import minimax, alphabeta
-from src.engine.evaluation import eval_simple, eval_new, eval_pst
 from src.engine import move_ordering
-from src.engine.data_structures import to_uci, MoveType
+from src.engine.algorithms import alphabeta, minimax
 from src.engine.configuration import Config
+from src.engine.constants import COLOR
+from src.engine.data_structures import MoveType, to_uci
+from src.engine.evaluation import eval_new, eval_pst, eval_simple
 from src.engine.iterative_deepening import itdep
+
+from .win_at_chess import win_at_chess
 
 
 class TestSelfPlay(unittest.TestCase):
-
     def _play(self, config: Config, b: board.Board):
         res = itdep(
             b,
@@ -55,81 +56,93 @@ class TestSelfPlay(unittest.TestCase):
         score = {0: 0, COLOR.WHITE: 0, COLOR.BLACK: 0}
         for _ in range(100):
             res = self._match(
-                Config({
-                    "alg_fn": alphabeta,
-                    "move_ordering_fn": move_ordering.random,
-                    "qs_move_ordering_fn": move_ordering.fast_mvv_lva,
-                    "eval_fn": eval_new,
-                    "use_transposition_table": True,
-                    "use_qs_transposition_table": True,
-                    "quiescence_search": True,
-                    "quiescence_depth": 5,
-                    "depth": 4,
-                }),
-                Config({
-                    "alg_fn": alphabeta,
-                    "move_ordering_fn": move_ordering.random,
-                    "qs_move_ordering_fn": move_ordering.qs_ordering,
-                    "eval_fn": eval_new,
-                    "use_transposition_table": True,
-                    "use_qs_transposition_table": True,
-                    "quiescence_search": True,
-                    "quiescence_depth": 5,
-                    "depth": 4,
-                }),
+                Config(
+                    {
+                        "alg_fn": alphabeta,
+                        "move_ordering_fn": move_ordering.random,
+                        "qs_move_ordering_fn": move_ordering.fast_mvv_lva,
+                        "eval_fn": eval_new,
+                        "use_transposition_table": True,
+                        "use_qs_transposition_table": True,
+                        "quiescence_search": True,
+                        "quiescence_depth": 5,
+                        "depth": 4,
+                    }
+                ),
+                Config(
+                    {
+                        "alg_fn": alphabeta,
+                        "move_ordering_fn": move_ordering.random,
+                        "qs_move_ordering_fn": move_ordering.qs_ordering,
+                        "eval_fn": eval_new,
+                        "use_transposition_table": True,
+                        "use_qs_transposition_table": True,
+                        "quiescence_search": True,
+                        "quiescence_depth": 5,
+                        "depth": 4,
+                    }
+                ),
             )
             score[res] += 1
         print(score)
-        self.assertTrue(score[COLOR.BLACK] + score[0]/2 > 60)
+        self.assertTrue(score[COLOR.BLACK] + score[0] / 2 > 60)
 
     def test_eval_new(self):
         score = {0: 0, COLOR.WHITE: 0, COLOR.BLACK: 0}
         for _ in range(10):
             res = self._match(
-                Config({
-                    "alg_fn": alphabeta,
-                    "move_ordering_fn": move_ordering.random,
-                    "eval_fn": eval_pst,
-                    "use_transposition_table": False,
-                    "quiescence_search": False,
-                    "quiescence_depth": 0,
-                    "depth": 5,
-                }),
-                Config({
-                    "alg_fn": alphabeta,
-                    "move_ordering_fn": move_ordering.random,
-                    "eval_fn": eval_new,
-                    "use_transposition_table": True,
-                    "quiescence_search": True,
-                    "quiescence_depth": 5,
-                    "depth": 4,
-                }),
+                Config(
+                    {
+                        "alg_fn": alphabeta,
+                        "move_ordering_fn": move_ordering.random,
+                        "eval_fn": eval_pst,
+                        "use_transposition_table": False,
+                        "quiescence_search": False,
+                        "quiescence_depth": 0,
+                        "depth": 5,
+                    }
+                ),
+                Config(
+                    {
+                        "alg_fn": alphabeta,
+                        "move_ordering_fn": move_ordering.random,
+                        "eval_fn": eval_new,
+                        "use_transposition_table": True,
+                        "quiescence_search": True,
+                        "quiescence_depth": 5,
+                        "depth": 4,
+                    }
+                ),
             )
             score[res] += 1
         print(score)
-        self.assertTrue(score[COLOR.BLACK] + score[0]/2 > 60)
+        self.assertTrue(score[COLOR.BLACK] + score[0] / 2 > 60)
 
     def test_quiescence(self):
         score = {0: 0, COLOR.WHITE: 0, COLOR.BLACK: 0}
         for _ in range(50):
             res = self._match(
-                Config({
-                    "alg_fn": alphabeta,
-                    "move_ordering_fn": move_ordering.random,
-                    "eval_fn": eval_simple,
-                    "use_transposition_table": False,
-                    "depth": 3,
-                }),
-                Config({
-                    "alg_fn": alphabeta,
-                    "move_ordering_fn": move_ordering.mvv_lva,
-                    "eval_fn": eval_simple,
-                    "use_transposition_table": True,
-                    "quiescence_search": True,
-                    "quiescence_depth": 5,
-                    "depth": 3,
-                }),
+                Config(
+                    {
+                        "alg_fn": alphabeta,
+                        "move_ordering_fn": move_ordering.random,
+                        "eval_fn": eval_simple,
+                        "use_transposition_table": False,
+                        "depth": 3,
+                    }
+                ),
+                Config(
+                    {
+                        "alg_fn": alphabeta,
+                        "move_ordering_fn": move_ordering.mvv_lva,
+                        "eval_fn": eval_simple,
+                        "use_transposition_table": True,
+                        "quiescence_search": True,
+                        "quiescence_depth": 5,
+                        "depth": 3,
+                    }
+                ),
             )
             score[res] += 1
         print(score)
-        self.assertTrue(score[COLOR.BLACK] + score[0]/2 > 30)
+        self.assertTrue(score[COLOR.BLACK] + score[0] / 2 > 30)

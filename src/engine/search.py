@@ -1,9 +1,10 @@
-from collections import deque
 import time
-from .constants import VALUE_MAX, PIECE
+from collections import deque
+
 from . import board
-from .data_structures import Search, Board, MoveType
 from .configuration import Config
+from .constants import PIECE, VALUE_MAX
+from .data_structures import Board, MoveType, Search
 
 
 def search(
@@ -35,7 +36,7 @@ def search(
             stop_search=True,
         )
 
-    # return immediatly if there is a king capture
+    # return immediately if there is a king capture
     for move in possible_moves:
         if move.is_king_capture:
             return Search(

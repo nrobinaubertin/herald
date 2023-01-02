@@ -1,10 +1,11 @@
 from collections import deque
-from .constants import COLOR, VALUE_MAX
-from . import board
-from .data_structures import Node, Board, Move
 from typing import Iterable
-from .pruning import is_bad_capture
+
+from . import board
 from .configuration import Config
+from .constants import COLOR, VALUE_MAX
+from .data_structures import Board, Move, Node
+from .pruning import is_bad_capture
 
 
 def quiescence(
@@ -125,7 +126,7 @@ def _search(
         curr_pv = deque(pv)
         curr_pv.append(move)
 
-        # return immediatly if this is a king capture
+        # return immediately if this is a king capture
         if move.is_king_capture:
             return Node(
                 value=VALUE_MAX * b.turn,

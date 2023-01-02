@@ -3,16 +3,17 @@ TestNodeCount
 :warning: This test should not be used for the time being
 """
 
-from collections import deque
 import unittest
-from .win_at_chess import win_at_chess
+from collections import deque
+
 import src.engine.board as board
-from src.engine.algorithms import minimax, alphabeta, negac
+from src.engine import evaluation, move_ordering
+from src.engine.algorithms import alphabeta, minimax, negac
 from src.engine.constants import VALUE_MAX
-from src.engine.transposition_table import TranspositionTable
-from src.engine import move_ordering
-from src.engine import evaluation
 from src.engine.iterative_deepening import itdep
+from src.engine.transposition_table import TranspositionTable
+
+from .win_at_chess import win_at_chess
 
 
 class TestNodeCount(unittest.TestCase):

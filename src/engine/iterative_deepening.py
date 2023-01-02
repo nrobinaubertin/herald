@@ -1,12 +1,13 @@
-import time
 import multiprocessing
+import random
+import time
 from collections import deque
-from .search import search
-from .data_structures import to_uci, Search, Board, Move
-from .constants import VALUE_MAX
+
 from . import board
 from .configuration import Config
-import random
+from .constants import VALUE_MAX
+from .data_structures import Board, Move, Search, to_uci
+from .search import search
 
 
 def to_string(search: Search) -> str:
@@ -17,15 +18,9 @@ def to_string(search: Search) -> str:
         + f"time {int(search.time // 1e9)} "
         + f"nodes {search.nodes} "
         + (
-            "nps "
-            + str(
-                int(
-                    search.nodes
-                    * 1e9
-                    // max(0.001, search.time)
-                )
-            )
-            + " " if search.time > 0 else ""
+            "nps " + str(int(search.nodes * 1e9 // max(0.001, search.time))) + " "
+            if search.time > 0
+            else ""
         )
         + f"pv {' '.join([to_uci(x) for x in search.pv])}"
     )
@@ -66,15 +61,17 @@ def itdep(
         if board.to_fen(b) in config.opening_book:
             moves = config.opening_book[board.to_fen(b)]["moves"]
             move = random.choice(moves)["move"]
-            move = Move(*[
-                int(move[0]),
-                int(move[1]),
-                int(move[2]),
-                bool(move[3]),
-                bool(move[4]),
-                int(move[5]),
-                bool(move[6])
-            ])
+            move = Move(
+                *[
+                    int(move[0]),
+                    int(move[1]),
+                    int(move[2]),
+                    bool(move[3]),
+                    bool(move[4]),
+                    int(move[5]),
+                    bool(move[6]),
+                ]
+            )
             if print_uci:
                 print(f"bestmove {to_uci(move)}")
             return Search(

@@ -1,8 +1,9 @@
 import collections
-from typing import Iterable, Hashable
 from array import array
-from .constants import PIECE, COLOR, ASCII_REP, CASTLE
-from .data_structures import Move, Board, to_normal_notation, to_square_notation
+from typing import Hashable, Iterable
+
+from .constants import ASCII_REP, CASTLE, COLOR, PIECE
+from .data_structures import Board, Move, to_normal_notation, to_square_notation
 
 
 def invturn(b: Board) -> COLOR:
@@ -81,14 +82,10 @@ def from_uci(b: Board, uci: str) -> Move:
         start=start,
         end=end,
         is_capture=(
-            abs(b.squares[end]) != PIECE.EMPTY
-            or end == b.en_passant
-            or end == b.king_en_passant
+            abs(b.squares[end]) != PIECE.EMPTY or end == b.en_passant or end == b.king_en_passant
         ),
         is_castle=(
-            start in (95, 25)
-            and abs(b.squares[start]) == PIECE.KING
-            and abs(end - start) == 2
+            start in (95, 25) and abs(b.squares[start]) == PIECE.KING and abs(end - start) == 2
         ),
         en_passant=(start + end) // 2
         if abs(b.squares[start]) == PIECE.PAWN and abs(start - end) == 20
@@ -114,7 +111,7 @@ def from_fen(fen: str) -> Board:
 
     rep, turn, castling_rights, en_passant, half_move, full_move = fen.split()
 
-    cr = array('b', [0, 0, 0, 0])
+    cr = array("b", [0, 0, 0, 0])
     if "K" in castling_rights:
         cr[CASTLE.KING_SIDE + COLOR.WHITE] = 1
     if "Q" in castling_rights:
@@ -167,12 +164,32 @@ def from_fen(fen: str) -> Board:
 
 def get_pawns_stats(squares):
 
-    pawn_number = array('b', [0, 0])
-    pawn_in_file = array('b', [
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0,
-    ])
+    pawn_number = array("b", [0, 0])
+    pawn_in_file = array(
+        "b",
+        [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        ],
+    )
 
     for i in range(8):
         for j in range(8):
@@ -190,13 +207,13 @@ def get_pawns_stats(squares):
 
 def push(b: Board, move: Move) -> Board:
 
-    squares = array('b', b.squares)
+    squares = array("b", b.squares)
     en_passant = b.en_passant
     king_en_passant = b.king_en_passant
-    castling_rights = array('b', b.castling_rights)
+    castling_rights = array("b", b.castling_rights)
     half_move = b.half_move
-    pawn_number = array('b', b.pawn_in_file)
-    pawn_in_file = array('b', b.pawn_in_file)
+    pawn_number = array("b", b.pawn_in_file)
+    pawn_in_file = array("b", b.pawn_in_file)
 
     if move.is_null:
         return Board(
@@ -246,9 +263,7 @@ def push(b: Board, move: Move) -> Board:
         en_passant = -1
 
     # promotion
-    if abs(piece_start) == PIECE.PAWN and move.end // 10 == (
-        2 if b.turn == COLOR.WHITE else 9
-    ):
+    if abs(piece_start) == PIECE.PAWN and move.end // 10 == (2 if b.turn == COLOR.WHITE else 9):
         color = abs(squares[move.end]) // squares[move.end]
         pawn_number[(color + 1) // 2] -= 1
         pawn_in_file[(move.end % 10) * 2 + (color + 1) // 2] -= 1
@@ -286,34 +301,18 @@ def push(b: Board, move: Move) -> Board:
             castling_rights[CASTLE.KING_SIDE + b.turn] = 0
             castling_rights[CASTLE.QUEEN_SIDE + b.turn] = 0
         else:
-            if (
-                move.end == 98
-                or move.start == 98
-            ):
+            if move.end == 98 or move.start == 98:
                 castling_rights[CASTLE.KING_SIDE + COLOR.WHITE] = 0
-            if (
-                move.end == 91
-                or move.start == 91
-            ):
+            if move.end == 91 or move.start == 91:
                 castling_rights[CASTLE.QUEEN_SIDE + COLOR.WHITE] = 0
-            if (
-                move.end == 28
-                or move.start == 28
-            ):
+            if move.end == 28 or move.start == 28:
                 castling_rights[CASTLE.KING_SIDE + COLOR.BLACK] = 0
-            if (
-                move.end == 21
-                or move.start == 21
-            ):
+            if move.end == 21 or move.start == 21:
                 castling_rights[CASTLE.QUEEN_SIDE + COLOR.BLACK] = 0
 
     return Board(
         squares=squares,
-        positions_history=(
-            b.positions_history | {get_pos(b)}
-            if half_move == 0
-            else {get_pos(b)}
-        ),
+        positions_history=(b.positions_history | {get_pos(b)} if half_move == 0 else {get_pos(b)}),
         turn=invturn(b),
         castling_rights=castling_rights,
         en_passant=en_passant,
@@ -356,10 +355,7 @@ def is_legal_move(b: Board, move: Move) -> bool:
         return False
 
     # the king_en_passant square should not be in check
-    if (
-        b2.king_en_passant != -1
-        and is_square_attacked(b2, b2.king_en_passant, b2.turn)
-    ):
+    if b2.king_en_passant != -1 and is_square_attacked(b2, b2.king_en_passant, b2.turn):
         return False
 
     ks = king_square(b, b.turn)
@@ -367,10 +363,7 @@ def is_legal_move(b: Board, move: Move) -> bool:
         return False
 
     # a castling move is only acceptable if the king is not in check
-    if (
-        move.is_castle
-        and is_square_attacked(b, ks, invturn(b))
-    ):
+    if move.is_castle and is_square_attacked(b, ks, invturn(b)):
         return False
 
     return True
@@ -427,20 +420,14 @@ def pieces(
     type: PIECE | None = None,
     color: COLOR | None = None,
 ) -> Iterable[int]:
-    squares: Iterable[int] = map(lambda x: x[0] + 20, filter(
-        lambda x: abs(x[1]) in [1, 2, 3, 4, 5, 6],
-        enumerate(b.squares[20:100])
-    ))
+    squares: Iterable[int] = map(
+        lambda x: x[0] + 20,
+        filter(lambda x: abs(x[1]) in [1, 2, 3, 4, 5, 6], enumerate(b.squares[20:100])),
+    )
     if type is not None:
-        squares = filter(
-            lambda x: abs(b.squares[x]) == type,
-            squares
-        )
+        squares = filter(lambda x: abs(b.squares[x]) == type, squares)
     if color is not None:
-        squares = filter(
-            lambda x: b.squares[x] * color > 0,
-            squares
-        )
+        squares = filter(lambda x: b.squares[x] * color > 0, squares)
     return squares
 
 
@@ -451,12 +438,8 @@ def knight_moves(
 ) -> Iterable[Move]:
     for depl in [21, 12, -8, -19, -21, -12, 8, 19]:
         end = start + depl
-        is_capture = (
-            bool(b.squares[end]) or end == b.king_en_passant
-        )
-        is_king_capture = (
-            abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
-        )
+        is_capture = bool(b.squares[end]) or end == b.king_en_passant
+        is_king_capture = abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
         if (
             b.squares[end] != PIECE.INVALID
             and b.squares[end] * b.turn <= 0
@@ -483,12 +466,8 @@ def rook_moves(
     for direction in [1, -1, 10, -10]:
         for x in range(1, 8):
             end = start + x * direction
-            is_capture = (
-                bool(b.squares[end]) or end == b.king_en_passant
-            )
-            is_king_capture = (
-                abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
-            )
+            is_capture = bool(b.squares[end]) or end == b.king_en_passant
+            is_king_capture = abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
 
             # castling moves are processed here
             # because we are already checking if the path is clear that way
@@ -502,7 +481,9 @@ def rook_moves(
                         start=(95 if b.turn == COLOR.WHITE else 25),
                         end=(97 if b.turn == COLOR.WHITE else 27),
                         moving_piece=PIECE.KING * b.turn,
-                        captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
+                        captured_piece=abs(
+                            b.squares[end]
+                        ),  # don't take king_en_passant into account
                         is_capture=False,
                         is_castle=True,
                         en_passant=-1,
@@ -554,12 +535,8 @@ def bishop_moves(
     for direction in [11, -11, 9, -9]:
         for x in range(1, 8):
             end = start + x * direction
-            is_capture = (
-                bool(b.squares[end]) or end == b.king_en_passant
-            )
-            is_king_capture = (
-                abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
-            )
+            is_capture = bool(b.squares[end]) or end == b.king_en_passant
+            is_king_capture = abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
             if (
                 b.squares[end] != PIECE.INVALID
                 and b.squares[end] * b.turn <= 0
@@ -588,12 +565,8 @@ def queen_moves(
     for direction in [11, -11, 9, -9, 1, -1, 10, -10]:
         for x in range(1, 8):
             end = start + x * direction
-            is_capture = (
-                bool(b.squares[end]) or end == b.king_en_passant
-            )
-            is_king_capture = (
-                abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
-            )
+            is_capture = bool(b.squares[end]) or end == b.king_en_passant
+            is_king_capture = abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
             if (
                 b.squares[end] != PIECE.INVALID
                 and b.squares[end] * b.turn <= 0
@@ -621,12 +594,8 @@ def king_moves(
 ) -> Iterable[Move]:
     for depl in [11, -11, 9, -9, 1, -1, 10, -10]:
         end = start + depl
-        is_capture = (
-            bool(b.squares[end]) or end == b.king_en_passant
-        )
-        is_king_capture = (
-            abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
-        )
+        is_capture = bool(b.squares[end]) or end == b.king_en_passant
+        is_king_capture = abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
         if (
             b.squares[end] != PIECE.INVALID
             and b.squares[end] * b.turn <= 0
@@ -678,12 +647,11 @@ def pawn_moves(
     for depl in [9, 11] if b.turn == COLOR.BLACK else [-9, -11]:
         end = start + depl
         if (
-            b.squares[end] != PIECE.INVALID
-            and b.squares[end] * b.turn < 0
-        ) or end == b.en_passant or end == b.king_en_passant:
-            is_king_capture = (
-                abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
-            )
+            (b.squares[end] != PIECE.INVALID and b.squares[end] * b.turn < 0)
+            or end == b.en_passant
+            or end == b.king_en_passant
+        ):
+            is_king_capture = abs(b.squares[end]) == PIECE.KING or end == b.king_en_passant
             yield Move(
                 start=start,
                 end=end,
@@ -741,12 +709,8 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
             start = target + x * direction
 
             if (
-                (
-                    abs(b.squares[start]) == PIECE.BISHOP
-                    or abs(b.squares[start]) == PIECE.QUEEN
-                )
-                and b.squares[start] * b.turn > 0
-            ):
+                abs(b.squares[start]) == PIECE.BISHOP or abs(b.squares[start]) == PIECE.QUEEN
+            ) and b.squares[start] * b.turn > 0:
                 yield Move(
                     start=start,
                     end=target,
@@ -767,12 +731,8 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
             start = target + x * direction
 
             if (
-                (
-                    abs(b.squares[start]) == PIECE.ROOK
-                    or abs(b.squares[start]) == PIECE.QUEEN
-                )
-                and b.squares[start] * b.turn > 0
-            ):
+                abs(b.squares[start]) == PIECE.ROOK or abs(b.squares[start]) == PIECE.QUEEN
+            ) and b.squares[start] * b.turn > 0:
                 yield Move(
                     start=start,
                     end=target,
@@ -824,8 +784,7 @@ def pseudo_legal_moves(
         )
 
     for start, piece in filter(
-        lambda x: x[1] != PIECE.INVALID and x[1] * b.turn > 0,
-        enumerate(b.squares[20:100])
+        lambda x: x[1] != PIECE.INVALID and x[1] * b.turn > 0, enumerate(b.squares[20:100])
     ):
         start = start + 20
         type = abs(piece)

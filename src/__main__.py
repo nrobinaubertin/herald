@@ -1,36 +1,39 @@
 #!/usr/bin/env python3
 
+import json
+import multiprocessing
 import os
 import sys
-import multiprocessing
-import json
+
 import engine.board as board
-from engine.data_structures import to_uci, Board
-from engine.iterative_deepening import itdep
-from engine.analysis import fen_analysis
-from engine.time_management import target_movetime
-from engine.configuration import Config
-from engine.evaluation import eval_new
-from engine.move_ordering import fast_mvv_lva, qs_ordering
 from engine.algorithms import alphabeta
+from engine.analysis import fen_analysis
+from engine.configuration import Config
+from engine.data_structures import Board, to_uci
+from engine.evaluation import eval_new
+from engine.iterative_deepening import itdep
+from engine.move_ordering import fast_mvv_lva, qs_ordering
 from engine.pruning import see
+from engine.time_management import target_movetime
 
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 
-CONFIG = Config({
-    "version": "0.19.15",
-    "alg_fn": alphabeta,
-    "move_ordering_fn": fast_mvv_lva,
-    "qs_move_ordering_fn": qs_ordering,
-    "eval_fn": eval_new,
-    "quiescence_search": True,
-    "quiescence_depth": 5,
-    "use_transposition_table": True,
-    "use_qs_transposition_table": True,
-    "futility_pruning": True,
-    "futility_depth": 3,
-})
+CONFIG = Config(
+    {
+        "version": "0.19.15",
+        "alg_fn": alphabeta,
+        "move_ordering_fn": fast_mvv_lva,
+        "qs_move_ordering_fn": qs_ordering,
+        "eval_fn": eval_new,
+        "quiescence_search": True,
+        "quiescence_depth": 5,
+        "use_transposition_table": True,
+        "use_qs_transposition_table": True,
+        "futility_pruning": False,
+        "futility_depth": 3,
+    }
+)
 
 # load config at default location
 if os.access("config.json", os.R_OK):
@@ -90,6 +93,7 @@ def uci_parser(line: str) -> list[str]:
                 nodes += execute(curr_board, depth - 1)
 
             return nodes
+
         for move in board.legal_moves(CURRENT_BOARD):
             b = board.push(CURRENT_BOARD, move)
             nodes = execute(b, int(tokens[1]) - 1)
@@ -126,9 +130,7 @@ def uci_parser(line: str) -> list[str]:
         CURRENT_BOARD = board.push(CURRENT_BOARD, move)
 
     if tokens[0] == "ucinewgame":
-        CURRENT_BOARD = board.from_fen(
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        )
+        CURRENT_BOARD = board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         return []
 
     if tokens[0] == "isready":
@@ -172,7 +174,7 @@ def uci_parser(line: str) -> list[str]:
             next_token = 7
         b = board.from_fen(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
-            for move_str in tokens[next_token + 1:]:
+            for move_str in tokens[next_token + 1 :]:
                 b = board.push(b, board.from_uci(b, move_str))
         CURRENT_BOARD = b
 
@@ -247,11 +249,5 @@ if __name__ == "__main__":
         sys.exit()
 
     # if we don't know what to do, print the help
-    print(
-        (
-            "Usage:\n"
-            f"  {sys.argv[0]}\n"
-            f"  {sys.argv[0]} (-h | --help | --version)\n"
-        )
-    )
+    print(("Usage:\n" f"  {sys.argv[0]}\n" f"  {sys.argv[0]} (-h | --help | --version)\n"))
     sys.exit()

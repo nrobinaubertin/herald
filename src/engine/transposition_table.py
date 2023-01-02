@@ -1,9 +1,10 @@
-import os
 import datetime
+import os
 import pickle
 from array import array
 from typing import Hashable
-from .data_structures import Node, Board
+
+from .data_structures import Board, Node
 
 # The table size is the maximum number of elements in the transposition table.
 TABLE_SIZE = 1_000_000
@@ -87,9 +88,7 @@ class TranspositionTable:
     def export_table(self, filename: str = "") -> str:
         """export the table to a file"""
         if filename == "":
-            filename = (
-                f"memory_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
-            )
+            filename = f"memory_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
         output = os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
             "..",
