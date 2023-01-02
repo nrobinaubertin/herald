@@ -5,3 +5,4 @@ memory_*
 config/
 *.pyz
 zipapps/
+.tox/
