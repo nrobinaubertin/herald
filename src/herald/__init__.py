@@ -1,15 +1,9 @@
-from herald import constants
-from herald import transposition_table
+from herald import board, configuration, constants, evaluation, move_ordering, transposition_table
 
 # from herald import data_structure
 # from herald import time_management
 
-from herald import board
-from herald import configuration
 
-from herald import evaluation
-
-from herald import move_ordering
 # from herald import quiescence
 
 # from herald import algorithms

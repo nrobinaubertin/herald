@@ -1,6 +1,9 @@
-from _typeshed import Incomplete
-from herald.data_structures import Board as Board, Node as Node
 from typing import Hashable, Union
+
+from _typeshed import Incomplete
+
+from herald.data_structures import Board as Board
+from herald.data_structures import Node as Node
 
 TABLE_SIZE: int
 

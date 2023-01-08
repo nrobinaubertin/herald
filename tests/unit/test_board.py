@@ -1,4 +1,5 @@
 import pytest
+
 from herald import board
 
 from ..win_at_chess import win_at_chess

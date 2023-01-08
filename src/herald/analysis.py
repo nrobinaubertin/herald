@@ -1,6 +1,6 @@
-from operator import itemgetter
 import json
 from collections import deque
+from operator import itemgetter
 
 from herald import board
 from herald.constants import COLOR, VALUE_MAX
@@ -98,8 +98,6 @@ def analysis(
             }
         )
 
-    return sorted(
-        results,
-        key=itemgetter("score"),
-        reverse=(b.turn == COLOR.WHITE)
-    )[:branch_factor]
+    return sorted(results, key=itemgetter("score"), reverse=(b.turn == COLOR.WHITE))[
+        :branch_factor
+    ]

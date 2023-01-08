@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-import pkg_resources
 import json
 import multiprocessing
 import os
 import sys
+
+import pkg_resources
 
 from herald import board
 from herald.algorithms import alphabeta
@@ -22,7 +23,7 @@ CURRENT_PROCESS = None
 
 CONFIG = Config(
     {
-        "version": pkg_resources.get_distribution('herald').version,
+        "version": pkg_resources.get_distribution("herald").version,
         "alg_fn": alphabeta,
         "move_ordering_fn": fast_mvv_lva,
         "qs_move_ordering_fn": qs_ordering,

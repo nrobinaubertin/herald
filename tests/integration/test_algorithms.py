@@ -4,19 +4,18 @@ We test algorithms by comparing results to the minimax algorithm who's well know
 When comparing move ordering functions, we cannot 
 """
 
-import pytest
 from collections import deque
 
-from herald import board
-from herald import move_ordering
+import pytest
+
+from herald import board, evaluation, move_ordering
 from herald.algorithms import alphabeta, minimax
 from herald.configuration import Config
 from herald.constants import VALUE_MAX
 from herald.data_structures import MoveType, to_uci
-from herald import evaluation
 
-from ..win_at_chess import win_at_chess
 from ..fens import fens
+from ..win_at_chess import win_at_chess
 
 
 def test_fast_mvv_lva():
@@ -101,7 +100,10 @@ def test_futility():
             VALUE_MAX,
         )
         assert futility_result.value == base_result.value
-        assert f"{fen}: {','.join([to_uci(x) for x in futility_result.pv])}" == f"{fen}: {','.join([to_uci(x) for x in base_result.pv])}"
+        assert (
+            f"{fen}: {','.join([to_uci(x) for x in futility_result.pv])}"
+            == f"{fen}: {','.join([to_uci(x) for x in base_result.pv])}"
+        )
 
 
 # This test equivalence between raw alphabeta
@@ -171,4 +173,7 @@ def test_alphabeta():
             VALUE_MAX,
         )
         assert minimax_result.value == alphabeta_result.value
-        assert f"{fen}: {','.join([to_uci(x) for x in minimax_result.pv])}" == f"{fen}: {','.join([to_uci(x) for x in alphabeta_result.pv])}"
+        assert (
+            f"{fen}: {','.join([to_uci(x) for x in minimax_result.pv])}"
+            == f"{fen}: {','.join([to_uci(x) for x in alphabeta_result.pv])}"
+        )
