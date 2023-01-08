@@ -1,9 +1,8 @@
-import collections
 from array import array
 from typing import Hashable, Iterable
 
-from .constants import ASCII_REP, CASTLE, COLOR, PIECE
-from .data_structures import Board, Move, to_normal_notation, to_square_notation
+from herald.constants import ASCII_REP, CASTLE, COLOR, PIECE
+from herald.data_structures import Board, Move, to_normal_notation, to_square_notation
 
 
 def invturn(b: Board) -> COLOR:
@@ -44,11 +43,13 @@ def to_fen(b: Board) -> str:
     if empty != 0:
         rep += str(empty)
 
+    rep += " "
+
     # color to move
     if b.turn == COLOR.BLACK:
-        rep += " b"
+        rep += "b"
     else:
-        rep += " w"
+        rep += "w"
 
     rep += " "
 
@@ -61,6 +62,9 @@ def to_fen(b: Board) -> str:
         rep += "k"
     if b.castling_rights[CASTLE.QUEEN_SIDE + COLOR.BLACK] == 1:
         rep += "q"
+    # if no castling right is remaining
+    if rep[-1] == " ":
+        rep += "-"
 
     rep += " "
 
@@ -70,7 +74,9 @@ def to_fen(b: Board) -> str:
     else:
         rep += to_normal_notation(b.en_passant)
 
-    rep += f" {b.half_move} {b.full_move}"
+    rep += " "
+
+    rep += f"{b.half_move} {b.full_move}"
 
     return rep
 

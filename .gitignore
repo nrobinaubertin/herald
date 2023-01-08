@@ -6,3 +6,5 @@ config/
 *.pyz
 zipapps/
 .tox/
+*.egg-info
+/venv/

@@ -1,9 +1,9 @@
 from array import array
 from typing import Callable
 
-from . import board
-from .constants import COLOR, PIECE
-from .data_structures import Board
+from herald import board
+from herald.constants import COLOR, PIECE
+from herald.data_structures import Board
 
 PIECE_VALUE = {
     PIECE.EMPTY: 0,

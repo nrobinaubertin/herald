@@ -1,4 +1,4 @@
-from .constants import COLOR
+from herald.constants import COLOR
 
 # the engine doesn't perform well when thinking too long
 MAX_THINKING_TIME: int = 15000

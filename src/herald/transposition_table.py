@@ -4,19 +4,17 @@ import pickle
 from array import array
 from typing import Hashable
 
-from .data_structures import Board, Node
-
 # The table size is the maximum number of elements in the transposition table.
 TABLE_SIZE = 1_000_000
 
 
-def hash(b: Board) -> Hashable:
+def hash(board) -> Hashable:
     data = array("b")
-    data.extend(b.squares)
-    data.append(b.turn)
-    data.extend(b.castling_rights)
-    data.append(b.en_passant)
-    data.append(b.king_en_passant)
+    data.extend(board.squares)
+    data.append(board.turn)
+    data.extend(board.castling_rights)
+    data.append(board.en_passant)
+    data.append(board.king_en_passant)
     return data.tobytes()
 
 
@@ -45,9 +43,9 @@ class TranspositionTable:
         self.table["better_nodes_added"] = 0
         self.table["worse_nodes_added"] = 0
 
-    def get(self, b: Board, depth: int = 0) -> Node | None:
+    def get(self, board, depth: int = 0):
         try:
-            board_hash = hash(b)
+            board_hash = hash(board)
             if __debug__:
                 self.table["reqs"] += 1
             ret = self.table.get(board_hash, None)
@@ -60,10 +58,10 @@ class TranspositionTable:
         except:
             return None
 
-    def add(self, b: Board, node: Node) -> None:
+    def add(self, board, node) -> None:
         if len(self.table) > TABLE_SIZE:
             self.table.clear()
-        board_hash = hash(b)
+        board_hash = hash(board)
         if __debug__:
             self.table["nodes_added"] += 1
         if board_hash not in self.table:

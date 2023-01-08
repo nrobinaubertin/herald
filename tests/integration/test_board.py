@@ -5,10 +5,10 @@ We test our move generation using the perft algorithm
 
 import pytest
 
-import src.engine.board as board
-from src.engine.data_structures import Board, to_uci
+from herald import board
+from herald.data_structures import Board, to_uci
 
-from .win_at_chess import wac_moves, win_at_chess
+from ..win_at_chess import wac_moves, win_at_chess
 
 
 def perft(b: Board, depth: int):

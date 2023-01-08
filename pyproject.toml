@@ -1,3 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "herald"
+version = "0.19.16"
+description = "Chess engine"
+readme = "README.md"
+authors = [{ name = "Niels Robin-Aubertin", email = "git@niels.fr" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: GPLv3 License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["chess", "engine"]
+dependencies = []
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "--import-mode=importlib"
+
 [tool.black]
 line-length = 99
 

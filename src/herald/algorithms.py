@@ -5,11 +5,11 @@ Search algorithms
 from collections import deque
 from typing import Callable, Iterable
 
-from . import board, pruning
-from .configuration import Config
-from .constants import COLOR, VALUE_MAX
-from .data_structures import Board, Move, MoveType, Node
-from .quiescence import quiescence
+from herald import board, pruning
+from herald.configuration import Config
+from herald.constants import COLOR, VALUE_MAX
+from herald.data_structures import Board, Move, MoveType, Node
+from herald.quiescence import quiescence
 
 Alg_fn = Callable[
     [

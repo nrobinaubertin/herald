@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
 
+import pkg_resources
 import json
 import multiprocessing
 import os
 import sys
 
-import engine.board as board
-from engine.algorithms import alphabeta
-from engine.analysis import fen_analysis
-from engine.configuration import Config
-from engine.data_structures import Board, to_uci
-from engine.evaluation import eval_new
-from engine.iterative_deepening import itdep
-from engine.move_ordering import fast_mvv_lva, qs_ordering
-from engine.pruning import see
-from engine.time_management import target_movetime
+from herald import board
+from herald.algorithms import alphabeta
+from herald.analysis import fen_analysis
+from herald.configuration import Config
+from herald.data_structures import Board, to_uci
+from herald.evaluation import eval_new
+from herald.iterative_deepening import itdep
+from herald.move_ordering import fast_mvv_lva, qs_ordering
+from herald.pruning import see
+from herald.time_management import target_movetime
 
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 
 CONFIG = Config(
     {
-        "version": "0.19.15",
+        "version": pkg_resources.get_distribution('herald').version,
         "alg_fn": alphabeta,
         "move_ordering_fn": fast_mvv_lva,
         "qs_move_ordering_fn": qs_ordering,

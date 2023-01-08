@@ -1,4 +1,4 @@
-from .transposition_table import TranspositionTable
+from herald.transposition_table import TranspositionTable
 
 
 class Config:
@@ -12,7 +12,7 @@ class Config:
 
     @property
     def version(self):
-        return self._config.get("version", True)
+        return self._config.get("version")
 
     def set_depth(self, depth: int):
         self._config["depth"] = depth
