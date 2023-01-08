@@ -144,7 +144,7 @@ def eval_pst(b: Board) -> int:
     return evaluation
 
 
-# adjustements of piece value based on the number of own pawns
+# adjustments of piece value based on the number of own pawns
 # fmt: off
 PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER = {
     PIECE.EMPTY: (0, 0, 0, 0, 0, 0, 0, 0, 0),
