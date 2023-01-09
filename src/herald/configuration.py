@@ -1,4 +1,4 @@
-from herald.transposition_table import TranspositionTable
+from .transposition_table import TranspositionTable
 
 
 class Config:

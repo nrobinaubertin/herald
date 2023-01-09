@@ -1,4 +1,4 @@
-from herald import board, configuration, constants, evaluation, move_ordering, transposition_table
+from . import board, configuration, constants, evaluation, move_ordering, transposition_table
 
 # from herald import data_structure
 # from herald import time_management

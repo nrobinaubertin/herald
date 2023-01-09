@@ -1,10 +1,10 @@
 import time
 from collections import deque
 
-from herald import board
-from herald.configuration import Config
-from herald.constants import PIECE, VALUE_MAX
-from herald.data_structures import Board, MoveType, Search
+from . import board
+from .configuration import Config
+from .constants import PIECE, VALUE_MAX
+from .data_structures import Board, MoveType, Search
 
 
 def search(

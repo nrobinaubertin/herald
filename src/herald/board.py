@@ -1,8 +1,8 @@
 from array import array
 from typing import Hashable, Iterable
 
-from herald.constants import ASCII_REP, CASTLE, COLOR, PIECE
-from herald.data_structures import Board, Move, to_normal_notation, to_square_notation
+from .constants import ASCII_REP, CASTLE, COLOR, PIECE
+from .data_structures import Board, Move, to_normal_notation, to_square_notation
 
 
 def invturn(b: Board) -> COLOR:

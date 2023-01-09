@@ -2,7 +2,7 @@ from array import array
 from collections import deque, namedtuple
 from enum import IntEnum
 
-from herald.constants import PIECE, VALUE_MAX
+from .constants import PIECE, VALUE_MAX
 
 
 class MoveType(IntEnum):

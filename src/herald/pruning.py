@@ -1,7 +1,7 @@
-from herald import board
-from herald.constants import COLOR, PIECE
-from herald.data_structures import Board, Move
-from herald.evaluation import PIECE_VALUE
+from . import board
+from .constants import COLOR, PIECE
+from .data_structures import Board, Move
+from .evaluation import PIECE_VALUE
 
 
 def is_futile(b: Board, depth: int, alpha: int, beta: int, eval_fn):

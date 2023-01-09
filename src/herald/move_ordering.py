@@ -2,9 +2,9 @@ import collections
 from random import shuffle
 from typing import Callable, Iterable, List
 
-from herald.constants import COLOR
-from herald.data_structures import Board, Move
-from herald.evaluation import PIECE_VALUE
+from .constants import COLOR
+from .data_structures import Board, Move
+from .evaluation import PIECE_VALUE
 
 Move_ordering_fn = Callable[
     [

@@ -3,11 +3,11 @@ import random
 import time
 from collections import deque
 
-from herald import board
-from herald.configuration import Config
-from herald.constants import VALUE_MAX
-from herald.data_structures import Board, Move, Search, to_uci
-from herald.search import search
+from . import board
+from .configuration import Config
+from .constants import VALUE_MAX
+from .data_structures import Board, Move, Search, to_uci
+from .search import search
 
 
 def to_string(search: Search) -> str:

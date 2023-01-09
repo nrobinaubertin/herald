@@ -2,9 +2,9 @@ import json
 from collections import deque
 from operator import itemgetter
 
-from herald import board
-from herald.constants import COLOR, VALUE_MAX
-from herald.data_structures import Board, MoveType, to_uci
+from . import board
+from .constants import COLOR, VALUE_MAX
+from .data_structures import Board, MoveType, to_uci
 
 
 def fen_analysis(

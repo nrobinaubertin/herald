@@ -5,8 +5,6 @@ import multiprocessing
 import os
 import sys
 
-import pkg_resources
-
 from herald import board
 from herald.algorithms import alphabeta
 from herald.analysis import fen_analysis
@@ -23,7 +21,7 @@ CURRENT_PROCESS = None
 
 CONFIG = Config(
     {
-        "version": pkg_resources.get_distribution("herald").version,
+        "version": "0.19.16",
         "alg_fn": alphabeta,
         "move_ordering_fn": fast_mvv_lva,
         "qs_move_ordering_fn": qs_ordering,
