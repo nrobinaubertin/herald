@@ -1,4 +1,3 @@
-import os
 import pytest
 
 from herald import board

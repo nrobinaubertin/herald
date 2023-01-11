@@ -6,7 +6,7 @@ We test our move generation using the perft algorithm
 import pytest
 
 from herald import board
-from herald.data_structures import Board, to_uci
+from herald.data_structures import Board
 
 
 def perft(b: Board, depth: int):
