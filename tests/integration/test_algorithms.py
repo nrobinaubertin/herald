@@ -12,13 +12,16 @@ from herald.configuration import Config
 from herald.constants import VALUE_MAX
 from herald.data_structures import MoveType, to_uci
 
-from ..fens import fens
-from ..win_at_chess import win_at_chess
+win_at_chess = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"]
+with open("tests/epd/wac.epd", "r") as wacfile:
+    for line in wacfile:
+        epd = line.split()
+        win_at_chess.append(" ".join(epd[:4]) + " 0 0")
 
 
 def test_fast_mvv_lva():
     depth = 3
-    for fen in win_at_chess[:100]:
+    for fen in win_at_chess:
         futility_result = alphabeta(
             Config(
                 {
@@ -52,7 +55,7 @@ def test_fast_mvv_lva():
 
 def test_futility():
     depth = 5
-    for fen in fens:
+    for fen in win_at_chess:
         futility_result = alphabeta(
             Config(
                 {
@@ -108,7 +111,7 @@ def test_futility():
 # and alphabeta with mvv_lva move ordering
 def test_mvv_lva():
     depth = 3
-    for fen in win_at_chess[:50]:
+    for fen in win_at_chess:
         alphabeta_result = alphabeta(
             Config(
                 {
@@ -143,7 +146,7 @@ def test_mvv_lva():
 # This test equivalence between raw alphabeta and minimax
 def test_alphabeta():
     depth = 3
-    for fen in win_at_chess[:50]:
+    for fen in win_at_chess:
         minimax_result = minimax(
             Config(
                 {
