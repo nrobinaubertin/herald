@@ -1,12 +1,9 @@
-"""
-Search algorithms
-"""
+"""Recursive search algorithms."""
 
 from collections import deque
 from typing import Callable, Iterable
 
-from . import board
-from . import pruning
+from . import board, pruning
 from .configuration import Config
 from .constants import COLOR, VALUE_MAX
 from .data_structures import Board, Move, MoveType, Node

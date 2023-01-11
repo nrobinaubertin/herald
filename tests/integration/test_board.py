@@ -1,5 +1,5 @@
-"""
-TestBoard
+"""Test the board structure and functions.
+
 We test our move generation using the perft algorithm
 """
 

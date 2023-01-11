@@ -1,12 +1,10 @@
-"""
-TestAlgorithms
+"""Test algorithms equivalence.
+
 We test algorithms by comparing results to the minimax algorithm who's well known.
-When comparing move ordering functions, we cannot 
+When comparing move ordering functions, we cannot compare pvs
 """
 
 from collections import deque
-
-import pytest
 
 from herald import board, evaluation, move_ordering
 from herald.algorithms import alphabeta, minimax

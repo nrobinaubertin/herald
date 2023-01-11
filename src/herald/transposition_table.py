@@ -1,6 +1,5 @@
-import datetime
-import os
-import pickle
+"""Storage class for usual transposition table."""
+
 from array import array
 from typing import Hashable
 
@@ -72,29 +71,6 @@ class TranspositionTable:
                 self.table["better_nodes_added"] += 1
         elif __debug__:
             self.table["worse_nodes_added"] += 1
-
-    def import_table(self, filename: str) -> None:
-        """import a file as the table"""
-        input = os.path.join(
-            os.path.abspath(os.path.dirname(__file__)),
-            "..",
-            filename,
-        )
-        with open(input, "rb") as input_pickle:
-            self.table = pickle.load(input_pickle)
-
-    def export_table(self, filename: str = "") -> str:
-        """export the table to a file"""
-        if filename == "":
-            filename = f"memory_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
-        output = os.path.join(
-            os.path.abspath(os.path.dirname(__file__)),
-            "..",
-            filename,
-        )
-        with open(output, "wb") as output_pickle:
-            pickle.dump(self.table, output_pickle)
-        return output
 
     def stats(self) -> dict[str, int]:
         return {
