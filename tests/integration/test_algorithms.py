@@ -5,6 +5,7 @@ When comparing move ordering functions, we cannot compare pvs
 """
 
 from collections import deque
+import pytest
 
 from herald import board, evaluation, move_ordering
 from herald.algorithms import alphabeta, minimax
@@ -19,8 +20,8 @@ with open("tests/epd/wac.epd", "r") as wacfile:
         win_at_chess.append(" ".join(epd[:4]) + " 0 0")
 
 
-def test_fast_mvv_lva():
-    depth = 3
+@pytest.mark.parametrize("depth", range(1, 3))
+def test_fast_mvv_lva(depth):
     for fen in win_at_chess:
         futility_result = alphabeta(
             Config(
@@ -53,8 +54,8 @@ def test_fast_mvv_lva():
         assert futility_result.value == base_result.value
 
 
-def test_futility():
-    depth = 5
+@pytest.mark.parametrize("depth", range(1, 7))
+def test_futility(depth):
     for fen in win_at_chess:
         futility_result = alphabeta(
             Config(
