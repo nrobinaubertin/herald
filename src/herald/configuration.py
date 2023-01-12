@@ -23,11 +23,11 @@ class Config:
 
     @property
     def use_transposition_table(self):
-        return self._config.get("use_transposition_table", True)
+        return self._config.get("use_transposition_table", False)
 
     @property
     def use_qs_transposition_table(self):
-        return self._config.get("use_qs_transposition_table", True)
+        return self._config.get("use_qs_transposition_table", False)
 
     @property
     def quiescence_search(self):
