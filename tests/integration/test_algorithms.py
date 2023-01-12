@@ -117,6 +117,8 @@ def test_mvv_lva():
                 {
                     "move_ordering_fn": move_ordering.no_ordering,
                     "eval_fn": evaluation.eval_simple,
+                    "use_transposition_table": False,
+                    "use_qs_transposition_table": False,
                 }
             ),
             board.from_fen(fen),
@@ -131,6 +133,8 @@ def test_mvv_lva():
                 {
                     "move_ordering_fn": move_ordering.mvv_lva,
                     "eval_fn": evaluation.eval_simple,
+                    "use_transposition_table": False,
+                    "use_qs_transposition_table": False,
                 }
             ),
             board.from_fen(fen),
@@ -152,6 +156,8 @@ def test_alphabeta():
                 {
                     "move_ordering_fn": move_ordering.no_ordering,
                     "eval_fn": evaluation.eval_simple,
+                    "use_transposition_table": False,
+                    "use_qs_transposition_table": False,
                 }
             ),
             board.from_fen(fen),
@@ -164,6 +170,8 @@ def test_alphabeta():
                 {
                     "move_ordering_fn": move_ordering.no_ordering,
                     "eval_fn": evaluation.eval_simple,
+                    "use_transposition_table": False,
+                    "use_qs_transposition_table": False,
                 }
             ),
             board.from_fen(fen),
