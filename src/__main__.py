@@ -21,7 +21,7 @@ CURRENT_PROCESS = None
 
 CONFIG = Config(
     {
-        "version": "0.19.16",
+        "version": "0.19.17",
         "alg_fn": alphabeta,
         "move_ordering_fn": fast_mvv_lva,
         "qs_move_ordering_fn": qs_ordering,
@@ -30,8 +30,6 @@ CONFIG = Config(
         "quiescence_depth": 5,
         "use_transposition_table": True,
         "use_qs_transposition_table": True,
-        "futility_pruning": False,
-        "futility_depth": 3,
     }
 )
 

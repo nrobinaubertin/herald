@@ -34,14 +34,6 @@ class Config:
         return self._config.get("quiescence_search", False)
 
     @property
-    def futility_pruning(self):
-        return self._config.get("futility_pruning", False)
-
-    @property
-    def futility_depth(self):
-        return self._config.get("futility_depth", 0)
-
-    @property
     def quiescence_depth(self):
         return self._config.get("quiescence_depth", 0)
 

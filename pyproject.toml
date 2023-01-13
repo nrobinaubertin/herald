@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "herald"
-version = "0.19.16"
+version = "0.19.17"
 description = "Chess engine"
 readme = "README.md"
 authors = [{ name = "Niels Robin-Aubertin", email = "git@niels.fr" }]

@@ -4,24 +4,6 @@ from .data_structures import Board, Move
 from .evaluation import PIECE_VALUE
 
 
-def is_futile(b: Board, depth: int, alpha: int, beta: int, eval_fn):
-
-    static_eval = eval_fn(b)
-
-    def futility_margin(depth):
-        return 165 * depth
-
-    # colors are inverted since this is a board resulting from our tested move
-    if b.turn == COLOR.BLACK:
-        if static_eval + futility_margin(depth) <= alpha:
-            return True
-    else:
-        if static_eval - futility_margin(depth) >= beta:
-            return True
-
-    return False
-
-
 def see(b: Board, target: int, score: int) -> int:
 
     # return score if it's already in our favor

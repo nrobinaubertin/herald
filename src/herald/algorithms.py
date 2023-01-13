@@ -3,7 +3,7 @@
 from collections import deque
 from typing import Callable, Iterable
 
-from . import board, pruning
+from . import board
 from .configuration import Config
 from .constants import COLOR, VALUE_MAX
 from .data_structures import Board, Move, MoveType, Node
@@ -134,12 +134,6 @@ def alphabeta(
             )
 
         nb = board.push(b, move)
-
-        # futility pruning
-        # Only analyse nodes close to the horizon
-        if config.futility_pruning and depth < config.futility_depth:
-            if pruning.is_futile(nb, depth, alpha, beta, config.eval_fn):
-                continue
 
         node = alphabeta(
             config,
