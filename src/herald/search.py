@@ -79,14 +79,6 @@ def search(
             continue
         break
 
-    if __debug__:
-        if len(node.pv) == 0:
-            breakpoint()
-        if b.squares[node.pv[0].start] == PIECE.EMPTY:
-            breakpoint()
-        if abs(b.squares[node.pv[0].start]) == PIECE.INVALID:
-            breakpoint()
-
     return Search(
         move=node.pv[0],
         pv=node.pv,
