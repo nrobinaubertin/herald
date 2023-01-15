@@ -1,3 +1,4 @@
+from typing import Iterable
 from array import array
 from collections import deque, namedtuple
 from enum import IntEnum
@@ -101,7 +102,14 @@ def is_promotion(move: Move) -> bool:
     return abs(move.moving_piece) == PIECE.PAWN and (row in (8, 1))
 
 
-def to_uci(move: Move) -> str:
-    if move.is_null:
-        return "null"
-    return f"{to_normal_notation(move.start)}{to_normal_notation(move.end)}{'q' if is_promotion(move) else ''}{'*' if move.is_quiescent else ''}"
+def to_uci(input: Move | Iterable[Move]) -> str:
+
+    if isinstance(input, Move):
+        if input.is_null:
+            return "null{'*' if input.is_quiescent else ''}"
+        return f"{to_normal_notation(input.start)}{to_normal_notation(input.end)}{'q' if is_promotion(input) else ''}{'*' if input.is_quiescent else ''}"
+
+    if isinstance(input, Iterable):
+        return ','.join([to_uci(x) for x in input])
+
+    raise Exception("Unknown input for to_uci()")
