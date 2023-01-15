@@ -59,7 +59,7 @@ Board = namedtuple(
         "pawn_number",
         "pawn_in_file",
     ],
-    defaults=[-1, 0, 0, -1, array("b"), array("b")],
+    defaults=[-1, 0, 0, array("b"), array("b"), array("b")],
 )
 
 
