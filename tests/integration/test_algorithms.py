@@ -22,6 +22,46 @@ with open("tests/epd/wac.epd", "r") as wacfile:
 
 
 # This test equivalence between raw alphabeta
+# and alphabeta with fast_mvv_lva move ordering
+@pytest.mark.parametrize("depth", range(1, 4))
+def test_fast_mvv_lva(depth):
+    for fen in win_at_chess:
+        alphabeta_result = alphabeta(
+            Config(
+                {
+                    "move_ordering_fn": move_ordering.no_ordering,
+                    "eval_fn": evaluation.eval_simple,
+                    "use_transposition_table": False,
+                    "use_qs_transposition_table": False,
+                }
+            ),
+            board.from_fen(fen),
+            depth,
+            deque(),
+            MoveType.LEGAL,
+            -VALUE_MAX,
+            VALUE_MAX,
+        )
+        alphabeta_fast_mvv_lva_result = alphabeta(
+            Config(
+                {
+                    "move_ordering_fn": move_ordering.fast_mvv_lva,
+                    "eval_fn": evaluation.eval_simple,
+                    "use_transposition_table": False,
+                    "use_qs_transposition_table": False,
+                }
+            ),
+            board.from_fen(fen),
+            depth,
+            deque(),
+            MoveType.LEGAL,
+            -VALUE_MAX,
+            VALUE_MAX,
+        )
+        assert alphabeta_fast_mvv_lva_result.value == alphabeta_result.value
+
+
+# This test equivalence between raw alphabeta
 # and alphabeta with mvv_lva move ordering
 @pytest.mark.parametrize("depth", range(1, 4))
 def test_mvv_lva(depth):
