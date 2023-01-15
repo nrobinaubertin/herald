@@ -99,7 +99,7 @@ def to_normal_notation(square: int) -> str:
 
 def is_promotion(move: Move) -> bool:
     row, _ = decompose_square(move.end)
-    return abs(move.moving_piece) == PIECE.PAWN and (row in (8, 1))
+    return move.moving_piece == PIECE.PAWN and (row in (8, 1))
 
 
 def to_uci(input: Move | Iterable[Move]) -> str:

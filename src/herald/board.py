@@ -459,7 +459,7 @@ def knight_moves(
             yield Move(
                 start=start,
                 end=end,
-                moving_piece=PIECE.KNIGHT * b.turn,
+                moving_piece=PIECE.KNIGHT,
                 captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
                 is_capture=is_capture,
                 is_castle=False,
@@ -491,7 +491,7 @@ def rook_moves(
                     yield Move(
                         start=(95 if b.turn == COLOR.WHITE else 25),
                         end=(97 if b.turn == COLOR.WHITE else 27),
-                        moving_piece=PIECE.KING * b.turn,
+                        moving_piece=PIECE.KING,
                         captured_piece=abs(
                             b.squares[end]
                         ),  # don't take king_en_passant into account
@@ -509,7 +509,7 @@ def rook_moves(
                     yield Move(
                         start=(95 if b.turn == COLOR.WHITE else 25),
                         end=(93 if b.turn == COLOR.WHITE else 23),
-                        moving_piece=PIECE.KING * b.turn,
+                        moving_piece=PIECE.KING,
                         captured_piece=0,
                         is_capture=False,
                         is_castle=True,
@@ -526,7 +526,7 @@ def rook_moves(
                 yield Move(
                     start=start,
                     end=end,
-                    moving_piece=PIECE.ROOK * b.turn,
+                    moving_piece=PIECE.ROOK,
                     captured_piece=abs(b.squares[end]),
                     is_capture=is_capture,
                     is_castle=False,
@@ -556,7 +556,7 @@ def bishop_moves(
                 yield Move(
                     start=start,
                     end=end,
-                    moving_piece=PIECE.BISHOP * b.turn,
+                    moving_piece=PIECE.BISHOP,
                     captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
                     is_capture=is_capture,
                     is_castle=False,
@@ -586,7 +586,7 @@ def queen_moves(
                 yield Move(
                     start=start,
                     end=end,
-                    moving_piece=PIECE.QUEEN * b.turn,
+                    moving_piece=PIECE.QUEEN,
                     captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
                     is_capture=is_capture,
                     is_castle=False,
@@ -615,7 +615,7 @@ def king_moves(
             yield Move(
                 start=start,
                 end=end,
-                moving_piece=PIECE.KING * b.turn,
+                moving_piece=PIECE.KING,
                 captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
                 is_capture=is_capture,
                 is_castle=False,
@@ -644,7 +644,7 @@ def pawn_moves(
                 yield Move(
                     start=start,
                     end=end,
-                    moving_piece=PIECE.PAWN * b.turn,
+                    moving_piece=PIECE.PAWN,
                     captured_piece=0,
                     is_capture=False,
                     is_castle=False,
@@ -666,7 +666,7 @@ def pawn_moves(
             yield Move(
                 start=start,
                 end=end,
-                moving_piece=PIECE.PAWN * b.turn,
+                moving_piece=PIECE.PAWN,
                 captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
                 is_capture=True,
                 is_castle=False,
@@ -689,7 +689,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
             yield Move(
                 start=start,
                 end=target,
-                moving_piece=PIECE.PAWN * b.turn,
+                moving_piece=PIECE.PAWN,
                 captured_piece=abs(b.squares[target]),
                 is_capture=True,
                 is_castle=False,
@@ -705,7 +705,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
             yield Move(
                 start=start,
                 end=target,
-                moving_piece=PIECE.KNIGHT * b.turn,
+                moving_piece=PIECE.KNIGHT,
                 captured_piece=abs(b.squares[target]),
                 is_capture=True,
                 is_castle=False,
@@ -725,7 +725,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
                 yield Move(
                     start=start,
                     end=target,
-                    moving_piece=abs(b.squares[start]) * b.turn,
+                    moving_piece=abs(b.squares[start]),
                     captured_piece=abs(b.squares[target]),
                     is_capture=True,
                     is_castle=False,
@@ -747,7 +747,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
                 yield Move(
                     start=start,
                     end=target,
-                    moving_piece=abs(b.squares[start]) * b.turn,
+                    moving_piece=abs(b.squares[start]),
                     captured_piece=abs(b.squares[target]),
                     is_capture=True,
                     is_castle=False,
@@ -765,7 +765,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
             yield Move(
                 start=start,
                 end=target,
-                moving_piece=PIECE.KING * b.turn,
+                moving_piece=PIECE.KING,
                 captured_piece=abs(b.squares[target]),
                 is_capture=True,
                 is_castle=False,
