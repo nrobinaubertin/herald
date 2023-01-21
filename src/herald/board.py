@@ -777,6 +777,12 @@ def pseudo_legal_moves(
             is_null=True,
             is_quiescent=quiescent,
         )
+    def king_in_check(b: Board, move: Move) -> bool:
+        b2 = push(b, move)
+        ks = king_square(b2, invturn(b2))
+        if is_square_attacked(b2, ks, b2.turn):
+            return True
+        return False
 
     for start, piece in filter(
         lambda x: x[1] != PIECE.INVALID and x[1] * b.turn > 0, enumerate(b.squares[20:100])
@@ -785,19 +791,25 @@ def pseudo_legal_moves(
         type = abs(piece)
         if type == PIECE.PAWN:
             for move in pawn_moves(b, start, quiescent):
-                yield move
+                if not king_in_check(b, move):
+                    yield move
         if type == PIECE.KNIGHT:
             for move in knight_moves(b, start, quiescent):
-                yield move
+                if not king_in_check(b, move):
+                    yield move
         if type == PIECE.BISHOP:
             for move in bishop_moves(b, start, quiescent):
-                yield move
+                if not king_in_check(b, move):
+                    yield move
         if type == PIECE.ROOK:
             for move in rook_moves(b, start, quiescent):
-                yield move
+                if not king_in_check(b, move):
+                    yield move
         if type == PIECE.QUEEN:
             for move in queen_moves(b, start, quiescent):
-                yield move
+                if not king_in_check(b, move):
+                    yield move
         if type == PIECE.KING:
             for move in king_moves(b, start, quiescent):
-                yield move
+                if not king_in_check(b, move):
+                    yield move
