@@ -170,32 +170,16 @@ def from_fen(fen: str) -> Board:
 
 def get_pawns_stats(squares):
 
+    # fmt: off
     pawn_number = array("b", [0, 0])
     pawn_in_file = array(
         "b",
         [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ],
     )
+    # fmt: on
 
     for i in range(8):
         for j in range(8):
