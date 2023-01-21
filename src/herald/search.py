@@ -3,7 +3,7 @@ from collections import deque
 
 from . import board
 from .configuration import Config
-from .constants import PIECE, VALUE_MAX
+from .constants import VALUE_MAX
 from .data_structures import Board, MoveType, Search
 
 
@@ -86,4 +86,5 @@ def search(
         nodes=node.children,
         score=node.value,
         time=(time.time_ns() - start_time),
+        stop_search=abs(node.value) > VALUE_MAX - 100,
     )
