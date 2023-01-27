@@ -1,7 +1,7 @@
-from typing import Iterable
 from array import array
 from collections import deque, namedtuple
 from enum import IntEnum
+from typing import Iterable
 
 from .constants import PIECE, VALUE_MAX
 
@@ -26,7 +26,6 @@ Move = namedtuple(
         "is_castle",
         "en_passant",
         "is_king_capture",
-        "is_null",
         "is_quiescent",
     ],
     defaults=[0, 0, False, False, -1, False, False, False],
@@ -105,11 +104,9 @@ def is_promotion(move: Move) -> bool:
 def to_uci(input: Move | Iterable[Move]) -> str:
 
     if isinstance(input, Move):
-        if input.is_null:
-            return "null{'*' if input.is_quiescent else ''}"
         return f"{to_normal_notation(input.start)}{to_normal_notation(input.end)}{'q' if is_promotion(input) else ''}{'*' if input.is_quiescent else ''}"
 
     if isinstance(input, Iterable):
-        return ','.join([to_uci(x) for x in input])
+        return ",".join([to_uci(x) for x in input])
 
     raise Exception("Unknown input for to_uci()")

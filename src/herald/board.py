@@ -378,6 +378,7 @@ def legal_moves(b: Board, quiescent: bool = False) -> list[Move]:
 
 
 def is_square_attacked(b: Board, square: int, color: COLOR) -> bool:
+    """Detects if square on b is attacked by color."""
     for depl in [21, 12, -8, -19, -21, -12, 8, 19]:
         if b.squares[square + depl] == PIECE.KNIGHT * color:
             return True
@@ -763,21 +764,7 @@ def pseudo_legal_moves(
     b: Board,
     quiescent: bool = False,
 ) -> Iterable[Move]:
-
-    # null move
-    if quiescent:
-        yield Move(
-            start=0,
-            end=0,
-            moving_piece=0,
-            is_capture=False,
-            is_castle=False,
-            en_passant=-1,
-            is_king_capture=False,
-            is_null=True,
-            is_quiescent=quiescent,
-        )
-    def king_in_check(b: Board, move: Move) -> bool:
+    def leaves_king_in_check(b: Board, move: Move) -> bool:
         b2 = push(b, move)
         ks = king_square(b2, invturn(b2))
         if is_square_attacked(b2, ks, b2.turn):
@@ -791,25 +778,25 @@ def pseudo_legal_moves(
         type = abs(piece)
         if type == PIECE.PAWN:
             for move in pawn_moves(b, start, quiescent):
-                if not king_in_check(b, move):
+                if not leaves_king_in_check(b, move):
                     yield move
         if type == PIECE.KNIGHT:
             for move in knight_moves(b, start, quiescent):
-                if not king_in_check(b, move):
+                if not leaves_king_in_check(b, move):
                     yield move
         if type == PIECE.BISHOP:
             for move in bishop_moves(b, start, quiescent):
-                if not king_in_check(b, move):
+                if not leaves_king_in_check(b, move):
                     yield move
         if type == PIECE.ROOK:
             for move in rook_moves(b, start, quiescent):
-                if not king_in_check(b, move):
+                if not leaves_king_in_check(b, move):
                     yield move
         if type == PIECE.QUEEN:
             for move in queen_moves(b, start, quiescent):
-                if not king_in_check(b, move):
+                if not leaves_king_in_check(b, move):
                     yield move
         if type == PIECE.KING:
             for move in king_moves(b, start, quiescent):
-                if not king_in_check(b, move):
+                if not leaves_king_in_check(b, move):
                     yield move

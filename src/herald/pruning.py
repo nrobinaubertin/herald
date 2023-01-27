@@ -32,10 +32,7 @@ def is_bad_capture(b: Board, move: Move, with_see: bool = True) -> bool:
     if not move.is_capture:
         return False
 
-    if (
-        move.moving_piece == PIECE.PAWN
-        or move.captured_piece in [PIECE.KING, PIECE.QUEEN]
-    ):
+    if move.moving_piece == PIECE.PAWN or move.captured_piece in [PIECE.KING, PIECE.QUEEN]:
         return False
 
     # captured piece is worth more than capturing piece

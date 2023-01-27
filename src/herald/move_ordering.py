@@ -2,6 +2,7 @@ import collections
 from random import shuffle
 from typing import Callable, Iterable, List
 
+from . import board
 from .constants import COLOR
 from .data_structures import Board, Move
 from .evaluation import PIECE_VALUE
@@ -27,8 +28,6 @@ def qs_ordering(
 
     for m in moves:
         if m.is_king_capture:
-            yield m
-        if m.is_null:
             yield m
         if m.captured_piece > 3:
             yield m
@@ -71,7 +70,10 @@ def fast_mvv_lva(
     # priority collections
     mem: collections.deque[Move] = collections.deque()
     for m in moves:
-        if m.is_king_capture or m.is_null or m.is_castle:
+        if m.is_king_capture or m.is_castle:
+            yield m
+        b2 = board.push(b, m)
+        if board.is_square_attacked(b2, board.king_square(b2, b2.turn), b.turn):
             yield m
         if m.is_capture:
             if m.captured_piece < 2:
@@ -88,10 +90,11 @@ def mvv_lva(
     moves: Iterable[Move],
 ) -> List[Move]:
     def eval(b, m):
+        b2 = board.push(b, m)
+        if board.is_square_attacked(b2, board.king_square(b2, b2.turn), b.turn):
+            return 100000
         if m.is_castle:
-            return 100000
-        if m.is_null:
-            return 100000
+            return 99999
         return (
             int(m.is_capture)
             * (
