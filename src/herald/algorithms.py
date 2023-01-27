@@ -54,18 +54,6 @@ def alphabeta(
         node = config.transposition_table.get(b, depth)
         if isinstance(node, Node) and node.depth >= depth:
 
-            # exact node
-            if node.lower < node.value < node.upper:
-                return Node(
-                    value=node.value,
-                    pv=pv,
-                    depth=node.depth,
-                    full_move=node.full_move,
-                    lower=alpha,
-                    upper=beta,
-                    children=1,
-                )
-
             # if this is a cut-node
             if node.value >= node.upper:
                 alpha = max(alpha, node.value)
@@ -86,7 +74,7 @@ def alphabeta(
             node = quiescence(
                 config,
                 b,
-                min(config.quiescence_depth, config.depth),
+                config.quiescence_depth,
                 pv,
                 alpha,
                 beta,
@@ -94,8 +82,9 @@ def alphabeta(
 
             children = node.children
             value = node.value
-            # uncomment next line if you want to display quiescent nodes
-            # pv = node.pv
+            if __debug__:
+                # display quiescent nodes
+                pv = node.pv
         else:
             value = config.eval_fn(b)
 
@@ -127,7 +116,7 @@ def alphabeta(
                 value=VALUE_MAX * b.turn,
                 depth=depth,
                 full_move=b.full_move,
-                pv=pv,
+                pv=curr_pv,
                 lower=alpha,
                 upper=beta,
                 children=children,
@@ -193,15 +182,27 @@ def alphabeta(
         )
     else:
         # no "best" found
-        node = Node(
-            depth=depth,
-            value=config.eval_fn(b),
-            pv=pv,
-            full_move=b.full_move,
-            lower=alpha,
-            upper=beta,
-            children=children,
-        )
+        # should happen only in case of stalemate/checkmate
+        if board.is_square_attacked(b, board.king_square(b, b.turn), board.invturn(b)):
+            node = Node(
+                depth=depth,
+                value=VALUE_MAX * b.turn * -1,
+                pv=pv,
+                full_move=b.full_move,
+                lower=alpha,
+                upper=beta,
+                children=children,
+            )
+        else:
+            node = Node(
+                depth=depth,
+                value=0,
+                pv=pv,
+                full_move=b.full_move,
+                lower=alpha,
+                upper=beta,
+                children=children,
+            )
 
     return node
 
@@ -259,7 +260,7 @@ def minimax(
             return Node(
                 value=VALUE_MAX * b.turn,
                 depth=depth,
-                pv=pv,
+                pv=curr_pv,
                 children=children,
             )
 
