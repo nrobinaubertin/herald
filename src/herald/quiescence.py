@@ -15,32 +15,6 @@ def quiescence(
     alpha: int,
     beta: int,
 ) -> Node:
-    stand_pat: int = config.eval_fn(b)
-
-    if b.turn == COLOR.WHITE:
-        if stand_pat >= beta:
-            return Node(
-                value=beta,
-                depth=0,
-                full_move=b.full_move,
-                pv=pv,
-                lower=alpha,
-                upper=beta,
-                children=1,
-            )
-        alpha = max(alpha, stand_pat)
-    else:
-        if stand_pat <= alpha:
-            return Node(
-                value=alpha,
-                depth=0,
-                full_move=b.full_move,
-                pv=pv,
-                lower=alpha,
-                upper=beta,
-                children=1,
-            )
-        beta = min(beta, stand_pat)
 
     node = _search(
         config,
@@ -78,18 +52,6 @@ def _search(
         node = config.qs_transposition_table.get(b, depth)
         if isinstance(node, Node) and node.depth >= depth:
 
-            # exact node
-            if node.lower < node.value < node.upper:
-                return Node(
-                    value=node.value,
-                    pv=pv,
-                    depth=node.depth,
-                    full_move=node.full_move,
-                    lower=alpha,
-                    upper=beta,
-                    children=1,
-                )
-
             # if this is a cut-node
             if node.value >= node.upper:
                 alpha = max(alpha, node.value)
@@ -97,6 +59,35 @@ def _search(
             # if this is an all-node
             if node.value <= node.lower:
                 beta = min(beta, node.value)
+
+    # stand_pat evaluation to check if we stop QS
+    stand_pat: int = config.eval_fn(b)
+    if b.turn == COLOR.WHITE:
+        # if stand_pat >= beta:
+        #     # print("stand_pat", stand_pat, beta, to_uci(pv))
+        #     return Node(
+        #         value=beta,
+        #         depth=0,
+        #         full_move=b.full_move,
+        #         pv=pv,
+        #         lower=alpha,
+        #         upper=beta,
+        #         children=1,
+        #     )
+        alpha = max(alpha, stand_pat)
+    else:
+        # if stand_pat <= alpha:
+        #     # print("stand_pat", to_uci(pv))
+        #     return Node(
+        #         value=alpha,
+        #         depth=0,
+        #         full_move=b.full_move,
+        #         pv=pv,
+        #         lower=alpha,
+        #         upper=beta,
+        #         children=1,
+        #     )
+        beta = min(beta, stand_pat)
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
@@ -131,34 +122,21 @@ def _search(
                 value=VALUE_MAX * b.turn,
                 depth=depth,
                 full_move=b.full_move,
-                pv=pv,
+                pv=curr_pv,
                 lower=alpha,
                 upper=beta,
                 children=children,
             )
 
-        if move.is_null:
-            # don't go further if this is a null move
-            value = config.eval_fn(b)
-            node = Node(
-                value=value,
-                depth=depth,
-                full_move=b.full_move,
-                pv=pv,
-                lower=alpha,
-                upper=beta,
-                children=1,
-            )
-        else:
-            nb = board.push(b, move)
-            node = _search(
-                config,
-                nb,
-                depth - 1,
-                curr_pv,
-                alpha,
-                beta,
-            )
+        nb = board.push(b, move)
+        node = _search(
+            config,
+            nb,
+            depth - 1,
+            curr_pv,
+            alpha,
+            beta,
+        )
 
         children += node.children
 
@@ -205,15 +183,16 @@ def _search(
             children=children,
         )
     else:
-        # no "best" found
-        node = Node(
-            depth=depth,
-            value=config.eval_fn(b),
-            pv=pv,
+        # this happens when no quiescent move is available
+        value = config.eval_fn(b)
+        return Node(
+            value=value,
+            depth=0,
             full_move=b.full_move,
+            pv=pv,
             lower=alpha,
             upper=beta,
-            children=children,
+            children=1,
         )
 
     return node
