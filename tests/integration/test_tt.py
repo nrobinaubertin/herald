@@ -1,13 +1,10 @@
-"""Test transposition table.
-"""
+"""Test transposition table."""
 
 from collections import deque
 
 import pytest
 
-from herald import board, evaluation, move_ordering
-from herald.transposition_table import TranspositionTable
-from herald import algorithms
+from herald import algorithms, board, evaluation, move_ordering
 from herald.configuration import Config
 from herald.constants import VALUE_MAX
 from herald.data_structures import MoveType, to_uci
@@ -19,6 +16,7 @@ with open("tests/epd/transposition_table.epd", "r") as tt_file:
         tt_fens.append(" ".join(epd[:4]) + " 0 0")
 
 depths = [1, 2, 3, 4, 5, 6, 7]
+
 
 # This test equivalence between w/ and w/o tt
 @pytest.mark.parametrize("fen,depth", tuple([l1, l2] for l2 in depths for l1 in tt_fens))
