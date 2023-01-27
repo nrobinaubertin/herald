@@ -205,20 +205,6 @@ def push(b: Board, move: Move) -> Board:
     pawn_number = array("b", b.pawn_number)
     pawn_in_file = array("b", b.pawn_in_file)
 
-    if move.is_null:
-        return Board(
-            squares=squares,
-            positions_history=b.positions_history,
-            turn=invturn(b),
-            castling_rights=castling_rights,
-            en_passant=-1,
-            half_move=half_move + 1,
-            full_move=b.full_move + 1,
-            king_en_passant=king_en_passant,
-            pawn_number=pawn_number,
-            pawn_in_file=pawn_in_file,
-        )
-
     assert b.squares[move.start] != PIECE.EMPTY, "Moving piece cannot be empty"
     assert abs(b.squares[move.start]) != PIECE.INVALID, "Moving piece cannot be invalid"
 
