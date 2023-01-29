@@ -1,7 +1,7 @@
 from typing import Iterable
 from dataclasses import dataclass
 
-from .constants import ASCII_REP, CASTLE, COLOR, PIECE, COLOR_IDX
+from .constants import ASCII_REP, CASTLE, COLOR, PIECE, COLOR_IDX, IS_PIECE, get_color
 from .data_structures import Move, to_normal_notation, to_square_notation
 
 
@@ -96,13 +96,13 @@ def from_uci(b: Board, uci: str) -> Move:
         start=start,
         end=end,
         is_capture=(
-            abs(b.squares[end]) != PIECE.EMPTY or end == b.en_passant or end in b.king_en_passant
+            IS_PIECE[b.squares[end]] != PIECE.EMPTY or end == b.en_passant or end in b.king_en_passant
         ),
         is_castle=(
-            start in (95, 25) and abs(b.squares[start]) == PIECE.KING and abs(end - start) == 2
+            start in (95, 25) and IS_PIECE[b.squares[start]] == PIECE.KING and abs(end - start) == 2
         ),
         en_passant=(start + end) // 2
-        if abs(b.squares[start]) == PIECE.PAWN and abs(start - end) == 20
+        if IS_PIECE[b.squares[start]] == PIECE.PAWN and abs(start - end) == 20
         else -1,
     )
 
@@ -197,8 +197,8 @@ def get_pawns_stats(squares):
             piece = squares[square]
             if piece == 0 or piece == 7:
                 continue
-            if abs(piece) == PIECE.PAWN:
-                color = abs(piece) // piece
+            if IS_PIECE[piece] == PIECE.PAWN:
+                color = get_color(piece)
                 pawn_number[COLOR_IDX[color]] += 1
                 pawn_in_file[i * 2 + COLOR_IDX[color]] += 1
 
@@ -217,19 +217,19 @@ def push(b: Board, move: Move) -> Board:
     king_squares = b.king_squares.copy()
 
     assert b.squares[move.start] != PIECE.EMPTY, "Moving piece cannot be empty"
-    assert abs(b.squares[move.start]) != PIECE.INVALID, "Moving piece cannot be invalid"
+    assert IS_PIECE[b.squares[move.start]] != PIECE.INVALID, "Moving piece cannot be invalid"
 
     piece_start = b.squares[move.start]
 
-    if move.is_capture or abs(piece_start) == PIECE.PAWN:
+    if move.is_capture or IS_PIECE[piece_start] == PIECE.PAWN:
         # reset half_move count when condition is met
         half_move = 0
-        color = abs(squares[move.start]) // squares[move.start]
+        color = get_color(squares[move.start])
         pawn_in_file[(move.start % 10) * 2 + COLOR_IDX[color]] -= 1
         pawn_in_file[(move.end % 10) * 2 + COLOR_IDX[color]] += 1
 
-    if move.is_capture and abs(squares[move.end]) == PIECE.PAWN:
-        color = abs(squares[move.end]) // squares[move.end]
+    if move.is_capture and IS_PIECE[squares[move.end]] == PIECE.PAWN:
+        color = get_color(squares[move.end])
         pawn_number[COLOR_IDX[color]] -= 1
         pawn_in_file[(move.end % 10) * 2 + COLOR_IDX[color]] -= 1
 
@@ -238,13 +238,13 @@ def push(b: Board, move: Move) -> Board:
     squares[move.end] = piece_start
 
     # change the king square
-    if abs(piece_start) == PIECE.KING:
+    if IS_PIECE[piece_start] == PIECE.KING:
         king_squares[COLOR_IDX[b.turn]] = move.end
 
     # special removal for "en passant" moves
-    if move.end == b.en_passant and abs(piece_start) == PIECE.PAWN:
+    if move.end == b.en_passant and IS_PIECE[piece_start] == PIECE.PAWN:
         target = move.end + (10 * b.turn)
-        color = abs(squares[target]) // squares[target]
+        color = get_color(squares[target])
         squares[target] = PIECE.EMPTY
         pawn_number[COLOR_IDX[color]] -= 1
         pawn_in_file[(move.end % 10) * 2 + COLOR_IDX[color]] -= 1
@@ -256,8 +256,8 @@ def push(b: Board, move: Move) -> Board:
         en_passant = -1
 
     # promotion
-    if abs(piece_start) == PIECE.PAWN and move.end // 10 == (2 if b.turn == COLOR.WHITE else 9):
-        color = abs(squares[move.end]) // squares[move.end]
+    if IS_PIECE[piece_start] == PIECE.PAWN and move.end // 10 == (2 if b.turn == COLOR.WHITE else 9):
+        color = get_color(squares[move.end])
         pawn_number[COLOR_IDX[color]] -= 1
         pawn_in_file[(move.end % 10) * 2 + COLOR_IDX[color]] -= 1
         squares[move.end] = PIECE.QUEEN * b.turn
@@ -292,7 +292,7 @@ def push(b: Board, move: Move) -> Board:
             king_en_passant.append(25)
     else:
         # remove castling rights
-        if abs(piece_start) == PIECE.KING:
+        if IS_PIECE[piece_start] == PIECE.KING:
             castling_rights[CASTLE.KING_SIDE + b.turn] = 0
             castling_rights[CASTLE.QUEEN_SIDE + b.turn] = 0
         else:
@@ -421,10 +421,10 @@ def pieces(
 ) -> Iterable[int]:
     squares: Iterable[int] = map(
         lambda x: x[0] + 20,
-        filter(lambda x: abs(x[1]) in [1, 2, 3, 4, 5, 6], enumerate(b.squares[20:100])),
+        filter(lambda x: x[1] in [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6], enumerate(b.squares[20:100])),
     )
     if type is not None:
-        squares = filter(lambda x: abs(b.squares[x]) == type, squares)
+        squares = filter(lambda x: IS_PIECE[b.squares[x]] == type, squares)
     if color is not None:
         squares = filter(lambda x: b.squares[x] * color > 0, squares)
     return squares
@@ -438,7 +438,7 @@ def knight_moves(
     for depl in [21, 12, -8, -19, -21, -12, 8, 19]:
         end = start + depl
         is_capture = bool(b.squares[end]) or end in b.king_en_passant
-        is_king_capture = abs(b.squares[end]) == PIECE.KING or end in b.king_en_passant
+        is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
         if (
             b.squares[end] != PIECE.INVALID
             and b.squares[end] * b.turn <= 0
@@ -448,7 +448,7 @@ def knight_moves(
                 start=start,
                 end=end,
                 moving_piece=PIECE.KNIGHT,
-                captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
+                captured_piece=IS_PIECE[b.squares[end]],  # don't take king_en_passant into account
                 is_capture=is_capture,
                 is_castle=False,
                 en_passant=-1,
@@ -466,7 +466,7 @@ def rook_moves(
         for x in range(1, 8):
             end = start + x * direction
             is_capture = bool(b.squares[end]) or end in b.king_en_passant
-            is_king_capture = abs(b.squares[end]) == PIECE.KING or end in b.king_en_passant
+            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
 
             # castling moves are processed here
             # because we are already checking if the path is clear that way
@@ -480,9 +480,9 @@ def rook_moves(
                         start=(95 if b.turn == COLOR.WHITE else 25),
                         end=(97 if b.turn == COLOR.WHITE else 27),
                         moving_piece=PIECE.KING,
-                        captured_piece=abs(
+                        captured_piece=IS_PIECE[
                             b.squares[end]
-                        ),  # don't take king_en_passant into account
+                        ],  # don't take king_en_passant into account
                         is_capture=False,
                         is_castle=True,
                         en_passant=-1,
@@ -515,7 +515,7 @@ def rook_moves(
                     start=start,
                     end=end,
                     moving_piece=PIECE.ROOK,
-                    captured_piece=abs(b.squares[end]),
+                    captured_piece=IS_PIECE[b.squares[end]],
                     is_capture=is_capture,
                     is_castle=False,
                     en_passant=-1,
@@ -535,7 +535,7 @@ def bishop_moves(
         for x in range(1, 8):
             end = start + x * direction
             is_capture = bool(b.squares[end]) or end in b.king_en_passant
-            is_king_capture = abs(b.squares[end]) == PIECE.KING or end in b.king_en_passant
+            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
             if (
                 b.squares[end] != PIECE.INVALID
                 and b.squares[end] * b.turn <= 0
@@ -545,7 +545,7 @@ def bishop_moves(
                     start=start,
                     end=end,
                     moving_piece=PIECE.BISHOP,
-                    captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
+                    captured_piece=IS_PIECE[b.squares[end]],  # don't take king_en_passant into account
                     is_capture=is_capture,
                     is_castle=False,
                     en_passant=-1,
@@ -565,7 +565,7 @@ def queen_moves(
         for x in range(1, 8):
             end = start + x * direction
             is_capture = bool(b.squares[end]) or end in b.king_en_passant
-            is_king_capture = abs(b.squares[end]) == PIECE.KING or end in b.king_en_passant
+            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
             if (
                 b.squares[end] != PIECE.INVALID
                 and b.squares[end] * b.turn <= 0
@@ -575,7 +575,7 @@ def queen_moves(
                     start=start,
                     end=end,
                     moving_piece=PIECE.QUEEN,
-                    captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
+                    captured_piece=IS_PIECE[b.squares[end]],  # don't take king_en_passant into account
                     is_capture=is_capture,
                     is_castle=False,
                     en_passant=-1,
@@ -594,7 +594,7 @@ def king_moves(
     for depl in [11, -11, 9, -9, 1, -1, 10, -10]:
         end = start + depl
         is_capture = bool(b.squares[end]) or end in b.king_en_passant
-        is_king_capture = abs(b.squares[end]) == PIECE.KING or end in b.king_en_passant
+        is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
         if (
             b.squares[end] != PIECE.INVALID
             and b.squares[end] * b.turn <= 0
@@ -604,7 +604,7 @@ def king_moves(
                 start=start,
                 end=end,
                 moving_piece=PIECE.KING,
-                captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
+                captured_piece=IS_PIECE[b.squares[end]],  # don't take king_en_passant into account
                 is_capture=is_capture,
                 is_castle=False,
                 en_passant=-1,
@@ -650,12 +650,12 @@ def pawn_moves(
             or end == b.en_passant
             or end in b.king_en_passant
         ):
-            is_king_capture = abs(b.squares[end]) == PIECE.KING or end in b.king_en_passant
+            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
             yield Move(
                 start=start,
                 end=end,
                 moving_piece=PIECE.PAWN,
-                captured_piece=abs(b.squares[end]),  # don't take king_en_passant into account
+                captured_piece=IS_PIECE[b.squares[end]],  # don't take king_en_passant into account
                 is_capture=True,
                 is_castle=False,
                 en_passant=-1,
@@ -668,17 +668,17 @@ def pawn_moves(
 # Useful for the SEE function
 def capture_moves(b: Board, target: int) -> Iterable[Move]:
 
-    is_king_capture = abs(b.squares[target]) == PIECE.KING
+    is_king_capture = IS_PIECE[b.squares[target]] == PIECE.KING
 
     # PAWN
     for depl in [9, 11] if b.turn == COLOR.WHITE else [-9, -11]:
         start = target + depl
-        if abs(b.squares[start]) == PIECE.PAWN and b.squares[start] * b.turn > 0:
+        if IS_PIECE[b.squares[start]] == PIECE.PAWN and b.squares[start] * b.turn > 0:
             yield Move(
                 start=start,
                 end=target,
                 moving_piece=PIECE.PAWN,
-                captured_piece=abs(b.squares[target]),
+                captured_piece=IS_PIECE[b.squares[target]],
                 is_capture=True,
                 is_castle=False,
                 en_passant=-1,
@@ -689,12 +689,12 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
     # KNIGHT
     for depl in [21, 12, -8, -19, -21, -12, 8, 19]:
         start = target + depl
-        if abs(b.squares[start]) == PIECE.KNIGHT and b.squares[start] * b.turn > 0:
+        if IS_PIECE[b.squares[start]] == PIECE.KNIGHT and b.squares[start] * b.turn > 0:
             yield Move(
                 start=start,
                 end=target,
                 moving_piece=PIECE.KNIGHT,
-                captured_piece=abs(b.squares[target]),
+                captured_piece=IS_PIECE[b.squares[target]],
                 is_capture=True,
                 is_castle=False,
                 en_passant=-1,
@@ -708,13 +708,13 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
             start = target + x * direction
 
             if (
-                abs(b.squares[start]) == PIECE.BISHOP or abs(b.squares[start]) == PIECE.QUEEN
+                IS_PIECE[b.squares[start]] == PIECE.BISHOP or IS_PIECE[b.squares[start]] == PIECE.QUEEN
             ) and b.squares[start] * b.turn > 0:
                 yield Move(
                     start=start,
                     end=target,
-                    moving_piece=abs(b.squares[start]),
-                    captured_piece=abs(b.squares[target]),
+                    moving_piece=IS_PIECE[b.squares[start]],
+                    captured_piece=IS_PIECE[b.squares[target]],
                     is_capture=True,
                     is_castle=False,
                     en_passant=-1,
@@ -730,13 +730,13 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
             start = target + x * direction
 
             if (
-                abs(b.squares[start]) == PIECE.ROOK or abs(b.squares[start]) == PIECE.QUEEN
+                IS_PIECE[b.squares[start]] == PIECE.ROOK or IS_PIECE[b.squares[start]] == PIECE.QUEEN
             ) and b.squares[start] * b.turn > 0:
                 yield Move(
                     start=start,
                     end=target,
-                    moving_piece=abs(b.squares[start]),
-                    captured_piece=abs(b.squares[target]),
+                    moving_piece=IS_PIECE[b.squares[start]],
+                    captured_piece=IS_PIECE[b.squares[target]],
                     is_capture=True,
                     is_castle=False,
                     en_passant=-1,
@@ -749,12 +749,12 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
     # KING
     for depl in [11, -11, 9, -9, 1, -1, 10, -10]:
         start = target + depl
-        if abs(b.squares[start]) == PIECE.KING and b.squares[start] * b.turn > 0:
+        if IS_PIECE[b.squares[start]] == PIECE.KING and b.squares[start] * b.turn > 0:
             yield Move(
                 start=start,
                 end=target,
                 moving_piece=PIECE.KING,
-                captured_piece=abs(b.squares[target]),
+                captured_piece=IS_PIECE[b.squares[target]],
                 is_capture=True,
                 is_castle=False,
                 en_passant=-1,
@@ -785,7 +785,7 @@ def pseudo_legal_moves(
         lambda x: x[1] != PIECE.INVALID and x[1] * b.turn > 0, enumerate(b.squares[20:100])
     ):
         start = start + 20
-        type = abs(piece)
+        type = IS_PIECE[piece]
         if type == PIECE.PAWN:
             for move in pawn_moves(b, start, quiescent):
                 yield move

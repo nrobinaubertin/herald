@@ -28,6 +28,25 @@ class PIECE(IntEnum):
     INVALID = 7
 
 
+IS_PIECE = {
+    -7: PIECE.INVALID,
+    -6: PIECE.KING,
+    -5: PIECE.QUEEN,
+    -4: PIECE.ROOK,
+    -3: PIECE.BISHOP,
+    -2: PIECE.KNIGHT,
+    -1: PIECE.PAWN,
+    0: PIECE.EMPTY,
+    1: PIECE.PAWN,
+    2: PIECE.KNIGHT,
+    3: PIECE.BISHOP,
+    4: PIECE.ROOK,
+    5: PIECE.QUEEN,
+    6: PIECE.KING,
+    7: PIECE.INVALID,
+}
+
+
 ASCII_REP: dict[int, str] = {
     0: ".",
     (PIECE.PAWN * COLOR.WHITE): "P",
@@ -45,3 +64,9 @@ ASCII_REP: dict[int, str] = {
 }
 
 VALUE_MAX: int = 12_000
+
+
+def get_color(value: int):
+    if value >= 0:
+        return 1
+    return -1
