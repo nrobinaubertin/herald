@@ -1,7 +1,8 @@
-from . import board
 from .constants import COLOR, PIECE
-from .data_structures import Board, Move
+from .data_structures import Move
 from .evaluation import PIECE_VALUE
+from . import board
+from .board import Board
 
 
 def see(b: Board, target: int, score: int) -> int:

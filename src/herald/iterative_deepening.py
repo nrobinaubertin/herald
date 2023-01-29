@@ -3,11 +3,12 @@ import random
 import time
 from collections import deque
 
-from . import board
 from .configuration import Config
 from .constants import VALUE_MAX
-from .data_structures import Board, Move, Search, to_uci
+from .data_structures import Move, Search, to_uci
 from .search import search
+from . import board
+from .board import Board
 
 
 def to_string(search: Search) -> str:

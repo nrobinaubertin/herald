@@ -14,6 +14,7 @@ def hash(board) -> Hashable:
     data.extend(board.castling_rights)
     data.append(board.en_passant)
     data.extend(board.king_en_passant)
+    data.append(board.half_move)
     return data.tobytes()
 
 

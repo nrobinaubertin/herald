@@ -1,9 +1,9 @@
 from array import array
 from typing import Callable
 
+from .constants import COLOR, PIECE, COLOR_IDX
 from . import board
-from .constants import COLOR, PIECE
-from .data_structures import Board
+from .board import Board
 
 PIECE_VALUE = {
     PIECE.EMPTY: 0,
@@ -180,22 +180,24 @@ def eval_new(b: Board) -> int:
             y = 2 + j
             color = abs(piece) // piece
             evaluation += PIECE_VALUE[abs(piece)] * color
+            assert 0 < abs(piece) < 7
+            assert 0 <= b.pawn_number[COLOR_IDX[color]] < 8
             evaluation += PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER[abs(piece)][
-                b.pawn_number[(color + 1) // 2]
+                b.pawn_number[COLOR_IDX[color]]
             ]
             if color == COLOR.WHITE:
                 evaluation += PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][square] * color
             else:
                 evaluation += PIECE_SQUARE_TABLE_MAILBOX[abs(piece)][119 - square] * color
             if abs(piece) == PIECE.PAWN:
-                if b.pawn_in_file[x * 2 + (color + 1) // 2] > 0:
+                if b.pawn_in_file[x * 2 + COLOR_IDX[color]] > 0:
                     evaluation += DOUBLED_PAWN_PENALTY * color
-                    if b.pawn_in_file[x * 2 + (color + 1) // 2] > 1:
+                    if b.pawn_in_file[x * 2 + COLOR_IDX[color]] > 1:
                         evaluation += DOUBLED_PAWN_PENALTY * color
                 else:
                     if (
-                        b.pawn_in_file[(x + 1) * 2 + (color * -1 + 1) // 2] == 0
-                        and b.pawn_in_file[(x - 1) * 2 + (color * -1 + 1) // 2] == 0
+                        b.pawn_in_file[(x + 1) * 2 + COLOR_IDX[color * -1]] == 0
+                        and b.pawn_in_file[(x - 1) * 2 + COLOR_IDX[color * -1]] == 0
                     ):
                         # bonus for passed pawn
                         if color == COLOR.WHITE:
@@ -203,9 +205,9 @@ def eval_new(b: Board) -> int:
                         else:
                             evaluation += PASSED_RANK[y] * color
             if abs(piece) == PIECE.ROOK:
-                if b.pawn_in_file[x * 2 + (color + 1) // 2] == 0:
+                if b.pawn_in_file[x * 2 + COLOR_IDX[color]] == 0:
                     evaluation += ROOK_ON_FILE[0] * color
-                    if b.pawn_in_file[x * 2 + (color * -1 + 1) // 2] == 0:
+                    if b.pawn_in_file[x * 2 + COLOR_IDX[color * -1]] == 0:
                         evaluation += ROOK_ON_FILE[1] * color
             if abs(piece) == PIECE.KING:
                 # we like having pawns in front of our king

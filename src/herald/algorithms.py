@@ -3,11 +3,12 @@
 from collections import deque
 from typing import Callable, Iterable
 
-from . import board
 from .configuration import Config
 from .constants import COLOR, VALUE_MAX
-from .data_structures import Board, Move, MoveType, Node
+from .data_structures import Move, MoveType, Node
 from .quiescence import quiescence
+from . import board
+from .board import Board
 
 Alg_fn = Callable[
     [
@@ -36,18 +37,6 @@ def alphabeta(
 ) -> Node:
 
     assert depth >= 0, depth
-
-    # test repetitions by returning it as a draw
-    if board.get_pos(b) in b.positions_history:
-        return Node(
-            value=0,
-            depth=0,
-            full_move=b.full_move,
-            pv=pv,
-            lower=alpha,
-            upper=beta,
-            children=1,
-        )
 
     if config.use_transposition_table and len(pv) > 0:
         # check if we find a hit in the transposition table
@@ -124,6 +113,11 @@ def alphabeta(
 
         nb = board.push(b, move)
 
+        # if the king is in check after we move
+        # then it's a bad move (we will lose the game)
+        if board.king_is_in_check(nb, nb.invturn):
+            continue
+
         node = alphabeta(
             config,
             nb,
@@ -183,7 +177,7 @@ def alphabeta(
     else:
         # no "best" found
         # should happen only in case of stalemate/checkmate
-        if board.is_square_attacked(b, board.king_square(b, b.turn), board.invturn(b)):
+        if board.is_square_attacked(b, board.king_square(b, b.turn), b.invturn):
             node = Node(
                 depth=depth,
                 value=VALUE_MAX * b.turn * -1,
@@ -220,16 +214,6 @@ def minimax(
 
     assert depth >= 0, depth
 
-    # test repetitions by returning it as a draw
-    if board.get_pos(b) in b.positions_history:
-        return Node(
-            value=0,
-            depth=0,
-            full_move=b.full_move,
-            pv=pv,
-            children=1,
-        )
-
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
@@ -263,6 +247,11 @@ def minimax(
                 pv=curr_pv,
                 children=children,
             )
+
+        # if the king is in check after we move
+        # then it's a bad move (we will lose the game)
+        if board.king_is_in_check(curr_board, curr_board.invturn):
+            continue
 
         node = minimax(
             config,
@@ -298,4 +287,25 @@ def minimax(
             pv=best.pv,
             children=children,
         )
-    raise Exception("No best node could be found. This should not happen")
+
+    # no "best" found
+    # should happen only in case of stalemate/checkmate
+    if board.is_square_attacked(b, board.king_square(b, b.turn), b.invturn):
+        return Node(
+            depth=depth,
+            value=VALUE_MAX * b.turn * -1,
+            pv=pv,
+            full_move=b.full_move,
+            lower=alpha,
+            upper=beta,
+            children=children,
+        )
+    return Node(
+        depth=depth,
+        value=0,
+        pv=pv,
+        full_move=b.full_move,
+        lower=alpha,
+        upper=beta,
+        children=children,
+    )

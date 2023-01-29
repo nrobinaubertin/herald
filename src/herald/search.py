@@ -1,10 +1,11 @@
 import time
 from collections import deque
 
-from . import board
 from .configuration import Config
 from .constants import VALUE_MAX
-from .data_structures import Board, MoveType, Search
+from .data_structures import MoveType, Search
+from . import board
+from .board import Board
 
 
 def search(
