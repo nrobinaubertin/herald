@@ -5,14 +5,12 @@ import multiprocessing
 import os
 import sys
 
-from herald import board
-from herald.algorithms import alphabeta
+from herald import algorithms, board, evaluation, move_ordering
 from herald.analysis import fen_analysis
+from herald.board import Board
 from herald.configuration import Config
-from herald.data_structures import Board, to_uci
-from herald.evaluation import eval_new
+from herald.data_structures import to_uci
 from herald.iterative_deepening import itdep
-from herald.move_ordering import fast_mvv_lva, qs_ordering
 from herald.pruning import see
 from herald.time_management import target_movetime
 
@@ -21,11 +19,11 @@ CURRENT_PROCESS = None
 
 CONFIG = Config(
     {
-        "version": "0.19.17",
-        "alg_fn": alphabeta,
-        "move_ordering_fn": fast_mvv_lva,
-        "qs_move_ordering_fn": qs_ordering,
-        "eval_fn": eval_new,
+        "version": "0.19.18",
+        "alg_fn": algorithms.alphabeta,
+        "move_ordering_fn": move_ordering.fast_mvv_lva,
+        "qs_move_ordering_fn": move_ordering.qs_ordering,
+        "eval_fn": evaluation.eval_new,
         "quiescence_search": True,
         "quiescence_depth": 5,
         "use_transposition_table": True,
@@ -67,6 +65,9 @@ def uci_parser(line: str) -> list[str]:
 
     if tokens[0] == "print":
         return [board.to_string(CURRENT_BOARD)]
+
+    if tokens[0] == "pseudomoves":
+        return [", ".join([to_uci(m) for m in board.pseudo_legal_moves(CURRENT_BOARD)])]
 
     if tokens[0] == "moves":
         return [", ".join([to_uci(m) for m in board.legal_moves(CURRENT_BOARD)])]

@@ -3,8 +3,9 @@ from collections import deque
 from operator import itemgetter
 
 from . import board
+from .board import Board
 from .constants import COLOR, VALUE_MAX
-from .data_structures import Board, MoveType, to_uci
+from .data_structures import MoveType, to_uci
 
 
 def fen_analysis(

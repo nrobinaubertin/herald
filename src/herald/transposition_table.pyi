@@ -2,7 +2,7 @@ from typing import Hashable, Union
 
 from _typeshed import Incomplete
 
-from .data_structures import Board as Board
+from .board import Board as Board
 from .data_structures import Node as Node
 
 TABLE_SIZE: int

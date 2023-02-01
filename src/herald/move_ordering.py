@@ -2,11 +2,11 @@ import collections
 from random import shuffle
 from typing import Callable, Iterable, List
 
+from . import board
+from .board import Board
 from .constants import COLOR
 from .data_structures import Move
 from .evaluation import PIECE_VALUE
-from . import board
-from .board import Board
 
 Move_ordering_fn = Callable[
     [

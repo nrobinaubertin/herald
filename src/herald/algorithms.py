@@ -3,12 +3,12 @@
 from collections import deque
 from typing import Callable, Iterable
 
-from .configuration import Config
-from .constants import COLOR, VALUE_MAX
-from .data_structures import Move, MoveType, Node
-from .quiescence import quiescence
 from . import board
 from .board import Board
+from .configuration import Config
+from .constants import COLOR, COLOR_IDX, VALUE_MAX
+from .data_structures import Move, MoveType, Node
+from .quiescence import quiescence
 
 Alg_fn = Callable[
     [
@@ -177,7 +177,7 @@ def alphabeta(
     else:
         # no "best" found
         # should happen only in case of stalemate/checkmate
-        if board.is_square_attacked(b, board.king_square(b, b.turn), b.invturn):
+        if board.is_square_attacked(b, b.king_squares[COLOR_IDX[b.turn]], b.invturn):
             node = Node(
                 depth=depth,
                 value=VALUE_MAX * b.turn * -1,
@@ -290,7 +290,7 @@ def minimax(
 
     # no "best" found
     # should happen only in case of stalemate/checkmate
-    if board.is_square_attacked(b, board.king_square(b, b.turn), b.invturn):
+    if board.is_square_attacked(b, b.king_squares[COLOR_IDX[b.turn]], b.invturn):
         return Node(
             depth=depth,
             value=VALUE_MAX * b.turn * -1,

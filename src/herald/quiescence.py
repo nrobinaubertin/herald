@@ -1,11 +1,11 @@
 from collections import deque
 
+from . import board
+from .board import Board
 from .configuration import Config
 from .constants import COLOR, VALUE_MAX
 from .data_structures import Move, Node
 from .pruning import is_bad_capture
-from . import board
-from .board import Board
 
 
 def quiescence(

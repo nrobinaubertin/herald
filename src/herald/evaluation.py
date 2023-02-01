@@ -1,9 +1,8 @@
 from array import array
 from typing import Callable
 
-from .constants import COLOR, PIECE, COLOR_IDX, IS_PIECE, get_color
-from . import board
 from .board import Board
+from .constants import COLOR, COLOR_IDX, IS_PIECE, PIECE, get_color
 
 PIECE_VALUE = {
     PIECE.EMPTY: 0,
@@ -123,24 +122,36 @@ Eval_fn = Callable[
 # only material
 def eval_simple(b: Board) -> int:
     evaluation = 0
-    for square in board.pieces(b):
-        piece = b.squares[square]
-        color = get_color(piece)
-        evaluation += PIECE_VALUE[IS_PIECE[piece]] * color
+    for i in range(8):
+        for j in range(8):
+            square = (2 + j) * 10 + (i + 1)
+            piece = b.squares[square]
+            color = get_color(piece)
+            if piece == PIECE.EMPTY:
+                continue
+            assert 0 < IS_PIECE[piece] < 7
+            assert 0 <= b.pawn_number[COLOR_IDX[color]] < 8
+            evaluation += PIECE_VALUE[IS_PIECE[piece]] * color
     return evaluation
 
 
 # material + pst
 def eval_pst(b: Board) -> int:
     evaluation = 0
-    for square in board.pieces(b):
-        piece = b.squares[square]
-        color = get_color(piece)
-        evaluation += PIECE_VALUE[IS_PIECE[piece]] * color
-        if color == COLOR.WHITE:
-            evaluation += PIECE_SQUARE_TABLE_MAILBOX[IS_PIECE[piece]][square] * color
-        else:
-            evaluation += PIECE_SQUARE_TABLE_MAILBOX[IS_PIECE[piece]][119 - square] * color
+    for i in range(8):
+        for j in range(8):
+            square = (2 + j) * 10 + (i + 1)
+            piece = b.squares[square]
+            color = get_color(piece)
+            if piece == PIECE.EMPTY:
+                continue
+            assert 0 < IS_PIECE[piece] < 7
+            assert 0 <= b.pawn_number[COLOR_IDX[color]] < 8
+            evaluation += PIECE_VALUE[IS_PIECE[piece]] * color
+            if color == COLOR.WHITE:
+                evaluation += PIECE_SQUARE_TABLE_MAILBOX[IS_PIECE[piece]][square] * color
+            else:
+                evaluation += PIECE_SQUARE_TABLE_MAILBOX[IS_PIECE[piece]][119 - square] * color
     return evaluation
 
 

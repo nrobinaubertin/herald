@@ -1,8 +1,8 @@
+from . import board
+from .board import Board
 from .constants import COLOR, PIECE
 from .data_structures import Move
 from .evaluation import PIECE_VALUE
-from . import board
-from .board import Board
 
 
 def see(b: Board, target: int, score: int) -> int:
@@ -16,7 +16,7 @@ def see(b: Board, target: int, score: int) -> int:
     # the least valuable attacker
     # for move in filter(lambda x: x.end == target, board.pseudo_legal_moves(b, True)):
     for move in board.capture_moves(b, target):
-        value = PIECE_VALUE[abs(b.squares[target])] * b.turn
+        value = PIECE_VALUE[PIECE(abs(b.squares[target]))] * b.turn
 
         if score != 0:
             if b.turn == COLOR.WHITE:

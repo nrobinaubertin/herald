@@ -11,10 +11,7 @@ class COLOR(IntEnum):
     BLACK = -1
 
 
-COLOR_IDX = {
-    COLOR.WHITE: 0,
-    COLOR.BLACK: 1
-}
+COLOR_IDX = {COLOR.WHITE: 0, COLOR.BLACK: 1}
 
 
 class PIECE(IntEnum):
