@@ -8,3 +8,4 @@ zipapps/
 .tox/
 *.egg-info
 /venv/
+build/
