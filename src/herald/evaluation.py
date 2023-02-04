@@ -192,7 +192,7 @@ def eval_new(b: Board) -> int:
             color = get_color(piece)
             evaluation += PIECE_VALUE[IS_PIECE[piece]] * color
             assert 0 < IS_PIECE[piece] < 7
-            assert 0 <= b.pawn_number[COLOR_IDX[color]] < 8
+            assert 0 <= b.pawn_number[COLOR_IDX[color]] <= 8
             evaluation += PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER[IS_PIECE[piece]][
                 b.pawn_number[COLOR_IDX[color]]
             ]
