@@ -60,7 +60,6 @@ def itdep(
         config.qs_transposition_table.clear()
 
     if movetime > 0:
-
         if board.to_fen(b) in config.opening_book:
             moves = config.opening_book[board.to_fen(b)]["moves"]
             move = random.choice(moves)["move"]
@@ -90,8 +89,9 @@ def itdep(
         last_search: Search | None = None
         max_depth = max(1, min(10, max_depth))
         for i in range(1, max_depth + 1):
-
             # we create a queue to be able to stop the search when there's no time left
+            # pylint issue: https://github.com/PyCQA/pylint/issues/3488
+            # pylint: disable=unsubscriptable-object
             queue: multiprocessing.Queue[Search | None] = multiprocessing.Queue()
             process = multiprocessing.Process(
                 target=search_wrapper,
@@ -107,7 +107,6 @@ def itdep(
 
             current_search: Search | None = None
             while current_search is None:
-
                 # # every second, we check if we got a move out of the queue
                 try:
                     current_search = queue.get(True, 1)
@@ -123,7 +122,6 @@ def itdep(
                     current_search = None
 
                 if isinstance(current_search, Search):
-
                     last_search = current_search
 
                     if print_uci:

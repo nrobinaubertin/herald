@@ -1,14 +1,19 @@
+from typing import Optional
+
 from .transposition_table import TranspositionTable
 
 
 class Config:
-    def __init__(self, config_dict: dict = {}):
-        self._config = config_dict
+    def __init__(self, config_dict: Optional[dict] = None):
+        self._config = config_dict or {}
         self.name = "Herald"
         self.author = "nrobinaubertin"
         self.transposition_table = TranspositionTable({})
         self.qs_transposition_table = TranspositionTable({})
         self.opening_book: dict = {}
+
+    def set_config(self, new_config: dict):
+        self._config = new_config
 
     @property
     def version(self):

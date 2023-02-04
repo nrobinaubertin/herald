@@ -6,7 +6,6 @@ from .evaluation import PIECE_VALUE
 
 
 def see(b: Board, target: int, score: int) -> int:
-
     # return score if it's already in our favor
     # this allows to go faster but see() doesn't return exact results
     if b.turn * score > 0:
@@ -28,7 +27,6 @@ def see(b: Board, target: int, score: int) -> int:
 
 
 def is_bad_capture(b: Board, move: Move, with_see: bool = True) -> bool:
-
     # a non-capture move is not a bad capture
     if not move.is_capture:
         return False

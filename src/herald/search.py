@@ -14,12 +14,11 @@ def search(
     config: Config,
     last_search: Search | None = None,
 ) -> Search | None:
-
     start_time = time.time_ns()
 
     config.set_depth(depth)
 
-    possible_moves = [x for x in board.legal_moves(b)]
+    possible_moves = board.legal_moves(b)
 
     # return None if there is no possible move
     if len(possible_moves) == 0:

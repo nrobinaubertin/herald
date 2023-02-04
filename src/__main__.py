@@ -33,23 +33,21 @@ CONFIG = Config(
 
 # load config at default location
 if os.access("config.json", os.R_OK):
-    with open("config.json", "r") as output_file:
-        CONFIG._config = json.load(output_file)
+    with open("config.json", "r", encoding="utf-8") as output_file:
+        CONFIG.set_config(json.load(output_file))
 
 # load opening book at default location
 if os.access("opening_book", os.R_OK):
-    with open("opening_book", "r") as output_file:
+    with open("opening_book", "r", encoding="utf-8") as output_file:
         CONFIG.opening_book = json.load(output_file)
 
 
 def stop_calculating() -> None:
-    global CURRENT_PROCESS
     if CURRENT_PROCESS is not None:
         CURRENT_PROCESS.terminate()
 
 
 def uci_parser(line: str) -> list[str]:
-    global CURRENT_ALG
     global CURRENT_BOARD
     global CURRENT_PROCESS
     tokens = line.strip().split()
@@ -102,7 +100,7 @@ def uci_parser(line: str) -> list[str]:
         return to_display
 
     if len(tokens) == 2 and tokens[0] == "load_book":
-        with open(tokens[1], "r") as output_file:
+        with open(tokens[1], "r", encoding="utf-8") as output_file:
             CONFIG.opening_book = json.load(output_file)
 
     if len(tokens) == 1 and tokens[0] == "uci":
@@ -138,9 +136,8 @@ def uci_parser(line: str) -> list[str]:
         ]
 
     if len(tokens) > 1 and tokens[0] == "analysis":
-
-        input = tokens[1]
-        output = tokens[2]
+        input_file_path = tokens[1]
+        output_file_path = tokens[2]
         depth = int(tokens[3])
         branch_factor = int(tokens[4])
 
@@ -149,7 +146,7 @@ def uci_parser(line: str) -> list[str]:
 
         process = multiprocessing.Process(
             target=fen_analysis,
-            args=(CONFIG, input, output),
+            args=(CONFIG, input_file_path, output_file_path),
             kwargs={
                 "depth": depth,
                 "branch_factor": branch_factor,
@@ -178,7 +175,6 @@ def uci_parser(line: str) -> list[str]:
         CURRENT_BOARD = b
 
     if len(tokens) > 1 and tokens[0] == "go":
-
         depth = 0
         movetime = 0
         wtime = 0
@@ -236,7 +232,6 @@ def uci_parser(line: str) -> list[str]:
 
 
 if __name__ == "__main__":
-
     if len(sys.argv) == 1:
         while True:
             line = input()

@@ -35,14 +35,12 @@ def alphabeta(
     alpha: int = -VALUE_MAX,
     beta: int = VALUE_MAX,
 ) -> Node:
-
     assert depth >= 0, depth
 
     if config.use_transposition_table and len(pv) > 0:
         # check if we find a hit in the transposition table
         node = config.transposition_table.get(b, depth)
         if isinstance(node, Node) and node.depth >= depth:
-
             # if this is a cut-node
             if node.value >= node.upper:
                 alpha = max(alpha, node.value)
@@ -57,7 +55,6 @@ def alphabeta(
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
-
         value: int = 0
         if config.quiescence_search:
             node = quiescence(
@@ -211,7 +208,6 @@ def minimax(
     alpha: int = 0,
     beta: int = 0,
 ) -> Node:
-
     assert depth >= 0, depth
 
     # if we are on a terminal node, return the evaluation

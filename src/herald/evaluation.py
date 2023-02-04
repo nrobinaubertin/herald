@@ -130,7 +130,6 @@ def eval_simple(b: Board) -> int:
             if piece == PIECE.EMPTY:
                 continue
             assert 0 < IS_PIECE[piece] < 7
-            assert 0 <= b.pawn_number[COLOR_IDX[color]] < 8
             evaluation += PIECE_VALUE[IS_PIECE[piece]] * color
     return evaluation
 
@@ -146,7 +145,6 @@ def eval_pst(b: Board) -> int:
             if piece == PIECE.EMPTY:
                 continue
             assert 0 < IS_PIECE[piece] < 7
-            assert 0 <= b.pawn_number[COLOR_IDX[color]] < 8
             evaluation += PIECE_VALUE[IS_PIECE[piece]] * color
             if color == COLOR.WHITE:
                 evaluation += PIECE_SQUARE_TABLE_MAILBOX[IS_PIECE[piece]][square] * color
@@ -178,7 +176,6 @@ PASSED_RANK = [0, 0, 0, 0, 10, 17, 15, 62, 168, 276, 0, 0]
 
 
 def eval_new(b: Board) -> int:
-
     evaluation = 0
 
     for i in range(8):

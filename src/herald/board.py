@@ -27,11 +27,10 @@ class Board:
 
 
 def to_fen(b: Board) -> str:
-
     rep = ""
     empty = 0
     for i in range(120):
-        if i % 10 == 9 and i > 20 and i < 91:
+        if i % 10 == 9 and 20 < i < 91:
             if empty != 0:
                 rep += str(empty)
                 empty = 0
@@ -138,7 +137,7 @@ def from_fen(fen: str) -> Board:
         cr[CASTLE.QUEEN_SIDE + COLOR.BLACK] = 1
 
     squares = [int(PIECE.INVALID)] * 120
-    ks = [-1, -1]
+    king_squares = [-1, -1]
     s = 19
     for row in rep.split("/"):
         squares[(s := s + 1)] = PIECE.INVALID
@@ -155,7 +154,7 @@ def from_fen(fen: str) -> Board:
                 piece = PIECE.QUEEN * color
             if c.lower() == "k":
                 piece = PIECE.KING * color
-                ks[COLOR_IDX[color]] = s + 1
+                king_squares[COLOR_IDX[color]] = s + 1
             if c.lower() == "p":
                 piece = PIECE.PAWN * color
             if piece is not None:
@@ -175,7 +174,7 @@ def from_fen(fen: str) -> Board:
         [],
         get_pawns_stats(squares)[0],
         get_pawns_stats(squares)[1],
-        ks,
+        king_squares,
         COLOR.WHITE if turn == "b" else COLOR.BLACK,
     )
 
@@ -183,7 +182,6 @@ def from_fen(fen: str) -> Board:
 
 
 def get_pawns_stats(squares):
-
     # fmt: off
     pawn_number = [0, 0]
     pawn_in_file = [
@@ -196,7 +194,7 @@ def get_pawns_stats(squares):
         for j in range(8):
             square = (2 + j) * 10 + (i + 1)
             piece = squares[square]
-            if piece == 0 or piece == 7:
+            if piece in [0, 7]:
                 continue
             if IS_PIECE[piece] == PIECE.PAWN:
                 color = get_color(piece)
@@ -207,7 +205,6 @@ def get_pawns_stats(squares):
 
 
 def push(b: Board, move: Move) -> Board:
-
     squares = b.squares.copy()
     en_passant = b.en_passant
     king_en_passant = []
@@ -330,15 +327,14 @@ def king_square(b: Board, color: COLOR) -> int | None:
         return None
 
 
-def number_of(b: Board, type: PIECE, color: COLOR) -> int:
+def number_of(b: Board, piece: PIECE, color: COLOR) -> int:
     try:
-        return int(b.squares.count(type * color))
+        return int(b.squares.count(piece * color))
     except:
         return 0
 
 
 def is_legal_move(b: Board, move: Move) -> bool:
-
     # verify that the king of the player to move exists
     if number_of(b, PIECE.KING, b.turn) < 1:
         return False
@@ -656,7 +652,6 @@ def _pawn_moves(
 # Special function to create moves that target a square
 # Useful for the SEE function
 def capture_moves(b: Board, target: int) -> Iterable[Move]:
-
     is_king_capture = IS_PIECE[b.squares[target]] == PIECE.KING
 
     # PAWN
@@ -771,27 +766,26 @@ def pseudo_legal_moves(
     b: Board,
     quiescent: bool = False,
 ) -> Iterable[Move]:
-
     for start, piece in filter(
         lambda x: x[1] != PIECE.INVALID and x[1] * b.turn > 0, enumerate(b.squares[20:100])
     ):
         start = start + 20
-        type = IS_PIECE[piece]
-        if type == PIECE.PAWN:
+        piece_type = IS_PIECE[piece]
+        if piece_type == PIECE.PAWN:
             for move in _pawn_moves(b, start, quiescent):
                 yield move
-        if type == PIECE.KNIGHT:
+        if piece_type == PIECE.KNIGHT:
             for move in _knight_moves(b, start, quiescent):
                 yield move
-        if type == PIECE.BISHOP:
+        if piece_type == PIECE.BISHOP:
             for move in _bishop_moves(b, start, quiescent):
                 yield move
-        if type == PIECE.ROOK:
+        if piece_type == PIECE.ROOK:
             for move in _rook_moves(b, start, quiescent):
                 yield move
-        if type == PIECE.QUEEN:
+        if piece_type == PIECE.QUEEN:
             for move in _queen_moves(b, start, quiescent):
                 yield move
-        if type == PIECE.KING:
+        if piece_type == PIECE.KING:
             for move in _king_moves(b, start, quiescent):
                 yield move

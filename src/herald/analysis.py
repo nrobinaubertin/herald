@@ -10,17 +10,17 @@ from .data_structures import MoveType, to_uci
 
 def fen_analysis(
     config,
-    input,
-    output,
+    input_file_path,
+    output_file_path,
     depth: int = 0,
     branch_factor: int = 1,
 ):
     fens = []
-    with open(input, "r") as input_file:
-        fens = [x for x in input_file.readlines()]
+    with open(input_file_path, "r", encoding="utf-8") as input_file:
+        fens = list(input_file.readlines())
 
     data = {}
-    with open(output, "r") as output_file:
+    with open(output_file_path, "r", encoding="utf-8") as output_file:
         data = json.load(output_file)
 
     for fen in fens:
@@ -41,13 +41,13 @@ def fen_analysis(
         print(f"{fen}: {','.join([to_uci(x['move']) for x in moves])}")
 
         # dump intermediary result
-        with open(output, "w") as output_file:
+        with open(output_file_path, "w", encoding="utf-8") as output_file:
             json.dump(data, output_file)
 
         # add new positions to the list of fens to analyse
         for move in [x["move"] for x in moves]:
             nb = board.push(b, move)
-            fens.append(board.to_fen(nb))
+            fens.append(board.to_fen(nb))  # pylint: disable=modified-iterating-list
 
     print("Done!")
 
@@ -58,10 +58,9 @@ def analysis(
     depth: int = 0,
     branch_factor: int = 1,
 ):
-
     results = []
 
-    possible_moves = [x for x in board.legal_moves(b)]
+    possible_moves = board.legal_moves(b)
 
     if len(possible_moves) == 0:
         return []
@@ -79,7 +78,6 @@ def analysis(
     children: int = 1
 
     for move in possible_moves:
-
         node = config.alg_fn(
             config,
             board.push(b, move),
@@ -99,6 +97,4 @@ def analysis(
             }
         )
 
-    return sorted(results, key=itemgetter("score"), reverse=(b.turn == COLOR.WHITE))[
-        :branch_factor
-    ]
+    return sorted(results, key=itemgetter("score"), reverse=b.turn == COLOR.WHITE)[:branch_factor]

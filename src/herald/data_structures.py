@@ -101,12 +101,16 @@ def is_promotion(move: Move) -> bool:
     return move.moving_piece == PIECE.PAWN and (row in (8, 1))
 
 
-def to_uci(input: Move | Iterable[Move]) -> str:
+def to_uci(input_move: Move | Iterable[Move]) -> str:
+    if isinstance(input_move, Move):
+        return (
+            f"{to_normal_notation(input_move.start)}"
+            f"{to_normal_notation(input_move.end)}"
+            f"{'q' if is_promotion(input_move) else ''}"
+            f"{'*' if input_move.is_quiescent else ''}"
+        )
 
-    if isinstance(input, Move):
-        return f"{to_normal_notation(input.start)}{to_normal_notation(input.end)}{'q' if is_promotion(input) else ''}{'*' if input.is_quiescent else ''}"
+    if isinstance(input_move, Iterable):
+        return ",".join([to_uci(x) for x in input_move])
 
-    if isinstance(input, Iterable):
-        return ",".join([to_uci(x) for x in input])
-
-    raise Exception("Unknown input for to_uci()")
+    raise Exception("Unknown input_move for to_uci()")

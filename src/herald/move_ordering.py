@@ -10,18 +10,17 @@ from .evaluation import PIECE_VALUE
 
 Move_ordering_fn = Callable[
     [
-        Board,
         Iterable[Move],
+        Board,
     ],
     List[Move],
 ]
 
 
 def qs_ordering(
-    b: Board,
+    _: Board,
     moves: Iterable[Move],
 ) -> Iterable[Move]:
-
     mem1: Move | None = None
     mem2: Move | None = None
     mem3: Move | None = None
@@ -64,10 +63,9 @@ def qs_ordering(
 
 
 def fast_mvv_lva(
-    b: Board,
+    _: Board,
     moves: Iterable[Move],
 ) -> Iterable[Move]:
-
     # priority collections
     mem: collections.deque[Move] = collections.deque()
     for m in moves:
@@ -89,8 +87,7 @@ def mvv_lva(
     b: Board,
     moves: Iterable[Move],
 ) -> List[Move]:
-    def eval(b, m):
-
+    def eval_move(b, m):
         # try check moves first
         b2 = board.push(b, m)
         if board.is_square_attacked(b2, board.king_square(b2, b2.turn), b.turn):
@@ -110,18 +107,18 @@ def mvv_lva(
             * b.turn
         )
 
-    return sorted(moves, key=lambda x: eval(b, x), reverse=b.turn == COLOR.WHITE)
+    return sorted(moves, key=lambda x: eval_move(b, x), reverse=b.turn == COLOR.WHITE)
 
 
 def no_ordering(
-    b: Board,
+    _: Board,
     moves: Iterable[Move],
 ) -> List[Move]:
     return list(moves)
 
 
 def random(
-    b: Board,
+    _: Board,
     moves: Iterable[Move],
 ) -> List[Move]:
     moves = list(moves)

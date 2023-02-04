@@ -16,7 +16,6 @@ def quiescence(
     alpha: int,
     beta: int,
 ) -> Node:
-
     node = _search(
         config,
         b,
@@ -45,14 +44,12 @@ def _search(
     alpha: int,
     beta: int,
 ) -> Node:
-
     assert depth >= 0, depth
 
     if config.use_qs_transposition_table:
         # check if we find a hit in the transposition table
         node = config.qs_transposition_table.get(b, depth)
         if isinstance(node, Node) and node.depth >= depth:
-
             # if this is a cut-node
             if node.value >= node.upper:
                 alpha = max(alpha, node.value)
