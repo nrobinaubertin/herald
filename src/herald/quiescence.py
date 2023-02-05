@@ -46,47 +46,6 @@ def _search(
 ) -> Node:
     assert depth >= 0, depth
 
-    if config.use_qs_transposition_table:
-        # check if we find a hit in the transposition table
-        node = config.qs_transposition_table.get(b, depth)
-        if isinstance(node, Node) and node.depth >= depth:
-            # if this is a cut-node
-            if node.value >= node.upper:
-                alpha = max(alpha, node.value)
-
-            # if this is an all-node
-            if node.value <= node.lower:
-                beta = min(beta, node.value)
-
-    # stand_pat evaluation to check if we stop QS
-    stand_pat: int = config.eval_fn(b)
-    if b.turn == COLOR.WHITE:
-        # if stand_pat >= beta:
-        #     # print("stand_pat", stand_pat, beta, to_uci(pv))
-        #     return Node(
-        #         value=beta,
-        #         depth=0,
-        #         full_move=b.full_move,
-        #         pv=pv,
-        #         lower=alpha,
-        #         upper=beta,
-        #         children=1,
-        #     )
-        alpha = max(alpha, stand_pat)
-    else:
-        # if stand_pat <= alpha:
-        #     # print("stand_pat", to_uci(pv))
-        #     return Node(
-        #         value=alpha,
-        #         depth=0,
-        #         full_move=b.full_move,
-        #         pv=pv,
-        #         lower=alpha,
-        #         upper=beta,
-        #         children=1,
-        #     )
-        beta = min(beta, stand_pat)
-
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         value = config.eval_fn(b)
@@ -99,6 +58,48 @@ def _search(
             upper=beta,
             children=1,
         )
+
+    if config.use_qs_transposition_table:
+        # check if we find a hit in the transposition table
+        node = config.qs_transposition_table.get(b, depth)
+        if isinstance(node, Node) and node.depth >= depth:
+            # if this is a cut-node
+            if node.value >= node.upper:
+                alpha = max(alpha, node.value)
+
+            # if this is an all-node
+            if node.value <= node.lower:
+                beta = min(beta, node.value)
+
+    # THIS SEEMS TO NOT GIVE CORRECT RESULTS
+    # # stand_pat evaluation to check if we stop QS
+    stand_pat: int = config.eval_fn(b)
+    if b.turn == COLOR.WHITE:
+        if stand_pat >= beta:
+            # print("stand_pat", stand_pat, beta, to_uci(pv))
+            return Node(
+                value=beta,
+                depth=0,
+                full_move=b.full_move,
+                pv=pv,
+                lower=alpha,
+                upper=beta,
+                children=1,
+            )
+        alpha = max(alpha, stand_pat)
+    else:
+        if stand_pat <= alpha:
+            # print("stand_pat", to_uci(pv))
+            return Node(
+                value=alpha,
+                depth=0,
+                full_move=b.full_move,
+                pv=pv,
+                lower=alpha,
+                upper=beta,
+                children=1,
+            )
+        beta = min(beta, stand_pat)
 
     # count the number of children (direct and non direct)
     # for info purposes
@@ -139,33 +140,35 @@ def _search(
         children += node.children
 
         if b.turn == COLOR.WHITE:
-            if best is None or node.value > best.value:
-                best = Node(
-                    value=node.value,
-                    depth=depth,
-                    full_move=node.full_move,
-                    pv=node.pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=children,
-                )
-            alpha = max(alpha, node.value)
-            if node.value >= beta:
-                break
+            if node.value >= alpha:
+                if best is None or node.value > best.value:
+                    best = Node(
+                        value=node.value,
+                        depth=depth,
+                        full_move=node.full_move,
+                        pv=node.pv,
+                        lower=alpha,
+                        upper=beta,
+                        children=children,
+                    )
+                alpha = max(alpha, node.value)
+                if node.value >= beta:
+                    break
         else:
-            if best is None or node.value < best.value:
-                best = Node(
-                    value=node.value,
-                    depth=depth,
-                    full_move=node.full_move,
-                    pv=node.pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=children,
-                )
-            beta = min(beta, node.value)
-            if node.value <= alpha:
-                break
+            if node.value <= beta:
+                if best is None or node.value < best.value:
+                    best = Node(
+                        value=node.value,
+                        depth=depth,
+                        full_move=node.full_move,
+                        pv=node.pv,
+                        lower=alpha,
+                        upper=beta,
+                        children=children,
+                    )
+                beta = min(beta, node.value)
+                if node.value <= alpha:
+                    break
 
     if config.use_qs_transposition_table:
         # Save the resulting best node in the transposition table
