@@ -5,24 +5,53 @@ from .data_structures import Move
 from .evaluation import PIECE_VALUE
 
 
+def is_futile(b: Board, depth: int, alpha: int, beta: int, eval_fn):
+    static_eval = eval_fn(b)
+
+    def futility_margin(depth):
+        return 165 * depth
+
+    # colors are inverted since this is a board resulting from our tested move
+    if b.turn == COLOR.BLACK:
+        if static_eval + futility_margin(depth) <= alpha:
+            return True
+    else:
+        if static_eval - futility_margin(depth) >= beta:
+            return True
+
+    return False
+
+
+# see() returns a colorified score
+# if the value is negative, it's good for black, positive it's good for white.
+# The value is not exact, it does not represent something else than being positive or negative
 def see(b: Board, target: int, score: int) -> int:
     # return score if it's already in our favor
     # this allows to go faster but see() doesn't return exact results
     if b.turn * score > 0:
         return score
 
-    # let's use the move that takes the target with
-    # the least valuable attacker
-    # for move in filter(lambda x: x.end == target, board.pseudo_legal_moves(b, True)):
+    # let's use the move that takes the target with the least valuable attacker
     for move in board.capture_moves(b, target):
-        value = PIECE_VALUE[PIECE(abs(b.squares[target]))] * b.turn
+        # the inversed colorified value of the captured piece
+        value = -PIECE_VALUE[b.squares[target]]
 
-        if score != 0:
-            if b.turn == COLOR.WHITE:
-                return max(score, see(board.push(b, move), target, score + value))
-            return min(score, see(board.push(b, move), target, score + value))
-        return see(board.push(b, move), target, score + value)
+        # if we capture with a piece that has a lesser value the SEE can only be good
+        # so we imagine the capturing piece being taken
+        current_score = score + value - PIECE_VALUE[move.moving_piece] * b.turn
+        if b.turn * current_score > 0:
+            return current_score
 
+        # if score is zero, we can't decide and we need to go further
+        if score == 0:
+            return see(board.push(b, move), target, score + value)
+
+        # we apply a minmax to the tiny tree of captures to this target square
+        if b.turn == COLOR.WHITE:
+            return max(score, see(board.push(b, move), target, score + value))
+        return min(score, see(board.push(b, move), target, score + value))
+
+    # if no valid move, return score
     return score
 
 
