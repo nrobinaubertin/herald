@@ -651,6 +651,7 @@ def _pawn_moves(
 
 # Special function to create moves that target a square
 # Useful for the SEE function
+# is LVA (least valuable attacker) by implementation
 def capture_moves(b: Board, target: int) -> Iterable[Move]:
     is_king_capture = IS_PIECE[b.squares[target]] == PIECE.KING
 
@@ -686,15 +687,12 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
                 is_quiescent=True,
             )
 
-    # BISHOP + QUEEN
+    # BISHOP
     for direction in [11, -11, 9, -9]:
         for x in range(1, 8):
             start = target + x * direction
 
-            if (
-                IS_PIECE[b.squares[start]] == PIECE.BISHOP
-                or IS_PIECE[b.squares[start]] == PIECE.QUEEN
-            ) and b.squares[start] * b.turn > 0:
+            if (IS_PIECE[b.squares[start]] == PIECE.BISHOP) and b.squares[start] * b.turn > 0:
                 yield Move(
                     start=start,
                     end=target,
@@ -709,19 +707,56 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
             if b.squares[start] != PIECE.EMPTY:
                 break
 
-    # ROOK + QUEEN
+    # ROOK
     for direction in [1, -1, 10, -10]:
         for x in range(1, 8):
             start = target + x * direction
 
-            if (
-                IS_PIECE[b.squares[start]] == PIECE.ROOK
-                or IS_PIECE[b.squares[start]] == PIECE.QUEEN
-            ) and b.squares[start] * b.turn > 0:
+            if (IS_PIECE[b.squares[start]] == PIECE.ROOK) and b.squares[start] * b.turn > 0:
                 yield Move(
                     start=start,
                     end=target,
                     moving_piece=IS_PIECE[b.squares[start]],
+                    captured_piece=IS_PIECE[b.squares[target]],
+                    is_capture=True,
+                    is_castle=False,
+                    en_passant=-1,
+                    is_king_capture=is_king_capture,
+                    is_quiescent=True,
+                )
+            if b.squares[start] != PIECE.EMPTY:
+                break
+
+    # QUEEN (DIAGONALS)
+    for direction in [11, -11, 9, -9]:
+        for x in range(1, 8):
+            start = target + x * direction
+
+            if (IS_PIECE[b.squares[start]] == PIECE.QUEEN) and b.squares[start] * b.turn > 0:
+                yield Move(
+                    start=start,
+                    end=target,
+                    moving_piece=PIECE.QUEEN,
+                    captured_piece=IS_PIECE[b.squares[target]],
+                    is_capture=True,
+                    is_castle=False,
+                    en_passant=-1,
+                    is_king_capture=is_king_capture,
+                    is_quiescent=True,
+                )
+            if b.squares[start] != PIECE.EMPTY:
+                break
+
+    # QUEEN (VERTICAL + HORIZONTAL)
+    for direction in [1, -1, 10, -10]:
+        for x in range(1, 8):
+            start = target + x * direction
+
+            if (IS_PIECE[b.squares[start]] == PIECE.QUEEN) and b.squares[start] * b.turn > 0:
+                yield Move(
+                    start=start,
+                    end=target,
+                    moving_piece=PIECE.QUEEN,
                     captured_piece=IS_PIECE[b.squares[target]],
                     is_capture=True,
                     is_castle=False,

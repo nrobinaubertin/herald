@@ -52,12 +52,10 @@ def itdep(
     max_depth: int = 10,
     print_uci: bool = True,
 ):
-    # clear transposition tables at each new search
+    # clear transposition table at each new search
     # there seems to be collision issues that I don't have time to handle now
     if config.use_transposition_table:
         config.transposition_table.clear()
-    if config.use_qs_transposition_table:
-        config.qs_transposition_table.clear()
 
     if movetime > 0:
         if board.to_fen(b) in config.opening_book:

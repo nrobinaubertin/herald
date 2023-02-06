@@ -9,7 +9,6 @@ class Config:
         self.name = "Herald"
         self.author = "nrobinaubertin"
         self.transposition_table = TranspositionTable({})
-        self.qs_transposition_table = TranspositionTable({})
         self.opening_book: dict = {}
 
     def set_config(self, new_config: dict):
@@ -29,10 +28,6 @@ class Config:
     @property
     def use_transposition_table(self):
         return self._config.get("use_transposition_table", False)
-
-    @property
-    def use_qs_transposition_table(self):
-        return self._config.get("use_qs_transposition_table", False)
 
     @property
     def quiescence_search(self):

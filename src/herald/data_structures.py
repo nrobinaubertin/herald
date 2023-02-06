@@ -1,4 +1,3 @@
-from array import array
 from collections import deque, namedtuple
 from enum import IntEnum
 from typing import Iterable
@@ -35,31 +34,6 @@ Node = namedtuple(
     "Node",
     ["value", "depth", "pv", "type", "upper", "lower", "squares", "children", "full_move"],
     defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None, 0, 0],
-)
-
-
-Board = namedtuple(
-    "Board",
-    [
-        # array of PIECE * COLOR
-        # 120 squares for a 10*12 mailbox
-        # https://www.chessprogramming.org/Mailbox
-        "squares",
-        # color of the player who's turn it is
-        "turn",
-        # positions history to check for repetition
-        "positions_history",
-        # array reprensenting castling rights (index CASTLE + COLOR)
-        "castling_rights",
-        # the following values are ints with default values
-        "en_passant",
-        "half_move",
-        "full_move",
-        "king_en_passant",
-        "pawn_number",
-        "pawn_in_file",
-    ],
-    defaults=[-1, 0, 0, array("b"), array("b"), array("b")],
 )
 
 

@@ -60,7 +60,6 @@ def alphabeta(
             node = quiescence(
                 config,
                 b,
-                config.quiescence_depth,
                 pv,
                 alpha,
                 beta,

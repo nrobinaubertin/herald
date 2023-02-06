@@ -1,17 +1,15 @@
 from collections import deque
 
-from . import board
+from . import board, pruning
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, VALUE_MAX
 from .data_structures import Move, Node
-from .pruning import is_bad_capture
 
 
 def quiescence(
     config: Config,
     b: Board,
-    depth: int,
     pv: deque[Move],
     alpha: int,
     beta: int,
@@ -19,7 +17,7 @@ def quiescence(
     node = _search(
         config,
         b,
-        depth,
+        0,
         pv,
         -VALUE_MAX,
         VALUE_MAX,
@@ -47,7 +45,7 @@ def _search(
     assert depth >= 0, depth
 
     # if we are on a terminal node, return the evaluation
-    if depth == 0:
+    if depth >= config.quiescence_depth:
         value = config.eval_fn(b)
         return Node(
             value=value,
@@ -59,9 +57,9 @@ def _search(
             children=1,
         )
 
-    if config.use_qs_transposition_table:
+    if config.use_transposition_table:
         # check if we find a hit in the transposition table
-        node = config.qs_transposition_table.get(b, depth)
+        node = config.transposition_table.get(b, depth)
         if isinstance(node, Node) and node.depth >= depth:
             # if this is a cut-node
             if node.value >= node.upper:
@@ -71,12 +69,10 @@ def _search(
             if node.value <= node.lower:
                 beta = min(beta, node.value)
 
-    # THIS SEEMS TO NOT GIVE CORRECT RESULTS
-    # # stand_pat evaluation to check if we stop QS
+    # stand_pat evaluation to check if we stop QS
     stand_pat: int = config.eval_fn(b)
     if b.turn == COLOR.WHITE:
         if stand_pat >= beta:
-            # print("stand_pat", stand_pat, beta, to_uci(pv))
             return Node(
                 value=beta,
                 depth=0,
@@ -89,7 +85,6 @@ def _search(
         alpha = max(alpha, stand_pat)
     else:
         if stand_pat <= alpha:
-            # print("stand_pat", to_uci(pv))
             return Node(
                 value=alpha,
                 depth=0,
@@ -107,11 +102,12 @@ def _search(
 
     best = None
     moves = board.pseudo_legal_moves(b, True)
-    if depth > 1:
-        moves = filter(lambda x: not is_bad_capture(b, x, with_see=True), moves)
+    if depth < config.quiescence_depth:
+        moves = filter(lambda x: not pruning.is_bad_capture(b, x, with_see=True), moves)
     else:
-        moves = filter(lambda x: not is_bad_capture(b, x, with_see=False), moves)
-    for move in config.qs_move_ordering_fn(b, moves):
+        moves = filter(lambda x: not pruning.is_bad_capture(b, x, with_see=False), moves)
+
+    for move in moves:
         curr_pv = deque(pv)
         curr_pv.append(move)
 
@@ -128,10 +124,16 @@ def _search(
             )
 
         nb = board.push(b, move)
+
+        # if the king is in check after we move
+        # then it's a bad move (we will lose the game)
+        if board.king_is_in_check(nb, nb.invturn):
+            continue
+
         node = _search(
             config,
             nb,
-            depth - 1,
+            depth + 1,
             curr_pv,
             alpha,
             beta,
@@ -144,7 +146,7 @@ def _search(
                 if best is None or node.value > best.value:
                     best = Node(
                         value=node.value,
-                        depth=depth,
+                        depth=0,
                         full_move=node.full_move,
                         pv=node.pv,
                         lower=alpha,
@@ -159,7 +161,7 @@ def _search(
                 if best is None or node.value < best.value:
                     best = Node(
                         value=node.value,
-                        depth=depth,
+                        depth=0,
                         full_move=node.full_move,
                         pv=node.pv,
                         lower=alpha,
@@ -170,15 +172,10 @@ def _search(
                 if node.value <= alpha:
                     break
 
-    if config.use_qs_transposition_table:
-        # Save the resulting best node in the transposition table
-        if best is not None and best.depth > 0:
-            config.qs_transposition_table.add(b, best)
-
     if best is not None:
         node = Node(
             value=best.value,
-            depth=best.depth,
+            depth=0,
             pv=best.pv,
             full_move=best.full_move,
             children=children,
@@ -193,7 +190,7 @@ def _search(
             pv=pv,
             lower=alpha,
             upper=beta,
-            children=1,
+            children=children,
         )
 
     return node
