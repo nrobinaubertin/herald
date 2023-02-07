@@ -48,8 +48,6 @@ def search(
                 time=(time.time_ns() - start_time),
             )
 
-    children: int = 1
-
     guess = last_search.score if last_search else 0
     lower = guess - 50
     upper = guess + 50
@@ -57,7 +55,7 @@ def search(
 
     # count the number of children (direct and non direct)
     # for info purposes
-    children = 0
+    children: int = 1
 
     while True:
         iteration += 1
