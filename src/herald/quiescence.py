@@ -19,8 +19,8 @@ def quiescence(
         b,
         0,
         pv,
-        -VALUE_MAX,
-        VALUE_MAX,
+        alpha,
+        beta,
     )
 
     return Node(
