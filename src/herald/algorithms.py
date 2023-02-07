@@ -8,7 +8,6 @@ from .board import Board
 from .configuration import Config
 from .constants import COLOR, COLOR_IDX, VALUE_MAX
 from .data_structures import Move, MoveType, Node
-from .quiescence import quiescence
 
 Alg_fn = Callable[
     [
@@ -57,7 +56,7 @@ def alphabeta(
     if depth == 0:
         value: int = 0
         if config.quiescence_search:
-            node = quiescence(
+            node = config.quiescence_fn(
                 config,
                 b,
                 pv,
@@ -65,11 +64,12 @@ def alphabeta(
                 beta,
             )
 
-            children = node.children
-            value = node.value
+            # type ignore because mypy doesn't see the qs fn
+            children = node.children  # type: ignore
+            value = node.value  # type: ignore
             if __debug__:
                 # display quiescent nodes
-                pv = node.pv
+                pv = node.pv  # type: ignore
         else:
             value = config.eval_fn(b)
 

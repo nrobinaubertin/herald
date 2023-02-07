@@ -197,15 +197,18 @@ def eval_new(b: Board) -> int:
                 evaluation += PIECE_SQUARE_TABLE_MAILBOX[IS_PIECE[piece]][square] * color
             else:
                 evaluation += PIECE_SQUARE_TABLE_MAILBOX[IS_PIECE[piece]][119 - square] * color
+
+            pawn_file: int = x + 10 * COLOR_IDX[color]
+            opposite_pawn_file: int = x + 10 * COLOR_IDX[color * -1]
             if IS_PIECE[piece] == PIECE.PAWN:
-                if b.pawn_in_file[x * 2 + COLOR_IDX[color]] > 0:
+                if b.pawn_in_file[pawn_file] > 0:
                     evaluation += DOUBLED_PAWN_PENALTY * color
-                    if b.pawn_in_file[x * 2 + COLOR_IDX[color]] > 1:
+                    if b.pawn_in_file[pawn_file] > 1:
                         evaluation += DOUBLED_PAWN_PENALTY * color
                 else:
                     if (
-                        b.pawn_in_file[(x + 1) * 2 + COLOR_IDX[color * -1]] == 0
-                        and b.pawn_in_file[(x - 1) * 2 + COLOR_IDX[color * -1]] == 0
+                        b.pawn_in_file[opposite_pawn_file + 1] == 0
+                        and b.pawn_in_file[opposite_pawn_file - 1] == 0
                     ):
                         # bonus for passed pawn
                         if color == COLOR.WHITE:
@@ -213,9 +216,9 @@ def eval_new(b: Board) -> int:
                         else:
                             evaluation += PASSED_RANK[y] * color
             if IS_PIECE[piece] == PIECE.ROOK:
-                if b.pawn_in_file[x * 2 + COLOR_IDX[color]] == 0:
+                if b.pawn_in_file[pawn_file] == 0:
                     evaluation += ROOK_ON_FILE[0] * color
-                    if b.pawn_in_file[x * 2 + COLOR_IDX[color * -1]] == 0:
+                    if b.pawn_in_file[opposite_pawn_file] == 0:
                         evaluation += ROOK_ON_FILE[1] * color
             if IS_PIECE[piece] == PIECE.KING:
                 # we like having pawns in front of our king

@@ -30,6 +30,10 @@ class Config:
         return self._config.get("use_transposition_table", False)
 
     @property
+    def quiescence_fn(self):
+        return self._config.get("quiescence_fn")
+
+    @property
     def quiescence_search(self):
         return self._config.get("quiescence_search", False)
 

@@ -183,7 +183,9 @@ def from_fen(fen: str) -> Board:
 
 def get_pawns_stats(squares):
     # fmt: off
+    # number of pawns for [white, black]
     pawn_number = [0, 0]
+    # number of pawns in each file for [white * 10, black * 10]
     pawn_in_file = [
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -199,7 +201,7 @@ def get_pawns_stats(squares):
             if IS_PIECE[piece] == PIECE.PAWN:
                 color = get_color(piece)
                 pawn_number[COLOR_IDX[color]] += 1
-                pawn_in_file[i * 2 + COLOR_IDX[color]] += 1
+                pawn_in_file[(i + 1) + 10 * COLOR_IDX[color]] += 1
 
     return pawn_number, pawn_in_file
 
@@ -222,14 +224,17 @@ def push(b: Board, move: Move) -> Board:
     if move.is_capture or IS_PIECE[piece_start] == PIECE.PAWN:
         # reset half_move count when condition is met
         half_move = 0
+
+        # the moved pawn changes pawn_in_file numbers
         color = get_color(squares[move.start])
-        pawn_in_file[(move.start % 10) * 2 + COLOR_IDX[color]] -= 1
-        pawn_in_file[(move.end % 10) * 2 + COLOR_IDX[color]] += 1
+        pawn_in_file[(move.start % 10) + 10 * COLOR_IDX[color]] -= 1
+        pawn_in_file[(move.end % 10) + 10 * COLOR_IDX[color]] += 1
 
     if move.is_capture and IS_PIECE[squares[move.end]] == PIECE.PAWN:
+        # the pawn taken changes pawn_in_file numbers
         color = get_color(squares[move.end])
         pawn_number[COLOR_IDX[color]] -= 1
-        pawn_in_file[(move.end % 10) * 2 + COLOR_IDX[color]] -= 1
+        pawn_in_file[(move.end % 10) + 10 * COLOR_IDX[color]] -= 1
 
     # do the move
     squares[move.start] = PIECE.EMPTY
@@ -245,7 +250,7 @@ def push(b: Board, move: Move) -> Board:
         color = get_color(squares[target])
         squares[target] = PIECE.EMPTY
         pawn_number[COLOR_IDX[color]] -= 1
-        pawn_in_file[(move.end % 10) * 2 + COLOR_IDX[color]] -= 1
+        pawn_in_file[(move.end % 10) + 10 * COLOR_IDX[color]] -= 1
 
     # declare en_passant square for the current board
     if move.en_passant != -1:
@@ -259,7 +264,7 @@ def push(b: Board, move: Move) -> Board:
     ):
         color = get_color(squares[move.end])
         pawn_number[COLOR_IDX[color]] -= 1
-        pawn_in_file[(move.end % 10) * 2 + COLOR_IDX[color]] -= 1
+        pawn_in_file[(move.end % 10) + 10 * COLOR_IDX[color]] -= 1
         squares[move.end] = PIECE.QUEEN * b.turn
 
     # some hardcode for castling move of the rook
