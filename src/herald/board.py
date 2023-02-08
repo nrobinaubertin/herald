@@ -211,10 +211,11 @@ def push(b: Board, move: Move) -> Board:
     en_passant = b.en_passant
     king_en_passant = []
     castling_rights = b.castling_rights.copy()
-    half_move = b.half_move
+    half_move = b.half_move + 1
     pawn_number = b.pawn_number.copy()
     pawn_in_file = b.pawn_in_file.copy()
     king_squares = b.king_squares.copy()
+    full_move = b.full_move + 1 if b.turn == COLOR.BLACK else b.full_move
 
     assert b.squares[move.start] != PIECE.EMPTY, "Moving piece cannot be empty"
     assert IS_PIECE[b.squares[move.start]] != PIECE.INVALID, "Moving piece cannot be invalid"
@@ -225,6 +226,7 @@ def push(b: Board, move: Move) -> Board:
         # reset half_move count when condition is met
         half_move = 0
 
+    if move.is_capture and IS_PIECE[piece_start] == PIECE.PAWN:
         # the moved pawn changes pawn_in_file numbers
         color = get_color(squares[move.start])
         pawn_in_file[(move.start % 10) + 10 * COLOR_IDX[color]] -= 1
@@ -310,13 +312,19 @@ def push(b: Board, move: Move) -> Board:
             if move.end == 21 or move.start == 21:
                 castling_rights[CASTLE.QUEEN_SIDE + COLOR.BLACK] = 0
 
+    # check that border squares are still invalid
+    assert not any(filter(lambda x: x != 7, squares[:20]))
+    assert not any(filter(lambda x: x != 7, squares[100:]))
+    assert not any(filter(lambda x: x != 7, [v for k, v in enumerate(squares) if k % 10 == 0]))
+    assert not any(filter(lambda x: x != 7, [v for k, v in enumerate(squares) if k % 10 == 9]))
+
     return Board(
         squares,
         COLOR(b.turn * -1),
         castling_rights,
         en_passant,
-        half_move + 1,
-        b.full_move + 1,
+        half_move,
+        full_move,
         king_en_passant,
         pawn_number,
         pawn_in_file,
