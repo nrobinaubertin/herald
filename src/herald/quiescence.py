@@ -57,7 +57,7 @@ def _search(
             children=1,
         )
 
-    if config.use_transposition_table:
+    if depth < 2 and config.use_transposition_table:
         # check if we find a hit in the transposition table
         node = config.transposition_table.get(b, depth)
         if isinstance(node, Node) and node.depth >= depth:
@@ -102,12 +102,11 @@ def _search(
 
     best = None
     moves = board.pseudo_legal_moves(b, True)
-    if depth < config.quiescence_depth:
-        moves = filter(lambda x: not pruning.is_bad_capture(b, x, with_see=True), moves)
-    else:
-        moves = filter(lambda x: not pruning.is_bad_capture(b, x, with_see=False), moves)
 
     for move in moves:
+        if pruning.is_bad_capture(b, move, with_see=True):
+            continue
+
         curr_pv = deque(pv)
         curr_pv.append(move)
 

@@ -814,9 +814,9 @@ def pseudo_legal_moves(
     b: Board,
     quiescent: bool = False,
 ) -> Iterable[Move]:
-    for start, piece in filter(
-        lambda x: x[1] != PIECE.INVALID and x[1] * b.turn > 0, enumerate(b.squares[20:100])
-    ):
+    for start, piece in enumerate(b.squares[20:100]):
+        if piece == PIECE.INVALID or piece * b.turn < 0:
+            continue
         start = start + 20
         piece_type = IS_PIECE[piece]
         if piece_type == PIECE.PAWN:

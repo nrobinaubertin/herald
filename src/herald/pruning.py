@@ -1,6 +1,6 @@
 from . import board
 from .board import Board
-from .constants import COLOR, PIECE
+from .constants import COLOR, IS_PIECE, PIECE
 from .data_structures import Move
 from .evaluation import PIECE_VALUE
 
@@ -34,7 +34,7 @@ def see(b: Board, target: int, score: int) -> int:
     # let's use the move that takes the target with the least valuable attacker
     for move in board.capture_moves(b, target):
         # the inversed colorified value of the captured piece
-        value = -PIECE_VALUE[b.squares[target]]
+        value = PIECE_VALUE[IS_PIECE[b.squares[target]]] * b.turn
 
         # if we capture with a piece that has a lesser value the SEE can only be good
         # so we imagine the capturing piece being taken

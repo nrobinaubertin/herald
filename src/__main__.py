@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
-
 import json
 import multiprocessing
 import os
 import sys
 
-from herald import algorithms, board, evaluation, move_ordering
+from herald import algorithms, board, evaluation, move_ordering, quiescence
 from herald.analysis import fen_analysis
 from herald.board import Board
 from herald.configuration import Config
@@ -19,15 +17,15 @@ CURRENT_PROCESS = None
 
 CONFIG = Config(
     {
-        "version": "0.19.18",
+        "version": "0.19.21",
         "alg_fn": algorithms.alphabeta,
         "move_ordering_fn": move_ordering.fast_mvv_lva,
         "qs_move_ordering_fn": move_ordering.qs_ordering,
         "eval_fn": evaluation.eval_new,
         "quiescence_search": True,
-        "quiescence_depth": 5,
+        "quiescence_depth": 9,
         "use_transposition_table": True,
-        "use_qs_transposition_table": True,
+        "quiescence_fn": quiescence.quiescence,
     }
 )
 
