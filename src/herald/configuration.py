@@ -9,6 +9,7 @@ class Config:
         self.name = "Herald"
         self.author = "nrobinaubertin"
         self.transposition_table = TranspositionTable({})
+        self.move_tt: dict = {}
         self.opening_book: dict = {}
 
     def set_config(self, new_config: dict):
@@ -28,6 +29,10 @@ class Config:
     @property
     def use_transposition_table(self):
         return self._config.get("use_transposition_table", False)
+
+    @property
+    def use_move_tt(self):
+        return self._config.get("use_move_tt", False)
 
     @property
     def quiescence_fn(self):

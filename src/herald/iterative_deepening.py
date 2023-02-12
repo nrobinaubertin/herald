@@ -56,6 +56,7 @@ def itdep(
     # there seems to be collision issues that I don't have time to handle now
     if config.use_transposition_table:
         config.transposition_table.clear()
+        config.move_tt.clear()
 
     if movetime > 0:
         if board.to_fen(b) in config.opening_book:

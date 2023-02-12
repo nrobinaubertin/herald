@@ -1,9 +1,10 @@
 """Recursive search algorithms."""
 
+import itertools
 from collections import deque
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
-from . import board
+from . import board, transposition_table
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, COLOR_IDX, VALUE_MAX
@@ -91,6 +92,7 @@ def alphabeta(
         )
 
     best = None
+    best_move = None
 
     moves: Iterable[Move] = []
     if move_type == MoveType.PSEUDO_LEGAL:
@@ -98,7 +100,14 @@ def alphabeta(
     if move_type == MoveType.LEGAL:
         moves = board.legal_moves(b)
 
-    for move in config.move_ordering_fn(b, moves):
+    moves = config.move_ordering_fn(b, moves)
+
+    if config.use_move_tt:
+        killer_move: Optional[Move] = config.move_tt.get(transposition_table.hash_board(b), None)
+        if killer_move:
+            moves = itertools.chain([killer_move], moves)
+
+    for move in moves:
         curr_pv = deque(pv)
         curr_pv.append(move)
 
@@ -135,6 +144,7 @@ def alphabeta(
 
         if b.turn == COLOR.WHITE:
             if best is None or node.value > best.value:
+                best_move = move
                 best = Node(
                     value=node.value,
                     depth=depth,
@@ -149,6 +159,7 @@ def alphabeta(
                 break
         else:
             if best is None or node.value < best.value:
+                best_move = move
                 best = Node(
                     value=node.value,
                     depth=depth,
@@ -166,6 +177,9 @@ def alphabeta(
         # Save the resulting best node in the transposition table
         if best is not None and best.depth > 0:
             config.transposition_table.add(b, best)
+        if config.use_move_tt:
+            if best_move is not None:
+                config.move_tt[transposition_table.hash_board(b)] = best_move
 
     if best is not None:
         node = Node(
