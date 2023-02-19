@@ -1,17 +1,25 @@
+import functools
 from enum import IntEnum
 
 
 class CASTLE(IntEnum):
-    KING_SIDE = 1
-    QUEEN_SIDE = 2
+    KING_SIDE = 0
+    QUEEN_SIDE = 1
 
 
 class COLOR(IntEnum):
-    WHITE = 1
-    BLACK = -1
+    WHITE = 0
+    BLACK = 1
+    UNKNOWN = 99
 
 
-COLOR_IDX = {COLOR.WHITE: 0, COLOR.BLACK: 1}
+COLOR_DIRECTION = {COLOR.BLACK: -1, COLOR.WHITE: 1}
+
+
+INV_COLOR = {
+    0: 1,
+    1: 0,
+}
 
 
 class PIECE(IntEnum):
@@ -22,17 +30,10 @@ class PIECE(IntEnum):
     ROOK = 4
     QUEEN = 5
     KING = 6
-    INVALID = 7
+    INVALID = 99
 
 
 IS_PIECE = {
-    -7: PIECE.INVALID,
-    -6: PIECE.KING,
-    -5: PIECE.QUEEN,
-    -4: PIECE.ROOK,
-    -3: PIECE.BISHOP,
-    -2: PIECE.KNIGHT,
-    -1: PIECE.PAWN,
     0: PIECE.EMPTY,
     1: PIECE.PAWN,
     2: PIECE.KNIGHT,
@@ -40,30 +41,56 @@ IS_PIECE = {
     4: PIECE.ROOK,
     5: PIECE.QUEEN,
     6: PIECE.KING,
-    7: PIECE.INVALID,
+    7: PIECE.PAWN,
+    8: PIECE.KNIGHT,
+    9: PIECE.BISHOP,
+    10: PIECE.ROOK,
+    11: PIECE.QUEEN,
+    12: PIECE.KING,
+    99: PIECE.INVALID,
+}
+
+
+IS_PVALUE = {
+    (COLOR.WHITE, PIECE.PAWN): 1,
+    (COLOR.WHITE, PIECE.KNIGHT): 2,
+    (COLOR.WHITE, PIECE.BISHOP): 3,
+    (COLOR.WHITE, PIECE.ROOK): 4,
+    (COLOR.WHITE, PIECE.QUEEN): 5,
+    (COLOR.WHITE, PIECE.KING): 6,
+    (COLOR.BLACK, PIECE.PAWN): 7,
+    (COLOR.BLACK, PIECE.KNIGHT): 8,
+    (COLOR.BLACK, PIECE.BISHOP): 9,
+    (COLOR.BLACK, PIECE.ROOK): 10,
+    (COLOR.BLACK, PIECE.QUEEN): 11,
+    (COLOR.BLACK, PIECE.KING): 12,
 }
 
 
 ASCII_REP: dict[int, str] = {
     0: ".",
-    (PIECE.PAWN * COLOR.WHITE): "P",
-    (PIECE.KNIGHT * COLOR.WHITE): "N",
-    (PIECE.BISHOP * COLOR.WHITE): "B",
-    (PIECE.ROOK * COLOR.WHITE): "R",
-    (PIECE.QUEEN * COLOR.WHITE): "Q",
-    (PIECE.KING * COLOR.WHITE): "K",
-    (PIECE.PAWN * COLOR.BLACK): "p",
-    (PIECE.KNIGHT * COLOR.BLACK): "n",
-    (PIECE.BISHOP * COLOR.BLACK): "b",
-    (PIECE.ROOK * COLOR.BLACK): "r",
-    (PIECE.QUEEN * COLOR.BLACK): "q",
-    (PIECE.KING * COLOR.BLACK): "k",
+    1: "P",
+    2: "N",
+    3: "B",
+    4: "R",
+    5: "Q",
+    6: "K",
+    7: "p",
+    8: "n",
+    9: "b",
+    10: "r",
+    11: "q",
+    12: "k",
+    99: "-",
 }
 
 VALUE_MAX: int = 12_000
 
 
-def get_color(value: int):
-    if value >= 0:
-        return 1
-    return -1
+@functools.lru_cache(maxsize=128, typed=False)
+def get_color(square: int):
+    if 0 < square < 7:
+        return COLOR.WHITE
+    if 6 < square < 13:
+        return COLOR.BLACK
+    return COLOR.UNKNOWN

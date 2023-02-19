@@ -1,11 +1,24 @@
 import time
-from collections import deque
+from collections import deque, namedtuple
 
 from . import board
 from .board import Board
 from .configuration import Config
 from .constants import VALUE_MAX
-from .data_structures import MoveType, Search
+
+Search = namedtuple(
+    "Search",
+    [
+        "move",
+        "depth",
+        "score",
+        "nodes",
+        "time",
+        "pv",
+        "stop_search",
+    ],
+    defaults=[False],
+)
 
 
 def search(
@@ -64,7 +77,7 @@ def search(
             b,
             depth,
             deque([]),
-            MoveType.LEGAL,
+            True,
             lower,
             upper,
         )

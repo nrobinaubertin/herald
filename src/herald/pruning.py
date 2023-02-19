@@ -1,6 +1,6 @@
 from . import board
 from .board import Board
-from .constants import COLOR, IS_PIECE, PIECE
+from .constants import COLOR, COLOR_DIRECTION, IS_PIECE, PIECE
 from .data_structures import Move
 from .evaluation import PIECE_VALUE
 
@@ -25,26 +25,23 @@ def is_futile(b: Board, depth: int, alpha: int, beta: int, eval_fn):
 # see() returns a colorified score
 # if the value is negative, it's good for black, positive it's good for white.
 # The value is not exact, it does not represent something else than being positive or negative
+# when the returned value is exactly 0, then it's *probably* better not to take
 def see(b: Board, target: int, score: int) -> int:
     # return score if it's already in our favor
     # this allows to go faster but see() doesn't return exact results
-    if b.turn * score > 0:
+    if COLOR_DIRECTION[b.turn] * score > 0:
         return score
 
     # let's use the move that takes the target with the least valuable attacker
     for move in board.capture_moves(b, target):
         # the inversed colorified value of the captured piece
-        value = PIECE_VALUE[IS_PIECE[b.squares[target]]] * b.turn
+        value = PIECE_VALUE[IS_PIECE[b.squares[target]]] * COLOR_DIRECTION[b.turn]
 
         # if we capture with a piece that has a lesser value the SEE can only be good
         # so we imagine the capturing piece being taken
-        current_score = score + value - PIECE_VALUE[move.moving_piece] * b.turn
-        if b.turn * current_score > 0:
+        current_score = score + value - PIECE_VALUE[move.moving_piece] * COLOR_DIRECTION[b.turn]
+        if COLOR_DIRECTION[b.turn] * current_score > 0:
             return current_score
-
-        # if score is zero, we can't decide and we need to go further
-        if score == 0:
-            return see(board.push(b, move), target, score + value)
 
         # we apply a minmax to the tiny tree of captures to this target square
         if b.turn == COLOR.WHITE:
@@ -64,21 +61,24 @@ def is_bad_capture(b: Board, move: Move, with_see: bool = True) -> bool:
         return False
 
     # captured piece is worth more than capturing piece
-    if PIECE_VALUE[abs(b.squares[move.end])] >= PIECE_VALUE[abs(b.squares[move.start])] - 50:
+    if (
+        PIECE_VALUE[IS_PIECE[b.squares[move.end]]]
+        >= PIECE_VALUE[IS_PIECE[b.squares[move.start]]] - 50
+    ):
         return False
 
     # if the piece is defended by a pawn, then it's a bad capture
     for depl in [9, 11] if b.turn == COLOR.WHITE else [-9, -11]:
         if (
-            abs(b.squares[move.start + depl]) == PIECE.PAWN
-            and b.squares[move.start + depl] * b.turn < 0
+            IS_PIECE[b.squares[move.start + depl]] == PIECE.PAWN
+            and b.squares[move.start + depl] * COLOR_DIRECTION[b.turn] < 0
         ):
             return True
 
     if with_see:
-        # if SEE is negative, then we don't attempt the move
-        if see(b, move.end, 0) * b.turn < 0:
+        # if SEE is in favor of the other, then we don't attempt the move
+        if see(b, move.end, 0) * COLOR_DIRECTION[b.turn] <= 0:
             return True
 
-    # if we don't know, we have to try the move (we can't say that it's bad)
+    # if we don't know, we have to try the move (we can't say that it's bad for sure)
     return False

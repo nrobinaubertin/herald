@@ -7,8 +7,8 @@ from typing import Callable, Iterable, Optional
 from . import board, transposition_table
 from .board import Board
 from .configuration import Config
-from .constants import COLOR, COLOR_IDX, VALUE_MAX
-from .data_structures import Move, MoveType, Node
+from .constants import COLOR, VALUE_MAX
+from .data_structures import Move, Node
 
 Alg_fn = Callable[
     [
@@ -16,7 +16,7 @@ Alg_fn = Callable[
         Board,
         int,
         deque[Move],
-        MoveType,
+        bool,
         int | None,
         int | None,
     ],
@@ -31,7 +31,7 @@ def alphabeta(
     b: Board,
     depth: int,
     pv: deque[Move],
-    move_type: MoveType = MoveType.PSEUDO_LEGAL,
+    gen_legal_moves: bool = False,
     alpha: int = -VALUE_MAX,
     beta: int = VALUE_MAX,
 ) -> Node:
@@ -95,19 +95,21 @@ def alphabeta(
     best_move = None
 
     moves: Iterable[Move] = []
-    if move_type == MoveType.PSEUDO_LEGAL:
-        moves = board.pseudo_legal_moves(b)
-    if move_type == MoveType.LEGAL:
+    if gen_legal_moves:
         moves = board.legal_moves(b)
+    else:
+        moves = board.pseudo_legal_moves(b)
 
     moves = config.move_ordering_fn(b, moves)
 
     if config.use_move_tt:
-        killer_move: Optional[Move] = config.move_tt.get(transposition_table.hash_board(b), None)
-        if killer_move:
-            moves = itertools.chain([killer_move], moves)
+        hash_move: Optional[Move] = config.move_tt.get(b, None)
+        if hash_move:
+            moves = itertools.chain([hash_move], moves)
 
     for move in moves:
+        if move == best_move:
+            continue
         curr_pv = deque(pv)
         curr_pv.append(move)
 
@@ -135,7 +137,7 @@ def alphabeta(
             nb,
             depth - 1,
             curr_pv,
-            (MoveType.PSEUDO_LEGAL if move_type == MoveType.LEGAL else move_type),
+            False,
             alpha,
             beta,
         )
@@ -179,7 +181,7 @@ def alphabeta(
             config.transposition_table.add(b, best)
         if config.use_move_tt:
             if best_move is not None:
-                config.move_tt[transposition_table.hash_board(b)] = best_move
+                config.move_tt[b] = best_move
 
     if best is not None:
         node = Node(
@@ -194,7 +196,7 @@ def alphabeta(
     else:
         # no "best" found
         # should happen only in case of stalemate/checkmate
-        if board.is_square_attacked(b, b.king_squares[COLOR_IDX[b.turn]], b.invturn):
+        if board.is_square_attacked(b, b.king_squares[b.turn], b.invturn):
             node = Node(
                 depth=depth,
                 value=VALUE_MAX * b.turn * -1,
@@ -224,7 +226,7 @@ def minimax(
     b: Board,
     depth: int,
     pv: deque[Move],
-    move_type: MoveType = MoveType.PSEUDO_LEGAL,
+    gen_legal_moves: bool = False,
     alpha: int = 0,
     beta: int = 0,
 ) -> Node:
@@ -246,10 +248,10 @@ def minimax(
     children = 1
 
     moves: Iterable[Move] = []
-    if move_type == MoveType.PSEUDO_LEGAL:
-        moves = board.pseudo_legal_moves(b)
-    if move_type == MoveType.LEGAL:
+    if gen_legal_moves:
         moves = board.legal_moves(b)
+    else:
+        moves = board.pseudo_legal_moves(b)
     for move in config.move_ordering_fn(b, moves):
         curr_board = board.push(b, move)
         curr_pv = deque(pv)
@@ -274,7 +276,7 @@ def minimax(
             curr_board,
             depth - 1,
             curr_pv,
-            MoveType.PSEUDO_LEGAL if move_type == MoveType.LEGAL else move_type,
+            False,
         )
 
         children += node.children
@@ -306,7 +308,7 @@ def minimax(
 
     # no "best" found
     # should happen only in case of stalemate/checkmate
-    if board.is_square_attacked(b, b.king_squares[COLOR_IDX[b.turn]], b.invturn):
+    if board.is_square_attacked(b, b.king_squares[b.turn], b.invturn):
         return Node(
             depth=depth,
             value=VALUE_MAX * b.turn * -1,

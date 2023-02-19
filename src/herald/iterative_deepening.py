@@ -7,8 +7,8 @@ from . import board
 from .board import Board
 from .configuration import Config
 from .constants import VALUE_MAX
-from .data_structures import Move, Search, to_uci
-from .search import search
+from .data_structures import Move, to_uci
+from .search import Search, search
 
 
 def to_string(search: Search) -> str:

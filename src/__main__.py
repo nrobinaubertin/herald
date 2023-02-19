@@ -17,7 +17,7 @@ CURRENT_PROCESS = None
 
 CONFIG = Config(
     {
-        "version": "0.19.21",
+        "version": "0.20.0",
         "alg_fn": algorithms.alphabeta,
         "move_ordering_fn": move_ordering.fast_mvv_lva,
         "qs_move_ordering_fn": move_ordering.qs_ordering,
@@ -25,6 +25,7 @@ CONFIG = Config(
         "quiescence_search": True,
         "quiescence_depth": 9,
         "use_transposition_table": True,
+        "use_move_tt": True,
         "quiescence_fn": quiescence.quiescence,
     }
 )

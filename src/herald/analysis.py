@@ -5,7 +5,7 @@ from operator import itemgetter
 from . import board
 from .board import Board
 from .constants import COLOR, VALUE_MAX
-from .data_structures import MoveType, to_uci
+from .data_structures import to_uci
 
 
 def fen_analysis(
@@ -83,7 +83,7 @@ def analysis(
             board.push(b, move),
             depth - 1,
             deque([move]),
-            MoveType.LEGAL,
+            True,
             -VALUE_MAX,
             VALUE_MAX,
         )

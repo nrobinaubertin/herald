@@ -1,18 +1,7 @@
 from collections import deque, namedtuple
-from enum import IntEnum
 from typing import Iterable
 
 from .constants import PIECE, VALUE_MAX
-
-
-class MoveType(IntEnum):
-    UNKNOWN = 0
-    INVALID = 1
-    PSEUDO_LEGAL = 2
-    LEGAL = 3
-    QUIESCENT = 4
-    NULL = 5
-
 
 Move = namedtuple(
     "Move",
@@ -34,21 +23,6 @@ Node = namedtuple(
     "Node",
     ["value", "depth", "pv", "type", "upper", "lower", "squares", "children", "full_move"],
     defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None, 0, 0],
-)
-
-
-Search = namedtuple(
-    "Search",
-    [
-        "move",
-        "depth",
-        "score",
-        "nodes",
-        "time",
-        "pv",
-        "stop_search",
-    ],
-    defaults=[False],
 )
 
 

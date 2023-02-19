@@ -2,11 +2,8 @@ import collections
 from random import shuffle
 from typing import Callable, Iterable, List
 
-from . import board
 from .board import Board
-from .constants import COLOR
 from .data_structures import Move
-from .evaluation import PIECE_VALUE
 
 Move_ordering_fn = Callable[
     [
@@ -81,33 +78,6 @@ def fast_mvv_lva(
         mem.append(m)
     for m in mem:
         yield m
-
-
-def mvv_lva(
-    b: Board,
-    moves: Iterable[Move],
-) -> List[Move]:
-    def eval_move(b, m):
-        # try check moves first
-        b2 = board.push(b, m)
-        if board.is_square_attacked(b2, board.king_square(b2, b2.turn), b.turn):
-            return 100000
-
-        # give some priority to castling
-        if m.is_castle:
-            return 99999
-
-        return (
-            int(m.is_capture)
-            * (
-                100
-                + PIECE_VALUE[abs(b.squares[m.end])] * 100
-                - PIECE_VALUE[abs(b.squares[m.start])]
-            )
-            * b.turn
-        )
-
-    return sorted(moves, key=lambda x: eval_move(b, x), reverse=b.turn == COLOR.WHITE)
 
 
 def no_ordering(

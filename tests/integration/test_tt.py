@@ -7,21 +7,19 @@ import pytest
 from herald import algorithms, board, evaluation, move_ordering, quiescence
 from herald.configuration import Config
 from herald.constants import VALUE_MAX
-from herald.data_structures import MoveType, to_uci
 
-tt_fens = []
+fens = []
 with open("tests/epd/transposition_table.epd", "r") as tt_file:
     for line in tt_file:
         epd = line.split()
-        tt_fens.append(" ".join(epd[:4]) + " 0 0")
-
-depths = [1, 2, 3, 4, 5, 6, 7]
-use_qs = [True, False]
-eval_fn = [evaluation.eval_simple, evaluation.eval_new]
+        fens.append(" ".join(epd[:4]) + " 0 0")
 
 
 # This test equivalence between w/ and w/o tt
-@pytest.mark.parametrize("fen,depth,use_qs,eval_fn", tuple([l1, l2, l3, l4] for l2 in depths for l1 in tt_fens for l3 in use_qs for l4 in eval_fn))
+@pytest.mark.parametrize("fen", fens)
+@pytest.mark.parametrize("depth", (1, 2, 3, 4, 5, 6, 7))
+@pytest.mark.parametrize("use_qs", (True, False))
+@pytest.mark.parametrize("eval_fn", (evaluation.eval_simple, evaluation.eval_new))
 def test_tt_equivalence(fen, depth, use_qs, eval_fn):
     alphabeta_result = algorithms.alphabeta(
         Config(
@@ -39,7 +37,7 @@ def test_tt_equivalence(fen, depth, use_qs, eval_fn):
         board.from_fen(fen),
         depth,
         deque(),
-        MoveType.LEGAL,
+        False,
         -VALUE_MAX,
         VALUE_MAX,
     )
@@ -59,7 +57,7 @@ def test_tt_equivalence(fen, depth, use_qs, eval_fn):
         board.from_fen(fen),
         depth,
         deque(),
-        MoveType.LEGAL,
+        False,
         -VALUE_MAX,
         VALUE_MAX,
     )

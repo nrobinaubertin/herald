@@ -7,17 +7,6 @@ from typing import Hashable
 TABLE_SIZE = 1_000_000
 
 
-def hash_board(board) -> Hashable:
-    data = array("b")
-    data.extend(board.squares)
-    data.append(board.turn)
-    data.extend(board.castling_rights)
-    data.append(board.en_passant)
-    data.extend(board.king_en_passant)
-    data.append(board.half_move)
-    return data.tobytes()
-
-
 class TranspositionTable:
     def __init__(self, table=None) -> None:
         self.table = table or {}
@@ -45,10 +34,9 @@ class TranspositionTable:
 
     def get(self, board, depth: int = 0):
         try:
-            board_hash = hash_board(board)
             if __debug__:
                 self.table["reqs"] += 1
-            ret = self.table.get(board_hash, None)
+            ret = self.table.get(board, None)
             if ret is not None:
                 if __debug__:
                     self.table["hits"] += 1
@@ -61,13 +49,12 @@ class TranspositionTable:
     def add(self, board, node) -> None:
         if len(self.table) > TABLE_SIZE:
             self.table.clear()
-        board_hash = hash_board(board)
         if __debug__:
             self.table["nodes_added"] += 1
-        if board_hash not in self.table:
-            self.table[board_hash] = node
-        elif self.table[board_hash].depth < node.depth:
-            self.table[board_hash] = node
+        if board not in self.table:
+            self.table[board] = node
+        elif self.table[board].depth < node.depth:
+            self.table[board] = node
             if __debug__:
                 self.table["better_nodes_added"] += 1
         elif __debug__:
