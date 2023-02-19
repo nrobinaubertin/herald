@@ -247,7 +247,7 @@ def minimax(
         moves = board.pseudo_legal_moves(b)
     for move in config.move_ordering_fn(b, moves):
         curr_board = board.push(b, move)
-        curr_pv = pv
+        curr_pv = pv.copy()
         curr_pv.append(move)
 
         # return immediately if this is a king capture

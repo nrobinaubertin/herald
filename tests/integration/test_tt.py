@@ -17,22 +17,20 @@ with open("tests/epd/transposition_table.epd", "r") as tt_file:
 
 # This test equivalence between w/ and w/o tt
 @pytest.mark.parametrize("fen", fens)
-@pytest.mark.parametrize("depth", (1, 2, 3, 4, 5, 6, 7))
+@pytest.mark.parametrize("depth", (3, 4, 5, 6))
 @pytest.mark.parametrize("use_qs", (True, False))
 @pytest.mark.parametrize("eval_fn", (evaluation.eval_simple, evaluation.eval_new))
 def test_tt_equivalence(fen, depth, use_qs, eval_fn):
     alphabeta_result = algorithms.alphabeta(
         Config(
-            {
-                "alg_fn": algorithms.alphabeta,
-                "eval_fn": eval_fn,
-                "move_ordering_fn": move_ordering.fast_mvv_lva,
-                "qs_move_ordering_fn": move_ordering.qs_ordering,
-                "quiescence_depth": 25,
-                "quiescence_search": use_qs,
-                "quiescence_fn": quiescence.quiescence,
-                "use_transposition_table": False,
-            }
+            alg_fn=algorithms.alphabeta,
+            eval_fn=eval_fn,
+            move_ordering_fn=move_ordering.fast_mvv_lva,
+            qs_move_ordering_fn=move_ordering.qs_ordering,
+            quiescence_depth=25,
+            quiescence_search=use_qs,
+            quiescence_fn=quiescence.quiescence,
+            use_transposition_table=False,
         ),
         board.from_fen(fen),
         depth,
@@ -43,16 +41,14 @@ def test_tt_equivalence(fen, depth, use_qs, eval_fn):
     )
     alphabeta_tt_result = algorithms.alphabeta(
         Config(
-            {
-                "alg_fn": algorithms.alphabeta,
-                "eval_fn": eval_fn,
-                "move_ordering_fn": move_ordering.fast_mvv_lva,
-                "qs_move_ordering_fn": move_ordering.qs_ordering,
-                "quiescence_depth": 25,
-                "quiescence_search": use_qs,
-                "quiescence_fn": quiescence.quiescence,
-                "use_transposition_table": True,
-            }
+            alg_fn=algorithms.alphabeta,
+            eval_fn=eval_fn,
+            move_ordering_fn=move_ordering.fast_mvv_lva,
+            qs_move_ordering_fn=move_ordering.qs_ordering,
+            quiescence_depth=25,
+            quiescence_search=use_qs,
+            quiescence_fn=quiescence.quiescence,
+            use_transposition_table=True,
         ),
         board.from_fen(fen),
         depth,

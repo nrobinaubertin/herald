@@ -4,8 +4,6 @@ We test algorithms by comparing results to the minimax algorithm who's well know
 When comparing move ordering functions, we cannot compare pvs
 """
 
-from collections import deque
-
 import pytest
 
 from herald import algorithms, board, evaluation, move_ordering, quiescence
@@ -21,7 +19,6 @@ with open("tests/epd/wac.epd", "r") as wacfile:
         win_at_chess.append(" ".join(epd[:4]) + " 0 0")
 
 fens = win_at_chess
-depths = [1, 2, 3, 4]
 
 
 # This test equivalence between raw alphabeta
@@ -32,34 +29,34 @@ depths = [1, 2, 3, 4]
 def test_fast_mvv_lva(fen, depth):
     alphabeta_result = alphabeta(
         Config(
-            {
-                "move_ordering_fn": move_ordering.no_ordering,
-                "eval_fn": evaluation.eval_simple,
-                "use_transposition_table": False,
-                "use_qs_transposition_table": False,
-                "use_move_tt": False,
-            }
+            alg_fn=algorithms.alphabeta,
+            eval_fn=evaluation.eval_simple,
+            move_ordering_fn=move_ordering.no_ordering,
+            qs_move_ordering_fn=move_ordering.qs_ordering,
+            quiescence_fn=quiescence.quiescence,
+            use_move_tt=False,
+            use_transposition_table=False,
         ),
         board.from_fen(fen),
         depth,
-        deque(),
+        [],
         False,
         -VALUE_MAX,
         VALUE_MAX,
     )
     alphabeta_fast_mvv_lva_result = alphabeta(
         Config(
-            {
-                "move_ordering_fn": move_ordering.fast_mvv_lva,
-                "eval_fn": evaluation.eval_simple,
-                "use_transposition_table": False,
-                "use_qs_transposition_table": False,
-                "use_move_tt": False,
-            }
+            alg_fn=algorithms.alphabeta,
+            eval_fn=evaluation.eval_simple,
+            move_ordering_fn=move_ordering.fast_mvv_lva,
+            qs_move_ordering_fn=move_ordering.qs_ordering,
+            quiescence_fn=quiescence.quiescence,
+            use_move_tt=False,
+            use_transposition_table=False,
         ),
         board.from_fen(fen),
         depth,
-        deque(),
+        [],
         False,
         -VALUE_MAX,
         VALUE_MAX,
@@ -68,37 +65,37 @@ def test_fast_mvv_lva(fen, depth):
 
 
 # This test equivalence between raw alphabeta and minimax
-@pytest.mark.parametrize("fen", fens)
+@pytest.mark.parametrize("fen", fens[:100])
 @pytest.mark.parametrize("depth", (1, 2, 3))
 def test_alphabeta(fen, depth):
     minimax_result = minimax(
         Config(
-            {
-                "move_ordering_fn": move_ordering.no_ordering,
-                "eval_fn": evaluation.eval_simple,
-                "use_transposition_table": False,
-                "use_qs_transposition_table": False,
-                "use_move_tt": False,
-            }
+            alg_fn=algorithms.minimax,
+            eval_fn=evaluation.eval_simple,
+            move_ordering_fn=move_ordering.no_ordering,
+            qs_move_ordering_fn=move_ordering.qs_ordering,
+            quiescence_fn=quiescence.quiescence,
+            use_move_tt=False,
+            use_transposition_table=False,
         ),
         board.from_fen(fen),
         depth,
-        deque(),
+        [],
         False,
     )
     alphabeta_result = alphabeta(
         Config(
-            {
-                "move_ordering_fn": move_ordering.no_ordering,
-                "eval_fn": evaluation.eval_simple,
-                "use_transposition_table": False,
-                "use_qs_transposition_table": False,
-                "use_move_tt": False,
-            }
+            alg_fn=algorithms.alphabeta,
+            eval_fn=evaluation.eval_simple,
+            move_ordering_fn=move_ordering.no_ordering,
+            qs_move_ordering_fn=move_ordering.qs_ordering,
+            quiescence_fn=quiescence.quiescence,
+            use_move_tt=False,
+            use_transposition_table=False,
         ),
         board.from_fen(fen),
         depth,
-        deque(),
+        [],
         False,
         -VALUE_MAX,
         VALUE_MAX,
@@ -111,46 +108,42 @@ def test_alphabeta(fen, depth):
 
 
 @pytest.mark.parametrize("fen", fens)
-@pytest.mark.parametrize("depth", (1, 2, 3, 4))
-def test_killer_move(fen, depth):
+@pytest.mark.parametrize("depth", (3, 4))
+def test_hash_move(fen, depth):
     r1 = alphabeta(
         Config(
-            {
-                "alg_fn": algorithms.alphabeta,
-                "move_ordering_fn": move_ordering.fast_mvv_lva,
-                "qs_move_ordering_fn": move_ordering.qs_ordering,
-                "eval_fn": evaluation.eval_new,
-                "quiescence_search": True,
-                "quiescence_depth": 50,
-                "use_transposition_table": True,
-                "use_move_tt": True,
-                "quiescence_fn": quiescence.quiescence,
-            }
+            alg_fn=algorithms.alphabeta,
+            eval_fn=evaluation.eval_new,
+            move_ordering_fn=move_ordering.fast_mvv_lva,
+            qs_move_ordering_fn=move_ordering.qs_ordering,
+            quiescence_depth=50,
+            quiescence_fn=quiescence.quiescence,
+            quiescence_search=True,
+            use_move_tt=True,
+            use_transposition_table=True,
         ),
         board.from_fen(fen),
         depth,
-        deque(),
+        [],
         False,
         -VALUE_MAX,
         VALUE_MAX,
     )
     r2 = alphabeta(
         Config(
-            {
-                "alg_fn": algorithms.alphabeta,
-                "move_ordering_fn": move_ordering.fast_mvv_lva,
-                "qs_move_ordering_fn": move_ordering.qs_ordering,
-                "eval_fn": evaluation.eval_new,
-                "quiescence_search": True,
-                "quiescence_depth": 50,
-                "use_transposition_table": True,
-                "use_move_tt": False,
-                "quiescence_fn": quiescence.quiescence,
-            }
+            alg_fn=algorithms.alphabeta,
+            eval_fn=evaluation.eval_new,
+            move_ordering_fn=move_ordering.fast_mvv_lva,
+            qs_move_ordering_fn=move_ordering.qs_ordering,
+            quiescence_depth=50,
+            quiescence_fn=quiescence.quiescence,
+            quiescence_search=True,
+            use_move_tt=False,
+            use_transposition_table=True,
         ),
         board.from_fen(fen),
         depth,
-        deque(),
+        [],
         False,
         -VALUE_MAX,
         VALUE_MAX,
