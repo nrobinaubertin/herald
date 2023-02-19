@@ -6,7 +6,7 @@ from typing import Callable, Iterable, Optional
 from . import board
 from .board import Board
 from .configuration import Config
-from .constants import COLOR, VALUE_MAX
+from .constants import COLOR, VALUE_MAX, COLOR_DIRECTION
 from .data_structures import Move, Node
 
 Alg_fn = Callable[
@@ -194,7 +194,7 @@ def alphabeta(
         if board.is_square_attacked(b, b.king_squares[b.turn], b.invturn):
             node = Node(
                 depth=depth,
-                value=VALUE_MAX * b.turn * -1,
+                value=VALUE_MAX * COLOR_DIRECTION[b.turn] * -1,
                 pv=pv,
                 lower=alpha,
                 upper=beta,
