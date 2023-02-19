@@ -35,8 +35,6 @@ def alphabeta(
     alpha: int = -VALUE_MAX,
     beta: int = VALUE_MAX,
 ) -> Node:
-    assert depth >= 0, depth
-
     if config.use_transposition_table and len(pv) > 0:
         # check if we find a hit in the transposition table
         node = config.transposition_table.get(b, depth)
@@ -61,7 +59,7 @@ def alphabeta(
     children: int = 1
 
     # if we are on a terminal node, return the evaluation
-    if depth == 0:
+    if depth <= 0:
         value: int = 0
         if config.quiescence_search:
             node = config.quiescence_fn(
@@ -73,7 +71,7 @@ def alphabeta(
             )
 
             # type ignore because mypy doesn't see the qs fn
-            children = node.children  # type: ignore
+            children += node.children  # type: ignore
             value = node.value  # type: ignore
             if __debug__:
                 # display quiescent nodes
@@ -108,8 +106,11 @@ def alphabeta(
             moves = itertools.chain([hash_move], moves)
 
     for move in moves:
+        # this check is here to avoid evaluating
+        # the hash_move twice
         if move == best_move:
             continue
+
         curr_pv = deque(pv)
         curr_pv.append(move)
 

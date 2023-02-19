@@ -82,11 +82,17 @@ def search(
             upper,
         )
         children += node.children + 1
-        if node.value > upper:
-            upper += 100 * (iteration**2)
+        # if no best move was found
+        # this could happen because of some pruning
+        if not node.pv:
+            upper += 50 * (iteration**2)
+            lower -= 50 * (iteration**2)
             continue
-        if node.value < lower:
-            lower -= 100 * (iteration**2)
+        if node.value >= upper:
+            upper += 50 * (iteration**2)
+            continue
+        if node.value <= lower:
+            lower -= 50 * (iteration**2)
             continue
         break
 
@@ -94,7 +100,7 @@ def search(
         move=node.pv[0],
         pv=node.pv,
         depth=node.depth,
-        nodes=node.children,
+        nodes=children,
         score=node.value,
         time=(time.time_ns() - start_time),
         stop_search=abs(node.value) > VALUE_MAX - 100,
