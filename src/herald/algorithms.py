@@ -1,10 +1,9 @@
 """Recursive search algorithms."""
 
 import itertools
-from collections import deque
 from typing import Callable, Iterable, Optional
 
-from . import board, transposition_table
+from . import board
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, VALUE_MAX
@@ -15,7 +14,7 @@ Alg_fn = Callable[
         Config,
         Board,
         int,
-        deque[Move],
+        list[Move],
         bool,
         int | None,
         int | None,
@@ -30,7 +29,7 @@ def alphabeta(
     config: Config,
     b: Board,
     depth: int,
-    pv: deque[Move],
+    pv: list[Move],
     gen_legal_moves: bool = False,
     alpha: int = -VALUE_MAX,
     beta: int = VALUE_MAX,
@@ -82,7 +81,6 @@ def alphabeta(
         return Node(
             value=value,
             depth=0,
-            full_move=b.full_move,
             pv=pv,
             lower=alpha,
             upper=beta,
@@ -111,7 +109,7 @@ def alphabeta(
         if move == best_move:
             continue
 
-        curr_pv = deque(pv)
+        curr_pv = pv.copy()
         curr_pv.append(move)
 
         # return immediately if this is a king capture
@@ -119,7 +117,6 @@ def alphabeta(
             return Node(
                 value=VALUE_MAX * b.turn,
                 depth=depth,
-                full_move=b.full_move,
                 pv=curr_pv,
                 lower=alpha,
                 upper=beta,
@@ -151,7 +148,6 @@ def alphabeta(
                 best = Node(
                     value=node.value,
                     depth=depth,
-                    full_move=node.full_move,
                     pv=node.pv,
                     lower=alpha,
                     upper=beta,
@@ -166,7 +162,6 @@ def alphabeta(
                 best = Node(
                     value=node.value,
                     depth=depth,
-                    full_move=node.full_move,
                     pv=node.pv,
                     lower=alpha,
                     upper=beta,
@@ -189,7 +184,6 @@ def alphabeta(
             depth=best.depth,
             value=best.value,
             pv=best.pv,
-            full_move=best.full_move,
             lower=alpha,
             upper=beta,
             children=children,
@@ -202,7 +196,6 @@ def alphabeta(
                 depth=depth,
                 value=VALUE_MAX * b.turn * -1,
                 pv=pv,
-                full_move=b.full_move,
                 lower=alpha,
                 upper=beta,
                 children=children,
@@ -212,7 +205,6 @@ def alphabeta(
                 depth=depth,
                 value=0,
                 pv=pv,
-                full_move=b.full_move,
                 lower=alpha,
                 upper=beta,
                 children=children,
@@ -226,7 +218,7 @@ def minimax(
     config: Config,
     b: Board,
     depth: int,
-    pv: deque[Move],
+    pv: list[Move],
     gen_legal_moves: bool = False,
     alpha: int = 0,
     beta: int = 0,
@@ -255,7 +247,7 @@ def minimax(
         moves = board.pseudo_legal_moves(b)
     for move in config.move_ordering_fn(b, moves):
         curr_board = board.push(b, move)
-        curr_pv = deque(pv)
+        curr_pv = pv
         curr_pv.append(move)
 
         # return immediately if this is a king capture
@@ -314,7 +306,6 @@ def minimax(
             depth=depth,
             value=VALUE_MAX * b.turn * -1,
             pv=pv,
-            full_move=b.full_move,
             lower=alpha,
             upper=beta,
             children=children,
@@ -323,7 +314,6 @@ def minimax(
         depth=depth,
         value=0,
         pv=pv,
-        full_move=b.full_move,
         lower=alpha,
         upper=beta,
         children=children,

@@ -1,5 +1,3 @@
-from collections import deque
-
 from . import board, pruning
 from .board import Board
 from .configuration import Config
@@ -10,7 +8,7 @@ from .data_structures import Move, Node
 def quiescence(
     config: Config,
     b: Board,
-    pv: deque[Move],
+    pv: list[Move],
     alpha: int,
     beta: int,
 ) -> Node:
@@ -26,7 +24,6 @@ def quiescence(
     return Node(
         value=node.value,
         depth=0,
-        full_move=b.full_move,
         pv=node.pv,
         lower=alpha,
         upper=beta,
@@ -38,7 +35,7 @@ def _search(
     config: Config,
     b: Board,
     depth: int,
-    pv: deque[Move],
+    pv: list[Move],
     alpha: int,
     beta: int,
 ) -> Node:
@@ -50,7 +47,6 @@ def _search(
         return Node(
             value=value,
             depth=0,
-            full_move=b.full_move,
             pv=pv,
             lower=alpha,
             upper=beta,
@@ -83,7 +79,6 @@ def _search(
             return Node(
                 value=beta,
                 depth=0,
-                full_move=b.full_move,
                 pv=pv,
                 lower=alpha,
                 upper=beta,
@@ -95,7 +90,6 @@ def _search(
             return Node(
                 value=alpha,
                 depth=0,
-                full_move=b.full_move,
                 pv=pv,
                 lower=alpha,
                 upper=beta,
@@ -114,7 +108,7 @@ def _search(
         if pruning.is_bad_capture(b, move, with_see=True):
             continue
 
-        curr_pv = deque(pv)
+        curr_pv = pv.copy()
         curr_pv.append(move)
 
         # return immediately if this is a king capture
@@ -122,7 +116,6 @@ def _search(
             return Node(
                 value=VALUE_MAX * b.turn,
                 depth=depth,
-                full_move=b.full_move,
                 pv=curr_pv,
                 lower=alpha,
                 upper=beta,
@@ -153,7 +146,6 @@ def _search(
                     best = Node(
                         value=node.value,
                         depth=0,
-                        full_move=node.full_move,
                         pv=node.pv,
                         lower=alpha,
                         upper=beta,
@@ -168,7 +160,6 @@ def _search(
                     best = Node(
                         value=node.value,
                         depth=0,
-                        full_move=node.full_move,
                         pv=node.pv,
                         lower=alpha,
                         upper=beta,
@@ -183,7 +174,6 @@ def _search(
             value=best.value,
             depth=0,
             pv=best.pv,
-            full_move=best.full_move,
             children=children,
         )
     else:
@@ -192,7 +182,6 @@ def _search(
         return Node(
             value=value,
             depth=0,
-            full_move=b.full_move,
             pv=pv,
             lower=alpha,
             upper=beta,

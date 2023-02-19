@@ -1,24 +1,22 @@
 import time
-from collections import deque, namedtuple
+from dataclasses import dataclass
 
 from . import board
 from .board import Board
 from .configuration import Config
 from .constants import VALUE_MAX
+from .data_structures import Move
 
-Search = namedtuple(
-    "Search",
-    [
-        "move",
-        "depth",
-        "score",
-        "nodes",
-        "time",
-        "pv",
-        "stop_search",
-    ],
-    defaults=[False],
-)
+
+@dataclass
+class Search:
+    move: Move
+    depth: int
+    score: int
+    nodes: int
+    time: int
+    pv: list
+    stop_search: bool = False
 
 
 def search(
@@ -54,7 +52,7 @@ def search(
         if move.is_king_capture:
             return Search(
                 move=move,
-                pv=deque([move]),
+                pv=[move],
                 depth=1,
                 nodes=1,
                 score=VALUE_MAX * b.turn,
@@ -76,7 +74,7 @@ def search(
             config,
             b,
             depth,
-            deque([]),
+            [],
             True,
             lower,
             upper,
@@ -85,14 +83,14 @@ def search(
         # if no best move was found
         # this could happen because of some pruning
         if not node.pv:
-            upper += 50 * (iteration**2)
-            lower -= 50 * (iteration**2)
+            upper += 100 * (iteration**2)
+            lower -= 100 * (iteration**2)
             continue
         if node.value >= upper:
-            upper += 50 * (iteration**2)
+            upper += 100 * (iteration**2)
             continue
         if node.value <= lower:
-            lower -= 50 * (iteration**2)
+            lower -= 100 * (iteration**2)
             continue
         break
 

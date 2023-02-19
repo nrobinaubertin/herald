@@ -1,12 +1,11 @@
 import multiprocessing
 import random
 import time
-from collections import deque
 
 from . import board
 from .board import Board
 from .configuration import Config
-from .constants import VALUE_MAX
+from .constants import PIECE, VALUE_MAX
 from .data_structures import Move, to_uci
 from .search import Search, search
 
@@ -63,21 +62,19 @@ def itdep(
             moves = config.opening_book[board.to_fen(b)]["moves"]
             move = random.choice(moves)["move"]
             move = Move(
-                *[
-                    int(move[0]),
-                    int(move[1]),
-                    int(move[2]),
-                    bool(move[3]),
-                    bool(move[4]),
-                    int(move[5]),
-                    bool(move[6]),
-                ]
+                int(move[0]),
+                int(move[1]),
+                PIECE(move[2]),
+                PIECE(move[3]),
+                bool(move[4]),
+                bool(move[5]),
+                bool(move[6]),
             )
             if print_uci:
                 print(f"bestmove {to_uci(move)}")
             return Search(
                 move=move,
-                pv=deque([move]),
+                pv=[move],
                 depth=0,
                 nodes=1,
                 score=0,

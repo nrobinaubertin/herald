@@ -1,8 +1,5 @@
 """Storage class for usual transposition table."""
 
-from array import array
-from typing import Hashable
-
 # The table size is the maximum number of elements in the transposition table.
 TABLE_SIZE = 1_000_000
 

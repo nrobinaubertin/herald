@@ -1,29 +1,30 @@
-from collections import deque, namedtuple
+from dataclasses import dataclass
 from typing import Iterable
 
 from .constants import PIECE, VALUE_MAX
 
-Move = namedtuple(
-    "Move",
-    [
-        "start",
-        "end",
-        "moving_piece",
-        "captured_piece",
-        "is_capture",
-        "is_castle",
-        "en_passant",
-        "is_king_capture",
-        "is_quiescent",
-    ],
-    defaults=[0, 0, False, False, -1, False, False, False],
-)
 
-Node = namedtuple(
-    "Node",
-    ["value", "depth", "pv", "type", "upper", "lower", "squares", "children", "full_move"],
-    defaults=[deque(), None, -VALUE_MAX, VALUE_MAX, None, 0, 0],
-)
+@dataclass(frozen=True)
+class Move:
+    start: int
+    end: int
+    moving_piece: PIECE = PIECE.INVALID
+    captured_piece: PIECE = PIECE.INVALID
+    is_capture: bool = False
+    is_castle: bool = False
+    en_passant: int = -1
+    is_king_capture: bool = False
+    is_quiescent: bool = False
+
+
+@dataclass(frozen=True)
+class Node:
+    value: int
+    depth: int
+    pv: list
+    upper: int = VALUE_MAX
+    lower: int = -VALUE_MAX
+    children: int = 1
 
 
 def decompose_square(square: int) -> tuple[int, int]:
