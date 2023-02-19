@@ -6,7 +6,7 @@ from typing import Callable, Iterable, Optional
 from . import board
 from .board import Board
 from .configuration import Config
-from .constants import COLOR, VALUE_MAX, COLOR_DIRECTION
+from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX
 from .data_structures import Move, Node
 
 Alg_fn = Callable[

@@ -475,43 +475,44 @@ def _rook_moves(
 
             # castling moves are processed here
             # because we are already checking if the path is clear that way
-            if not quiescent:
-                if (
-                    b.castling_rights[2 * b.turn + CASTLE.KING_SIDE] == 1
-                    and start == (28 if b.turn == COLOR.BLACK else 98)
-                    and IS_PIECE[b.squares[end]] == PIECE.KING
-                    and get_color(b.squares[end]) == b.turn
-                ):
-                    yield Move(
-                        start=(95 if b.turn == COLOR.WHITE else 25),
-                        end=(97 if b.turn == COLOR.WHITE else 27),
-                        moving_piece=PIECE.KING,
-                        captured_piece=IS_PIECE[
-                            b.squares[end]
-                        ],  # don't take king_en_passant into account
-                        is_capture=False,
-                        is_castle=True,
-                        en_passant=-1,
-                        is_king_capture=False,
-                        is_quiescent=quiescent,
-                    )
-                if (
-                    b.castling_rights[2 * b.turn + CASTLE.QUEEN_SIDE] == 1
-                    and start == (21 if b.turn == COLOR.BLACK else 91)
-                    and IS_PIECE[b.squares[end]] == PIECE.KING
-                    and get_color(b.squares[end]) == b.turn
-                ):
-                    yield Move(
-                        start=(95 if b.turn == COLOR.WHITE else 25),
-                        end=(93 if b.turn == COLOR.WHITE else 23),
-                        moving_piece=PIECE.KING,
-                        captured_piece=PIECE.EMPTY,
-                        is_capture=False,
-                        is_castle=True,
-                        en_passant=-1,
-                        is_king_capture=False,
-                        is_quiescent=quiescent,
-                    )
+            if (
+                b.castling_rights[2 * b.turn + CASTLE.KING_SIDE] == 1
+                and start == (28 if b.turn == COLOR.BLACK else 98)
+                and IS_PIECE[b.squares[end]] == PIECE.KING
+                and get_color(b.squares[end]) == b.turn
+                and not quiescent
+                and not king_is_in_check(b, b.turn)
+            ):
+                yield Move(
+                    start=(95 if b.turn == COLOR.WHITE else 25),
+                    end=(97 if b.turn == COLOR.WHITE else 27),
+                    moving_piece=PIECE.KING,
+                    captured_piece=PIECE.EMPTY,
+                    is_capture=False,
+                    is_castle=True,
+                    en_passant=-1,
+                    is_king_capture=False,
+                    is_quiescent=quiescent,
+                )
+            if (
+                b.castling_rights[2 * b.turn + CASTLE.QUEEN_SIDE] == 1
+                and start == (21 if b.turn == COLOR.BLACK else 91)
+                and IS_PIECE[b.squares[end]] == PIECE.KING
+                and get_color(b.squares[end]) == b.turn
+                and not quiescent
+                and not king_is_in_check(b, b.turn)
+            ):
+                yield Move(
+                    start=(95 if b.turn == COLOR.WHITE else 25),
+                    end=(93 if b.turn == COLOR.WHITE else 23),
+                    moving_piece=PIECE.KING,
+                    captured_piece=PIECE.EMPTY,
+                    is_capture=False,
+                    is_castle=True,
+                    en_passant=-1,
+                    is_king_capture=False,
+                    is_quiescent=quiescent,
+                )
 
             if (
                 b.squares[end] != PIECE.INVALID
@@ -829,7 +830,7 @@ def will_check_the_king(b: Board, move: Move) -> bool:
 
 
 def king_is_in_check(b: Board, color: COLOR) -> bool:
-    if is_square_attacked(b, b.king_squares[color], COLOR(INV_COLOR[color])):
+    if is_square_attacked(b, b.king_squares[color], INV_COLOR[color]):
         return True
     return False
 

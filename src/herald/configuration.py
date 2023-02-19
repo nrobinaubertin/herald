@@ -12,7 +12,7 @@ class Config:
     move_ordering_fn: Any
     qs_move_ordering_fn: Any
     alg_fn: Any
-    version: str = "0.20.1"
+    version: str = "0.20.2"
     name: str = "Herald"
     author: str = "nrobinaubertin"
     transposition_table: dict[Board, Node] = field(default_factory=dict)

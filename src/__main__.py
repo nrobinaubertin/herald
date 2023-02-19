@@ -4,6 +4,7 @@ import sys
 from herald import algorithms, board, evaluation, move_ordering, quiescence
 from herald.board import Board
 from herald.configuration import Config
+from herald.constants import COLOR
 from herald.data_structures import to_uci
 from herald.iterative_deepening import itdep
 from herald.pruning import see
@@ -13,7 +14,6 @@ CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 
 CONFIG = Config(
-    version="0.20.0",
     alg_fn=algorithms.alphabeta,
     move_ordering_fn=move_ordering.fast_mvv_lva,
     qs_move_ordering_fn=move_ordering.qs_ordering,
@@ -38,6 +38,12 @@ def uci_parser(line: str) -> list[str]:
 
     if not tokens:
         return []
+
+    if tokens[0] == "checks":
+        return [
+            f"White king is in check: {board.king_is_in_check(CURRENT_BOARD, COLOR.WHITE)}",
+            f"Black king is in check: {board.king_is_in_check(CURRENT_BOARD, COLOR.BLACK)}",
+        ]
 
     if tokens[0] == "see":
         return [f"SEE: {see(CURRENT_BOARD, int(tokens[1]), 0)}"]

@@ -56,7 +56,7 @@ namespace_packages = true
 [tool.pylint.design]
 max-args = 5
 max-attributes = 7
-max-bool-expr = 5
+max-bool-expr = 6
 max-branches = 12
 max-locals = 15
 max-parents = 7
