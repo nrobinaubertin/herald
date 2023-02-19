@@ -1,3 +1,5 @@
+from typing import Any
+
 from . import board
 from .board import Board
 from .constants import COLOR, COLOR_DIRECTION, IS_PIECE, PIECE
@@ -5,10 +7,10 @@ from .data_structures import Move
 from .evaluation import PIECE_VALUE
 
 
-def is_futile(b: Board, depth: int, alpha: int, beta: int, eval_fn):
-    static_eval = eval_fn(b)
+def is_futile(b: Board, depth: int, alpha: int, beta: int, eval_fn: Any) -> bool:
+    static_eval: int = eval_fn(b)
 
-    def futility_margin(depth):
+    def futility_margin(depth: int) -> int:
         return 165 * depth
 
     # colors are inverted since this is a board resulting from our tested move

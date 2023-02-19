@@ -88,7 +88,7 @@ VALUE_MAX: int = 12_000
 
 
 @functools.lru_cache(maxsize=128, typed=False)
-def get_color(square: int):
+def get_color(square: int) -> COLOR:
     if 0 < square < 7:
         return COLOR.WHITE
     if 6 < square < 13:

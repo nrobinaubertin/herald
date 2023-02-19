@@ -174,7 +174,7 @@ def alphabeta(
     if config.use_transposition_table:
         # Save the resulting best node in the transposition table
         if best is not None and best.depth > 0:
-            config.transposition_table.add(b, best)
+            config.transposition_table[b] = best
         if config.use_move_tt:
             if best_move is not None:
                 config.move_tt[b] = best_move

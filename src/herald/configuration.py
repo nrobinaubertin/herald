@@ -1,63 +1,24 @@
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Any
 
-from .transposition_table import TranspositionTable
+from .board import Board
+from .data_structures import Move, Node
 
 
+@dataclass
 class Config:
-    def __init__(self, config_dict: Optional[dict] = None):
-        self._config = config_dict or {}
-        self.name = "Herald"
-        self.author = "nrobinaubertin"
-        self.transposition_table = TranspositionTable({})
-        self.move_tt: dict = {}
-        self.opening_book: dict = {}
-
-    def set_config(self, new_config: dict):
-        self._config = new_config
-
-    @property
-    def version(self):
-        return self._config.get("version")
-
-    def set_depth(self, depth: int):
-        self._config["depth"] = depth
-
-    @property
-    def depth(self):
-        return self._config.get("depth", 0)
-
-    @property
-    def use_transposition_table(self):
-        return self._config.get("use_transposition_table", False)
-
-    @property
-    def use_move_tt(self):
-        return self._config.get("use_move_tt", False)
-
-    @property
-    def quiescence_fn(self):
-        return self._config.get("quiescence_fn")
-
-    @property
-    def quiescence_search(self):
-        return self._config.get("quiescence_search", False)
-
-    @property
-    def quiescence_depth(self):
-        return self._config.get("quiescence_depth", 0)
-
-    @property
-    def eval_fn(self):
-        return self._config["eval_fn"]
-
-    @property
-    def move_ordering_fn(self):
-        return self._config["move_ordering_fn"]
-
-    @property
-    def qs_move_ordering_fn(self):
-        return self._config["qs_move_ordering_fn"]
-
-    @property
-    def alg_fn(self):
-        return self._config["alg_fn"]
+    quiescence_fn: Any
+    eval_fn: Any
+    move_ordering_fn: Any
+    qs_move_ordering_fn: Any
+    alg_fn: Any
+    version: str = "0.20.1"
+    name: str = "Herald"
+    author: str = "nrobinaubertin"
+    transposition_table: dict[Board, Node] = field(default_factory=dict)
+    move_tt: dict[Board, Move] = field(default_factory=dict)
+    opening_book: dict[str, str] = field(default_factory=dict)
+    use_transposition_table: bool = False
+    use_move_tt: bool = False
+    quiescence_search: bool = False
+    quiescence_depth: int = 0

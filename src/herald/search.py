@@ -15,7 +15,7 @@ class Search:
     score: int
     nodes: int
     time: int
-    pv: list
+    pv: list[Move]
     stop_search: bool = False
 
 
@@ -26,8 +26,6 @@ def search(
     last_search: Search | None = None,
 ) -> Search | None:
     start_time = time.time_ns()
-
-    config.set_depth(depth)
 
     possible_moves = board.legal_moves(b)
 

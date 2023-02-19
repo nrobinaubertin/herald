@@ -1,10 +1,7 @@
-import json
 import multiprocessing
-import os
 import sys
 
 from herald import algorithms, board, evaluation, move_ordering, quiescence
-from herald.analysis import fen_analysis
 from herald.board import Board
 from herald.configuration import Config
 from herald.data_structures import to_uci
@@ -16,29 +13,17 @@ CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
 
 CONFIG = Config(
-    {
-        "version": "0.20.0",
-        "alg_fn": algorithms.alphabeta,
-        "move_ordering_fn": move_ordering.fast_mvv_lva,
-        "qs_move_ordering_fn": move_ordering.qs_ordering,
-        "eval_fn": evaluation.eval_new,
-        "quiescence_search": True,
-        "quiescence_depth": 9,
-        "use_transposition_table": True,
-        "use_move_tt": True,
-        "quiescence_fn": quiescence.quiescence,
-    }
+    version="0.20.0",
+    alg_fn=algorithms.alphabeta,
+    move_ordering_fn=move_ordering.fast_mvv_lva,
+    qs_move_ordering_fn=move_ordering.qs_ordering,
+    eval_fn=evaluation.eval_new,
+    quiescence_search=True,
+    quiescence_depth=9,
+    use_transposition_table=True,
+    use_move_tt=True,
+    quiescence_fn=quiescence.quiescence,
 )
-
-# load config at default location
-if os.access("config.json", os.R_OK):
-    with open("config.json", "r", encoding="utf-8") as output_file:
-        CONFIG.set_config(json.load(output_file))
-
-# load opening book at default location
-if os.access("opening_book", os.R_OK):
-    with open("opening_book", "r", encoding="utf-8") as output_file:
-        CONFIG.opening_book = json.load(output_file)
 
 
 def stop_calculating() -> None:
@@ -98,10 +83,6 @@ def uci_parser(line: str) -> list[str]:
         to_display.append(f"Nodes: {total}")
         return to_display
 
-    if len(tokens) == 2 and tokens[0] == "load_book":
-        with open(tokens[1], "r", encoding="utf-8") as output_file:
-            CONFIG.opening_book = json.load(output_file)
-
     if len(tokens) == 1 and tokens[0] == "uci":
         return [
             f"{CONFIG.name} {CONFIG.version} by {CONFIG.author}",
@@ -133,27 +114,6 @@ def uci_parser(line: str) -> list[str]:
         return [
             "readyok",
         ]
-
-    if len(tokens) > 1 and tokens[0] == "analysis":
-        input_file_path = tokens[1]
-        output_file_path = tokens[2]
-        depth = int(tokens[3])
-        branch_factor = int(tokens[4])
-
-        if CURRENT_PROCESS is not None:
-            CURRENT_PROCESS.terminate()
-
-        process = multiprocessing.Process(
-            target=fen_analysis,
-            args=(CONFIG, input_file_path, output_file_path),
-            kwargs={
-                "depth": depth,
-                "branch_factor": branch_factor,
-            },
-            daemon=False,
-        )
-        process.start()
-        CURRENT_PROCESS = process
 
     if len(tokens) > 1 and tokens[0] == "position":
         if tokens[1] == "startpos":

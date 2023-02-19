@@ -118,6 +118,31 @@ def from_uci(b: Board, uci: str) -> Move:
     )
 
 
+def get_pawns_stats(squares: list[int]) -> tuple[bytes, bytes]:
+    # fmt: off
+    # number of pawns for [white, black]
+    pawn_number = [0, 0]
+    # number of pawns in each file for [white * 10, black * 10]
+    pawn_in_file = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ]
+    # fmt: on
+
+    for i in range(8):
+        for j in range(8):
+            square = (2 + j) * 10 + (i + 1)
+            piece = squares[square]
+            if piece in [PIECE.EMPTY, PIECE.INVALID]:
+                continue
+            if IS_PIECE[piece] == PIECE.PAWN:
+                color = get_color(piece)
+                pawn_number[color] += 1
+                pawn_in_file[(i + 1) + 10 * color] += 1
+
+    return bytes(pawn_number), bytes(pawn_in_file)
+
+
 def to_string(b: Board) -> str:
     rep = f"{'w' if b.turn == COLOR.WHITE else 'b'}  0 1 2 3 4 5 6 7 8 9"
     for i in range(120):
@@ -186,31 +211,6 @@ def from_fen(fen: str) -> Board:
     )
 
     return b
-
-
-def get_pawns_stats(squares):
-    # fmt: off
-    # number of pawns for [white, black]
-    pawn_number = [0, 0]
-    # number of pawns in each file for [white * 10, black * 10]
-    pawn_in_file = [
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    ]
-    # fmt: on
-
-    for i in range(8):
-        for j in range(8):
-            square = (2 + j) * 10 + (i + 1)
-            piece = squares[square]
-            if piece in [PIECE.EMPTY, PIECE.INVALID]:
-                continue
-            if IS_PIECE[piece] == PIECE.PAWN:
-                color = get_color(piece)
-                pawn_number[color] += 1
-                pawn_in_file[(i + 1) + 10 * color] += 1
-
-    return bytes(pawn_number), bytes(pawn_in_file)
 
 
 def push(b: Board, move: Move) -> Board:

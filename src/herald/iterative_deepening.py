@@ -1,12 +1,11 @@
 import multiprocessing
-import random
 import time
+from typing import Any, Optional
 
-from . import board
 from .board import Board
 from .configuration import Config
-from .constants import PIECE, VALUE_MAX
-from .data_structures import Move, to_uci
+from .constants import VALUE_MAX
+from .data_structures import to_uci
 from .search import Search, search
 
 
@@ -28,7 +27,7 @@ def to_string(search: Search) -> str:
 
 # wrapper around the search function to allow for multiprocess time management
 def search_wrapper(
-    queue,
+    queue: Any,
     b: Board,
     depth: int,
     config: Config,
@@ -50,7 +49,7 @@ def itdep(
     movetime: int = 0,
     max_depth: int = 10,
     print_uci: bool = True,
-):
+) -> Optional[Search]:
     # clear transposition table at each new search
     # there seems to be collision issues that I don't have time to handle now
     if config.use_transposition_table:
@@ -58,29 +57,6 @@ def itdep(
         config.move_tt.clear()
 
     if movetime > 0:
-        if board.to_fen(b) in config.opening_book:
-            moves = config.opening_book[board.to_fen(b)]["moves"]
-            move = random.choice(moves)["move"]
-            move = Move(
-                int(move[0]),
-                int(move[1]),
-                PIECE(move[2]),
-                PIECE(move[3]),
-                bool(move[4]),
-                bool(move[5]),
-                bool(move[6]),
-            )
-            if print_uci:
-                print(f"bestmove {to_uci(move)}")
-            return Search(
-                move=move,
-                pv=[move],
-                depth=0,
-                nodes=1,
-                score=0,
-                time=1,
-            )
-
         start_time = time.time_ns()
         last_search: Search | None = None
         max_depth = max(1, min(10, max_depth))
