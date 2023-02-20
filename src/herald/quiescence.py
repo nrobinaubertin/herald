@@ -1,4 +1,4 @@
-from . import board, pruning
+from . import board, pruning, evaluation
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, VALUE_MAX
@@ -43,7 +43,8 @@ def _search(
 
     # if we are on a terminal node, return the evaluation
     if depth >= config.quiescence_depth:
-        value = config.eval_fn(b)
+        # value = config.eval_fn(b)
+        value = evaluation.eval_fast(b.squares)
         return Node(
             value=value,
             depth=0,
@@ -178,7 +179,8 @@ def _search(
         )
     else:
         # this happens when no quiescent move is available
-        value = config.eval_fn(b)
+        # value = config.eval_fn(b)
+        value = evaluation.eval_fast(b.squares)
         return Node(
             value=value,
             depth=0,

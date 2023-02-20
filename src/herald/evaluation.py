@@ -1,3 +1,4 @@
+import functools
 from array import array
 from typing import Callable
 
@@ -117,6 +118,24 @@ Eval_fn = Callable[
     ],
     int,
 ]
+
+
+# only material
+@functools.lru_cache(typed=False)
+def eval_fast(squares: bytes) -> int:
+    evaluation = 0
+    for i in range(8):
+        for j in range(8):
+            square = (2 + j) * 10 + (i + 1)
+            piece = squares[square]
+            if piece == PIECE.EMPTY:
+                continue
+            assert 0 < IS_PIECE[piece] < 7
+            if get_color(piece) == COLOR.WHITE:
+                evaluation += PIECE_VALUE[IS_PIECE[piece]]
+            else:
+                evaluation -= PIECE_VALUE[IS_PIECE[piece]]
+    return evaluation
 
 
 # only material
