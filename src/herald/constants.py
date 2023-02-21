@@ -87,7 +87,7 @@ ASCII_REP: dict[int, str] = {
 VALUE_MAX: int = 12_000
 
 
-@functools.lru_cache(typed=False)
+@functools.lru_cache(maxsize=128, typed=False)
 def get_color(square: int) -> COLOR:
     if 0 < square < 7:
         return COLOR.WHITE
