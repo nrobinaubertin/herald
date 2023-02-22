@@ -21,6 +21,15 @@ PIECE_VALUE[PIECE.KING] = (
     + PIECE_VALUE[PIECE.ROOK] * 2
 )
 
+START_MATERIAL = (
+    PIECE_VALUE[PIECE.KING] * 2
+    + PIECE_VALUE[PIECE.QUEEN] * 2
+    + PIECE_VALUE[PIECE.ROOK] * 4
+    + PIECE_VALUE[PIECE.BISHOP] * 4
+    + PIECE_VALUE[PIECE.KNIGHT] * 4
+    + PIECE_VALUE[PIECE.PAWN] * 16
+)
+
 # fmt: off
 PIECE_SQUARE_TABLE = {
     PIECE.PAWN: (
@@ -117,6 +126,19 @@ Eval_fn = Callable[
     ],
     int,
 ]
+
+
+def remaining_material(b: Board) -> int:
+    material = 0
+    for i in range(8):
+        for j in range(8):
+            square = (2 + j) * 10 + (i + 1)
+            piece = b.squares[square]
+            if piece == PIECE.EMPTY:
+                continue
+            assert 0 < IS_PIECE[piece] < 7
+            material += PIECE_VALUE[IS_PIECE[piece]]
+    return material
 
 
 # only material
