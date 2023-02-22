@@ -172,7 +172,7 @@ def uci_parser(line: str) -> list[str]:
                 args=(CURRENT_BOARD, CONFIG),
                 kwargs={
                     "movetime": target_movetime(
-                        CURRENT_BOARD.turn,
+                        CURRENT_BOARD,
                         movetime,
                         wtime,
                         btime,
