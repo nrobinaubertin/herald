@@ -191,7 +191,7 @@ def alphabeta(
     else:
         # no "best" found
         # should happen only in case of stalemate/checkmate
-        if board.is_square_attacked(b, b.king_squares[b.turn], b.invturn):
+        if board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn):
             node = Node(
                 depth=depth,
                 value=VALUE_MAX * COLOR_DIRECTION[b.turn] * -1,
@@ -301,7 +301,7 @@ def minimax(
 
     # no "best" found
     # should happen only in case of stalemate/checkmate
-    if board.is_square_attacked(b, b.king_squares[b.turn], b.invturn):
+    if board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn):
         return Node(
             depth=depth,
             value=VALUE_MAX * b.turn * -1,

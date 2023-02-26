@@ -1,10 +1,10 @@
 import multiprocessing
 import sys
 
-from herald import algorithms, board, evaluation, move_ordering, quiescence
+from herald import algorithms, board, evaluation, move_ordering, pruning, quiescence
 from herald.board import Board
 from herald.configuration import Config
-from herald.constants import COLOR
+from herald.constants import COLOR, VALUE_MAX
 from herald.data_structures import to_uci
 from herald.iterative_deepening import itdep
 from herald.pruning import see
@@ -53,6 +53,46 @@ def uci_parser(line: str) -> list[str]:
 
     if tokens[0] == "print":
         return [board.to_string(CURRENT_BOARD)]
+
+    if tokens[0] == "quietlines":
+        moves = (
+            move
+            for move in board.pseudo_legal_moves(CURRENT_BOARD)
+            if move.is_capture or board.will_check_the_king(CURRENT_BOARD, move)[1]
+        )
+        moves = (
+            move
+            for move in moves
+            if not pruning.is_bad_capture(CURRENT_BOARD, move, with_see=True)
+        )
+        for move in moves:
+            nb = board.push(CURRENT_BOARD, move)
+            quiescence.quiescence(CONFIG, nb, [move], -VALUE_MAX, VALUE_MAX, True)
+
+    if tokens[0] == "quiescence":
+        if CURRENT_PROCESS is not None:
+            CURRENT_PROCESS.terminate()
+
+        process = multiprocessing.Process(
+            target=quiescence.quiescence,
+            args=(CONFIG, CURRENT_BOARD, [], -VALUE_MAX, VALUE_MAX, True),
+            daemon=False,
+        )
+        process.start()
+        CURRENT_PROCESS = process
+
+    if tokens[0] == "quietmoves":
+        moves = (
+            move
+            for move in board.pseudo_legal_moves(CURRENT_BOARD)
+            if move.is_capture or board.will_check_the_king(CURRENT_BOARD, move)[1]
+        )
+        moves = (
+            move
+            for move in moves
+            if not pruning.is_bad_capture(CURRENT_BOARD, move, with_see=True)
+        )
+        return [", ".join([to_uci(m) for m in moves])]
 
     if tokens[0] == "pseudomoves":
         return [", ".join([to_uci(m) for m in board.pseudo_legal_moves(CURRENT_BOARD)])]

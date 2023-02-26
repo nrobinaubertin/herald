@@ -14,7 +14,6 @@ class Move:
     is_castle: bool = False
     en_passant: int = -1
     is_king_capture: bool = False
-    is_quiescent: bool = False
 
 
 @dataclass(frozen=True)
@@ -56,7 +55,6 @@ def to_uci(input_move: Move | Iterable[Move]) -> str:
             f"{to_normal_notation(input_move.start)}"
             f"{to_normal_notation(input_move.end)}"
             f"{'q' if is_promotion(input_move) else ''}"
-            f"{'*' if input_move.is_quiescent else ''}"
         )
 
     if isinstance(input_move, Iterable):

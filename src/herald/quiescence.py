@@ -1,8 +1,8 @@
 from . import board, pruning
 from .board import Board
 from .configuration import Config
-from .constants import COLOR, VALUE_MAX
-from .data_structures import Move, Node
+from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX
+from .data_structures import Move, Node, to_uci
 
 
 def quiescence(
@@ -11,6 +11,7 @@ def quiescence(
     pv: list[Move],
     alpha: int,
     beta: int,
+    debug: bool = False,
 ) -> Node:
     node = _search(
         config,
@@ -19,7 +20,11 @@ def quiescence(
         pv,
         alpha,
         beta,
+        2,
     )
+
+    if debug:
+        print([node.value] + [to_uci(m) for m in node.pv])
 
     return Node(
         value=node.value,
@@ -38,6 +43,7 @@ def _search(
     pv: list[Move],
     alpha: int,
     beta: int,
+    check_quota: int,
 ) -> Node:
     assert depth >= 0, depth
 
@@ -72,41 +78,59 @@ def _search(
                 if node.lower < node.value < node.upper:
                     return node
 
-    # stand_pat evaluation to check if we stop QS
-    stand_pat: int = config.eval_fn(b)
-    if b.turn == COLOR.WHITE:
-        if stand_pat >= beta:
-            return Node(
-                value=beta,
-                depth=0,
-                pv=pv,
-                lower=alpha,
-                upper=beta,
-                children=1,
-            )
-        alpha = max(alpha, stand_pat)
-    else:
-        if stand_pat <= alpha:
-            return Node(
-                value=alpha,
-                depth=0,
-                pv=pv,
-                lower=alpha,
-                upper=beta,
-                children=1,
-            )
-        beta = min(beta, stand_pat)
-
     # count the number of children (direct and non direct)
     # for info purposes
     children = 1
 
     best = None
-    moves = board.pseudo_legal_moves(b, True)
+    we_are_in_check = board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn)
 
-    for move in moves:
-        if pruning.is_bad_capture(b, move, with_see=True):
-            continue
+    if not we_are_in_check:
+        # stand_pat evaluation to check if we stop QS
+        stand_pat: int = config.eval_fn(b)
+        if b.turn == COLOR.WHITE:
+            if stand_pat >= beta:
+                return Node(
+                    value=beta,
+                    depth=0,
+                    pv=pv,
+                    lower=alpha,
+                    upper=beta,
+                    children=1,
+                )
+            alpha = max(alpha, stand_pat)
+        else:
+            if stand_pat <= alpha:
+                return Node(
+                    value=alpha,
+                    depth=0,
+                    pv=pv,
+                    lower=alpha,
+                    upper=beta,
+                    children=1,
+                )
+            beta = min(beta, stand_pat)
+
+    for move in board.pseudo_legal_moves(b):
+        if check_quota > 0:
+            nb, will_check_the_king = board.will_check_the_king(b, move)
+            if not we_are_in_check:
+                if not will_check_the_king:
+                    if pruning.is_bad_capture(b, move, with_see=True):
+                        continue
+                    if not move.is_capture:
+                        continue
+                else:
+                    if check_quota < 1:
+                        continue
+                    check_quota -= 1
+        else:
+            nb = board.push(b, move)
+            if not we_are_in_check:
+                if pruning.is_bad_capture(b, move, with_see=True):
+                    continue
+                if not move.is_capture:
+                    continue
 
         curr_pv = pv.copy()
         curr_pv.append(move)
@@ -122,8 +146,6 @@ def _search(
                 children=children,
             )
 
-        nb = board.push(b, move)
-
         # if the king is in check after we move
         # then it's a bad move (we will lose the game)
         if board.king_is_in_check(nb, nb.invturn):
@@ -136,12 +158,13 @@ def _search(
             curr_pv,
             alpha,
             beta,
+            check_quota,
         )
 
         children += node.children
 
         if b.turn == COLOR.WHITE:
-            if node.value >= alpha:
+            if node.value >= alpha or we_are_in_check:
                 if best is None or node.value > best.value:
                     best = Node(
                         value=node.value,
@@ -155,7 +178,7 @@ def _search(
                 if node.value >= beta:
                     break
         else:
-            if node.value <= beta:
+            if node.value <= beta or we_are_in_check:
                 if best is None or node.value < best.value:
                     best = Node(
                         value=node.value,
@@ -178,14 +201,24 @@ def _search(
         )
     else:
         # this happens when no quiescent move is available
-        value = config.eval_fn(b)
-        return Node(
-            value=value,
-            depth=0,
-            pv=pv,
-            lower=alpha,
-            upper=beta,
-            children=children,
-        )
+        if board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn):
+            node = Node(
+                depth=depth,
+                value=VALUE_MAX * COLOR_DIRECTION[b.turn] * -1,
+                pv=pv,
+                lower=alpha,
+                upper=beta,
+                children=children,
+            )
+        else:
+            value = config.eval_fn(b)
+            return Node(
+                value=value,
+                depth=0,
+                pv=pv,
+                lower=alpha,
+                upper=beta,
+                children=children,
+            )
 
     return node

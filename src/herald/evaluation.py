@@ -199,13 +199,12 @@ def eval_new(b: Board) -> int:
             assert 0 < IS_PIECE[piece] < 7
             assert 0 <= b.pawn_number[color] <= 8
 
-            eval_curr += PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER[IS_PIECE[piece]][b.pawn_number[color]]
-
             if color == COLOR.WHITE:
                 eval_curr += PIECE_SQUARE_TABLE_MAILBOX[IS_PIECE[piece]][square]
             else:
-                eval_curr += PIECE_SQUARE_TABLE_MAILBOX[IS_PIECE[piece]][119 - square]
+                eval_curr -= PIECE_SQUARE_TABLE_MAILBOX[IS_PIECE[piece]][119 - square]
 
+            eval_curr += PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER[IS_PIECE[piece]][b.pawn_number[color]]
             pawn_file: int = x + 10 * color
             opposite_pawn_file: int = x + 10 * (color * -1)
             if IS_PIECE[piece] == PIECE.PAWN:
