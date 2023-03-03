@@ -1,6 +1,6 @@
 from .board import Board
-from .constants import COLOR, PIECE
-from .evaluation import PIECE_VALUE, START_MATERIAL, remaining_material
+from .constants import COLOR
+from .evaluation import remaining_material_percent
 
 
 def target_movetime(
@@ -25,13 +25,8 @@ def target_movetime(
         remaining_time = btime
         time_inc = binc
 
-    # percent of the game by material
-    p = (remaining_material(b) - PIECE_VALUE[PIECE.KING] * 2) / (
-        START_MATERIAL - PIECE_VALUE[PIECE.KING] * 2
-    )
-
     # estimated turns remaining
-    t = 40 * p
+    t = 40 * remaining_material_percent(b.squares)
 
     time = (
         min(

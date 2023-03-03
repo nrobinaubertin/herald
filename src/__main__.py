@@ -15,7 +15,7 @@ CURRENT_PROCESS = None
 
 CONFIG = Config(
     alg_fn=algorithms.alphabeta,
-    move_ordering_fn=move_ordering.fast_mvv_lva,
+    move_ordering_fn=move_ordering.fast_ordering,
     qs_move_ordering_fn=move_ordering.qs_ordering,
     eval_fn=evaluation.eval_new,
     quiescence_search=True,

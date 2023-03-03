@@ -1,4 +1,4 @@
-from . import board, pruning
+from . import board, pruning, move_ordering
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX
@@ -20,7 +20,7 @@ def quiescence(
         pv,
         alpha,
         beta,
-        2,
+        1,
     )
 
     if debug:
@@ -43,7 +43,7 @@ def _search(
     pv: list[Move],
     alpha: int,
     beta: int,
-    check_quota: int,
+    tactical_quota: int,
 ) -> Node:
     assert depth >= 0, depth
 
@@ -59,24 +59,37 @@ def _search(
             children=1,
         )
 
-    if depth < 2 and config.use_transposition_table:
-        # check if we find a hit in the transposition table
-        node = config.transposition_table.get(b, depth)
-        if isinstance(node, Node) and node.depth >= depth:
-            # first we make sure that the retrieved node
-            # is in our alpha-beta range
-            if alpha < node.lower and node.upper < beta:
-                # if this is a cut-node
-                if node.value >= node.upper:
-                    alpha = max(alpha, node.value)
+    # # the qs_tt is not so strict as the main tt
+    # # so that it's faster.
+    # if config.use_transposition_table:
+    #     # check if we find a hit in the transposition table
+    #     node = config.transposition_table.get(b, depth)
+    #     # we don't check for depth in qs search. Everything goes in.
+    #     if isinstance(node, Node):
+    #         # we return the node instantly with bound checking.
+    #         # return node
+    #         return Node(
+    #             value=node.value,
+    #             depth=depth,
+    #             pv=node.pv,
+    #             lower=max(node.lower, alpha),
+    #             upper=min(node.upper, beta),
+    #             children=1,
+    #         )
+    #         # # first we make sure that the retrieved node
+    #         # # is in our alpha-beta range
+    #         # if alpha < node.lower and node.upper < beta:
+    #         #     # if this is a cut-node
+    #         #     if node.value >= node.upper:
+    #         #         alpha = max(alpha, node.value)
 
-                # if this is an all-node
-                if node.value <= node.lower:
-                    beta = min(beta, node.value)
+    #         #     # if this is an all-node
+    #         #     if node.value <= node.lower:
+    #         #         beta = min(beta, node.value)
 
-                # if this is an exact node
-                if node.lower < node.value < node.upper:
-                    return node
+    #         #     # if this is an exact node
+    #         #     if node.lower < node.value < node.upper:
+    #         #         return node
 
     # count the number of children (direct and non direct)
     # for info purposes
@@ -110,27 +123,32 @@ def _search(
                     children=1,
                 )
             beta = min(beta, stand_pat)
+    moves = board.pseudo_legal_moves(b)
 
-    for move in board.pseudo_legal_moves(b):
-        if check_quota > 0:
-            nb, will_check_the_king = board.will_check_the_king(b, move)
-            if not we_are_in_check:
-                if not will_check_the_king:
-                    if pruning.is_bad_capture(b, move, with_see=True):
-                        continue
-                    if not move.is_capture:
-                        continue
-                else:
-                    if check_quota < 1:
-                        continue
-                    check_quota -= 1
-        else:
+    if not we_are_in_check and tactical_quota < 1:
+        moves = (move for move in moves if move.is_capture)
+        moves = move_ordering.qs_ordering(b, moves)
+    else:
+        moves = config.move_ordering_fn(b, moves)
+
+    for move in moves:
+
+        # we allow everything if we are in check
+        # if the move is a good capture, then it's alright anyway
+        if (
+            (move.is_capture and not pruning.is_bad_capture(b, move, with_see=True))
+            or we_are_in_check
+        ):
             nb = board.push(b, move)
-            if not we_are_in_check:
-                if pruning.is_bad_capture(b, move, with_see=True):
-                    continue
-                if not move.is_capture:
-                    continue
+        else:
+            # we need to have some tactical quota left
+            if tactical_quota < 1:
+                continue
+            # the only tactical move allowed for now
+            # are moves that check ennemy king
+            nb, will_check_the_king = board.will_check_the_king(b, move)
+            if not will_check_the_king:
+                continue
 
         curr_pv = pv.copy()
         curr_pv.append(move)
@@ -158,7 +176,8 @@ def _search(
             curr_pv,
             alpha,
             beta,
-            check_quota,
+            # if we were in check or if it's a capture, then we don't reduce our tactical quota
+            tactical_quota if move.is_capture or we_are_in_check else tactical_quota - 1,
         )
 
         children += node.children
@@ -191,6 +210,11 @@ def _search(
                 beta = min(beta, node.value)
                 if node.value <= alpha:
                     break
+
+    # if config.use_qs_transposition_table:
+    #     # Save the resulting best node in the transposition table
+    #     if best is not None:
+    #         config.qs_transposition_table[b] = best
 
     if best is not None:
         node = Node(
