@@ -187,7 +187,7 @@ def alphabeta(
                 break
 
         # print our intermediary result
-        if best is not None and depth == max_depth and has_changed:
+        if max_depth != 0 and best is not None and depth == max_depth and has_changed:
             print(to_string(best))
 
     if config.use_transposition_table:

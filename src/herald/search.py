@@ -24,6 +24,7 @@ def search(
     depth: int,
     config: Config,
     last_search: Search | None = None,
+    silent: bool = False,
 ) -> Search | None:
     start_time = time.time_ns()
 
@@ -76,7 +77,7 @@ def search(
             True,
             lower,
             upper,
-            depth,
+            depth if not silent else 0,
         )
         children += node.children + 1
         # if no best move was found

@@ -95,7 +95,7 @@ def _search(
             beta = min(beta, stand_pat)
     moves = board.pseudo_legal_moves(b)
 
-    if not we_are_in_check and (tactical_quota < 1 or depth > 5):
+    if not we_are_in_check and (tactical_quota < 1 or depth > 4):
         moves = move_ordering.capture_ordering(b, moves)
     else:
         moves = config.move_ordering_fn(b, moves)
@@ -111,7 +111,7 @@ def _search(
             pass
         else:
             # we need to have some tactical quota left
-            if tactical_quota < 1 or depth > 5:
+            if tactical_quota < 1 or depth > 4:
                 continue
             # the only tactical move allowed for now
             # are moves that check ennemy king
