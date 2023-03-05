@@ -51,7 +51,7 @@ def itdep(
     print_uci: bool = True,
 ) -> Optional[Search]:
     # clear transposition table at each new search
-    # there seems to be collision issues that I don't have time to handle now
+    # there seems to be collision/memory issues that I don't have time to handle now
     if config.use_transposition_table:
         config.transposition_table.clear()
         config.move_tt.clear()
@@ -96,8 +96,8 @@ def itdep(
                 if isinstance(current_search, Search):
                     last_search = current_search
 
-                    if print_uci:
-                        print(to_string(last_search))
+                    # if print_uci:
+                    #     print(to_string(last_search))
 
                     # bail out if the search tells us to stop
                     if last_search.stop_search:
@@ -147,8 +147,8 @@ def itdep(
                 print("bestmove nomove")
             return None
 
-        if print_uci:
-            print(to_string(current_search))
+        # if print_uci:
+        #     print(to_string(current_search))
 
         last_search = current_search
         if current_search.stop_search:

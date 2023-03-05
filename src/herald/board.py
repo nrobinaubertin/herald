@@ -36,6 +36,9 @@ class Board:
     king_squares: tuple
     invturn: COLOR
 
+    def __hash__(self):
+        return hash((self.squares, self.turn, self.castling_rights))
+
 
 def to_fen(b: Board) -> str:
     rep = ""
@@ -440,11 +443,32 @@ def is_square_attacked(squares: tuple, square: int, color: COLOR) -> bool:
     return False
 
 
-def will_check_the_king(b: Board, move: Move) -> tuple[Board, bool]:
+def will_check_the_king(b: Board, move: Move) -> bool:
+    ks = b.king_squares[b.invturn]
+
+    # rapid check before full verification
+    if (
+        move.start // 10 != ks // 10
+        and move.end // 10 != ks // 10
+        and move.start % 10 != ks % 10
+        and move.end % 10 != ks % 10
+        and (move.start - ks) % 11 != 0
+        and (move.end - ks) % 11 != 0
+        and move.moving_piece != PIECE.KNIGHT
+    ):
+        return False
+
+    # if we pass the rapid check as a knight, we can avoid the push()
+    if move.moving_piece == PIECE.KNIGHT:
+        if move.end not in (21 + ks, 12 + ks, -8 + ks, -19 + ks, -21 + ks, -12 + ks, 8 + ks, 19 + ks):
+            return False
+        else:
+            return True
+
     b2 = push(b, move)
-    if is_square_attacked(b2.squares, b2.king_squares[b2.turn], b2.invturn):
-        return (b2, True)
-    return (b2, False)
+    if is_square_attacked(b2.squares, ks, b2.invturn):
+        return True
+    return False
 
 
 def king_is_in_check(b: Board, color: COLOR) -> bool:
@@ -457,7 +481,7 @@ def _knight_moves(
     b: Board,
     start: int,
 ) -> Iterable[Move]:
-    for depl in [21, 12, -8, -19, -21, -12, 8, 19]:
+    for depl in (21, 12, -8, -19, -21, -12, 8, 19):
         end = start + depl
         is_capture = bool(b.squares[end]) or end in b.king_en_passant
         is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
@@ -478,7 +502,7 @@ def _rook_moves(
     b: Board,
     start: int,
 ) -> Iterable[Move]:
-    for direction in [1, -1, 10, -10]:
+    for direction in (10, -10, 1, -1):
         for x in range(1, 8):
             end = start + x * direction
             is_capture = bool(b.squares[end]) or end in b.king_en_passant
@@ -540,7 +564,7 @@ def _bishop_moves(
     b: Board,
     start: int,
 ) -> Iterable[Move]:
-    for direction in [11, -11, 9, -9]:
+    for direction in (11, -11, 9, -9):
         for x in range(1, 8):
             end = start + x * direction
             is_capture = bool(b.squares[end]) or end in b.king_en_passant
@@ -566,7 +590,7 @@ def _queen_moves(
     b: Board,
     start: int,
 ) -> Iterable[Move]:
-    for direction in [11, -11, 9, -9, 1, -1, 10, -10]:
+    for direction in (11, -11, 9, -9, 10, -10, 1, -1):
         for x in range(1, 8):
             end = start + x * direction
             is_capture = bool(b.squares[end]) or end in b.king_en_passant
@@ -592,7 +616,7 @@ def _king_moves(
     b: Board,
     start: int,
 ) -> Iterable[Move]:
-    for depl in [11, -11, 9, -9, 1, -1, 10, -10]:
+    for depl in (11, -11, 9, -9, 1, -1, 10, -10):
         end = start + depl
         is_capture = bool(b.squares[end]) or end in b.king_en_passant
         is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
@@ -613,13 +637,20 @@ def _pawn_moves(
     b: Board,
     start: int,
 ) -> Iterable[Move]:
-    depls = [(10 if b.turn == COLOR.BLACK else -10)]
-    if start // 10 == (3 if b.turn == COLOR.BLACK else 8):
-        depls.append((20 if b.turn == COLOR.BLACK else -20))
+    if b.turn == COLOR.BLACK:
+        if start < 40:
+            depls = (10, 20)
+        else:
+            depls = (10,)
+    else:
+        if start > 79:
+            depls = (-10, -20)
+        else:
+            depls = (-10,)
     for depl in depls:
         end = start + depl
         if b.squares[end] == PIECE.EMPTY:
-            if abs(depl) == 20:
+            if depl in (-20, 20):
                 en_passant = start + depls[0]
             else:
                 en_passant = -1
@@ -636,7 +667,7 @@ def _pawn_moves(
         else:
             # do not allow 2 squares move if there's a piece in the way
             break
-    for depl in [9, 11] if b.turn == COLOR.BLACK else [-9, -11]:
+    for depl in (9, 11) if b.turn == COLOR.BLACK else (-9, -11):
         end = start + depl
         if (
             (
@@ -666,7 +697,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
     is_king_capture = IS_PIECE[b.squares[target]] == PIECE.KING
 
     # PAWN
-    for depl in [9, 11] if b.turn == COLOR.WHITE else [-9, -11]:
+    for depl in (9, 11) if b.turn == COLOR.WHITE else (-9, -11):
         start = target + depl
         if IS_PIECE[b.squares[start]] == PIECE.PAWN and get_color(b.squares[start]) == b.turn:
             yield Move(
@@ -681,7 +712,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
             )
 
     # KNIGHT
-    for depl in [21, 12, -8, -19, -21, -12, 8, 19]:
+    for depl in (21, 12, -8, -19, -21, -12, 8, 19):
         start = target + depl
         if IS_PIECE[b.squares[start]] == PIECE.KNIGHT and get_color(b.squares[start]) == b.turn:
             yield Move(
@@ -696,7 +727,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
             )
 
     # BISHOP
-    for direction in [11, -11, 9, -9]:
+    for direction in (11, -11, 9, -9):
         for x in range(1, 8):
             start = target + x * direction
 
@@ -717,7 +748,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
                 break
 
     # ROOK
-    for direction in [1, -1, 10, -10]:
+    for direction in (1, -1, 10, -10):
         for x in range(1, 8):
             start = target + x * direction
 
@@ -737,29 +768,8 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
             if b.squares[start] != PIECE.EMPTY:
                 break
 
-    # QUEEN (DIAGONALS)
-    for direction in [11, -11, 9, -9]:
-        for x in range(1, 8):
-            start = target + x * direction
-
-            if (IS_PIECE[b.squares[start]] == PIECE.QUEEN) and get_color(
-                b.squares[start]
-            ) == b.turn:
-                yield Move(
-                    start=start,
-                    end=target,
-                    moving_piece=PIECE.QUEEN,
-                    captured_piece=IS_PIECE[b.squares[target]],
-                    is_capture=True,
-                    is_castle=False,
-                    en_passant=-1,
-                    is_king_capture=is_king_capture,
-                )
-            if b.squares[start] != PIECE.EMPTY:
-                break
-
-    # QUEEN (VERTICAL + HORIZONTAL)
-    for direction in [1, -1, 10, -10]:
+    # QUEEN
+    for direction in (11, -11, 9, -9, 10, -10, 1, -1):
         for x in range(1, 8):
             start = target + x * direction
 
@@ -780,7 +790,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
                 break
 
     # KING
-    for depl in [11, -11, 9, -9, 1, -1, 10, -10]:
+    for depl in (11, -11, 9, -9, 1, -1, 10, -10):
         start = target + depl
         if IS_PIECE[b.squares[start]] == PIECE.KING and get_color(b.squares[start]) == b.turn:
             yield Move(

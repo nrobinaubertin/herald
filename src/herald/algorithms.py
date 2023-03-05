@@ -3,11 +3,11 @@
 import itertools
 from typing import Callable, Iterable, Optional
 
-from . import board
+from . import board, evaluation
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX
-from .data_structures import Move, Node
+from .data_structures import Move, Node, to_uci
 
 Alg_fn = Callable[
     [
@@ -23,6 +23,16 @@ Alg_fn = Callable[
 ]
 
 
+def to_string(node: Node) -> str:
+    return (
+        ""
+        + f"info depth {node.depth} "
+        + f"score cp {node.value} "
+        + f"nodes {node.children} "
+        + f"pv {' '.join([to_uci(x) for x in node.pv])}"
+    )
+
+
 # alphabeta pruning (fail-soft)
 # with optional move ordering and transposition table
 def alphabeta(
@@ -33,6 +43,7 @@ def alphabeta(
     gen_legal_moves: bool = False,
     alpha: int = -VALUE_MAX,
     beta: int = VALUE_MAX,
+    max_depth: int = 0,
 ) -> Node:
     if config.use_transposition_table and len(pv) > 0:
         # check if we find a hit in the transposition table
@@ -76,7 +87,7 @@ def alphabeta(
                 # display quiescent nodes
                 pv = node.pv  # type: ignore
         else:
-            value = config.eval_fn(b)
+            value = evaluation.eval_fast(b.squares)
 
         return Node(
             value=value,
@@ -138,12 +149,15 @@ def alphabeta(
             False,
             alpha,
             beta,
+            max_depth,
         )
 
         children += node.children
 
+        has_changed: bool = False
         if b.turn == COLOR.WHITE:
             if best is None or node.value > best.value:
+                has_changed = True
                 best_move = move
                 best = Node(
                     value=node.value,
@@ -158,6 +172,7 @@ def alphabeta(
                 break
         else:
             if best is None or node.value < best.value:
+                has_changed = True
                 best_move = move
                 best = Node(
                     value=node.value,
@@ -170,6 +185,10 @@ def alphabeta(
             beta = min(beta, node.value)
             if node.value <= alpha:
                 break
+
+        # print our intermediary result
+        if best is not None and depth == max_depth and has_changed:
+            print(to_string(best))
 
     if config.use_transposition_table:
         # Save the resulting best node in the transposition table
@@ -228,7 +247,7 @@ def minimax(
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=config.eval_fn(b),
+            value=evaluation.eval_fast(b.squares),
             depth=0,
             pv=pv,
             children=1,

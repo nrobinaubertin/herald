@@ -1,8 +1,5 @@
 from functools import cache
-from typing import Callable
-
-from .board import Board
-from .constants import COLOR, COLOR_DIRECTION, IS_PIECE, PIECE, get_color
+from .constants import COLOR, IS_PIECE, PIECE, get_color
 
 PIECE_VALUE = {
     PIECE.EMPTY: 0,
@@ -106,14 +103,14 @@ PIECE_SQUARE_TABLE = [
             0, 0, 0, 0, 0, 0, 0, 0,
         ),
         PIECE.KNIGHT: (
-            -66, -53, -75, -75, -10, -55, -58, -70,
-            -3, -6, 100, -36, 4, 62, -4, -14,
-            10, 67, 1, 74, 73, 27, 62, -2,
-            24, 24, 45, 37, 33, 41, 25, 17,
-            -1, 5, 31, 21, 22, 35, 2, 0,
-            -18, 10, 13, 22, 18, 15, 11, -14,
-            -23, -15, 2, 0, 2, 0, -23, -20,
-            -74, -23, -26, -24, -19, -35, -22, -69,
+            -50, 0, 0, 0, 0, 0, 0, -50,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 10, 10, 10, 10, 0, 0,
+            0, 0, 10, 10, 10, 10, 0, 0,
+            0, 0, 10, 10, 10, 10, 0, 0,
+            0, 0, 10, 10, 10, 10, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            -50, 0, 0, 0, 0, 0, 0, -50,
         ),
         PIECE.BISHOP: (
             -50, 0, 0, 0, 0, 0, 0, -50,
@@ -177,13 +174,6 @@ for table in PIECE_SQUARE_TABLE:
         new_piece_table[piece] = new_table
     PIECE_SQUARE_TABLE_MAILBOX.append(new_piece_table)
 
-Eval_fn = Callable[
-    [
-        Board,
-    ],
-    int,
-]
-
 
 @cache
 def remaining_material(squares: tuple[int]) -> int:
@@ -206,114 +196,31 @@ def remaining_material_percent(squares: tuple[int]) -> float:
     )
 
 
-# only material
-def eval_simple(b: Board) -> int:
-    evaluation = 0
-    for i in range(8):
-        for j in range(8):
-            square = (2 + j) * 10 + (i + 1)
-            piece = b.squares[square]
-            if piece == PIECE.EMPTY:
-                continue
-            assert 0 < IS_PIECE[piece] < 7
-            if get_color(piece) == COLOR.WHITE:
-                evaluation += PIECE_VALUE[IS_PIECE[piece]]
-            else:
-                evaluation -= PIECE_VALUE[IS_PIECE[piece]]
-    return evaluation
-
-
-# adjustments of piece value based on the number of own pawns
-# fmt: off
-PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER = {
-    PIECE.EMPTY: (0, 0, 0, 0, 0, 0, 0, 0, 0),
-    PIECE.PAWN: (0, 0, 0, 0, 0, 0, 0, 0, 0),
-    PIECE.KNIGHT: (-20, -16, -12, -8, -4, 0, 4, 8, 12),
-    PIECE.BISHOP: (0, 0, 0, 0, 0, 0, 0, 0, 0),
-    PIECE.ROOK: (15, 12, 9, 6, 3, 0, -3, -6, -9),
-    PIECE.QUEEN: (0, 0, 0, 0, 0, 0, 0, 0, 0),
-    PIECE.KING: (0, 0, 0, 0, 0, 0, 0, 0, 0),
-}
-# fmt: on
-
-DOUBLED_PAWN_PENALTY = -20
-
-# Bonus for rook on semiopen/open file
-ROOK_ON_FILE = [21, 26]
-
-# PassedRank[Rank] contains a bonus according to the rank of a passed pawn
-PASSED_RANK = [0, 0, 0, 0, 10, 17, 15, 62, 168, 276, 0, 0]
-
-
-def eval_new(b: Board) -> int:
+@cache
+def eval_fast(squares: tuple[int]) -> int:
     evaluation = 0
 
     for i in range(8):
         for j in range(8):
             square = (2 + j) * 10 + (i + 1)
-            piece = b.squares[square]
+            piece = squares[square]
             if piece == PIECE.EMPTY:
                 continue
-            x = i + 1
-            y = 2 + j
             color = get_color(piece)
 
-            eval_curr = 0
-            eval_curr += PIECE_VALUE[IS_PIECE[piece]]
-
             assert 0 < IS_PIECE[piece] < 7
-            assert 0 <= b.pawn_number[color] <= 8
 
             if color == COLOR.WHITE:
-                eval_curr += int(
-                    PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][square] * remaining_material_percent(b.squares)
-                    + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][square] * (1 - remaining_material_percent(b.squares))
+                evaluation += PIECE_VALUE[IS_PIECE[piece]]
+                evaluation += int(
+                    PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][square] * remaining_material_percent(squares)
+                    + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][square] * (1 - remaining_material_percent(squares))
                 )
             else:
-                eval_curr += int(
-                    PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][119 - square] * remaining_material_percent(b.squares)
-                    + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][119 - square] * (1 - remaining_material_percent(b.squares))
+                invsquare = (9 - j) * 10 + (i + 1)
+                evaluation -= PIECE_VALUE[IS_PIECE[piece]]
+                evaluation -= int(
+                    PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][invsquare] * remaining_material_percent(squares)
+                    + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][invsquare] * (1 - remaining_material_percent(squares))
                 )
-
-            eval_curr += PIECE_ADJUSTEMENTS_OWN_PAWN_NUMBER[IS_PIECE[piece]][b.pawn_number[color]]
-            pawn_file: int = x + 10 * color
-            opposite_pawn_file: int = x + 10 * (color * -1)
-            if IS_PIECE[piece] == PIECE.PAWN:
-                if b.pawn_in_file[pawn_file] > 0:
-                    eval_curr += DOUBLED_PAWN_PENALTY
-                    if b.pawn_in_file[pawn_file] > 1:
-                        eval_curr += DOUBLED_PAWN_PENALTY
-                else:
-                    if (
-                        b.pawn_in_file[opposite_pawn_file + 1] == 0
-                        and b.pawn_in_file[opposite_pawn_file - 1] == 0
-                    ):
-                        # bonus for passed pawn
-                        if color == COLOR.WHITE:
-                            eval_curr += PASSED_RANK[11 - y]
-                        else:
-                            eval_curr += PASSED_RANK[y]
-            if IS_PIECE[piece] == PIECE.ROOK:
-                if b.pawn_in_file[pawn_file] == 0:
-                    eval_curr += ROOK_ON_FILE[0]
-                    if b.pawn_in_file[opposite_pawn_file] == 0:
-                        eval_curr += ROOK_ON_FILE[1]
-            if IS_PIECE[piece] == PIECE.KING:
-                # we like having pawns in front of our king
-                for depl in [
-                    -10 * COLOR_DIRECTION[color],
-                    -10 * COLOR_DIRECTION[color] + 1,
-                    -10 * COLOR_DIRECTION[color] - 1,
-                ]:
-                    if (
-                        IS_PIECE[b.squares[square + depl]] == PIECE.PAWN
-                        and b.squares[square + depl] * color > 0
-                    ):
-                        eval_curr += 20
-
-            if color == COLOR.WHITE:
-                evaluation += eval_curr
-            else:
-                evaluation -= eval_curr
-
     return evaluation

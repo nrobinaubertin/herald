@@ -3,6 +3,7 @@ from random import shuffle
 from typing import Callable, Iterable, List
 
 from .board import Board
+from .constants import PIECE
 from .data_structures import Move
 
 Move_ordering_fn = Callable[
@@ -14,7 +15,7 @@ Move_ordering_fn = Callable[
 ]
 
 
-def qs_ordering(
+def capture_ordering(
     _: Board,
     moves: Iterable[Move],
 ) -> Iterable[Move]:
@@ -24,6 +25,11 @@ def qs_ordering(
     mem4: Move | None = None
 
     for m in moves:
+        # promotions are highly valued
+        if m.moving_piece == PIECE.PAWN and (m.end < 30 or m.end > 90):
+            yield m
+        if not m.is_capture:
+            continue
         if m.is_king_capture:
             yield m
         if m.captured_piece > 3:
@@ -71,15 +77,13 @@ def fast_ordering(
     mem_list: list[Move] | None = None
 
     for m in moves:
-        if m.is_king_capture or m.is_castle:
+        # promotions are highly valued
+        if m.moving_piece == PIECE.PAWN and (m.end < 30 or m.end > 90):
             yield m
-        # if board.will_check_the_king(b, m):
-        #     yield m
+        if m.is_king_capture:
+            yield m
         if m.is_capture:
-            # if m.captured_piece < 2:
-            #     mem.appendleft(m)
-            #     continue
-            if m.captured_piece > 4:
+            if m.captured_piece > 3:
                 yield m
                 continue
             if mem1 is None:
@@ -118,27 +122,6 @@ def fast_ordering(
     if mem_list is not None:
         for m in mem_list:
             yield m
-
-
-def fast_mvv_lva(
-    _: Board,
-    moves: Iterable[Move],
-) -> Iterable[Move]:
-    # priority collections
-    mem: collections.deque[Move] = collections.deque()
-    for m in moves:
-        if m.is_king_capture or m.is_castle:
-            yield m
-        # if board.will_check_the_king(b, m):
-        #     yield m
-        if m.is_capture:
-            if m.captured_piece < 2:
-                mem.appendleft(m)
-                continue
-            yield m
-        mem.append(m)
-    for m in mem:
-        yield m
 
 
 def no_ordering(

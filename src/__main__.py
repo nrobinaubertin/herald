@@ -1,7 +1,7 @@
 import multiprocessing
 import sys
 
-from herald import algorithms, board, evaluation, move_ordering, pruning, quiescence
+from herald import algorithms, board, move_ordering, pruning, quiescence, evaluation
 from herald.board import Board
 from herald.configuration import Config
 from herald.constants import COLOR, VALUE_MAX
@@ -16,8 +16,6 @@ CURRENT_PROCESS = None
 CONFIG = Config(
     alg_fn=algorithms.alphabeta,
     move_ordering_fn=move_ordering.fast_ordering,
-    qs_move_ordering_fn=move_ordering.qs_ordering,
-    eval_fn=evaluation.eval_new,
     quiescence_search=True,
     quiescence_depth=9,
     use_transposition_table=True,
@@ -49,7 +47,7 @@ def uci_parser(line: str) -> list[str]:
         return [f"SEE: {see(CURRENT_BOARD, int(tokens[1]), 0)}"]
 
     if tokens[0] == "eval":
-        return [f"board: {CONFIG.eval_fn(CURRENT_BOARD)}"]
+        return [f"board: {evaluation.eval_fast(CURRENT_BOARD)}"]
 
     if tokens[0] == "print":
         return [board.to_string(CURRENT_BOARD)]
@@ -162,17 +160,21 @@ def uci_parser(line: str) -> list[str]:
         ]
 
     if len(tokens) > 1 and tokens[0] == "position":
-        if tokens[1] == "startpos":
+        next_token = 1
+        if tokens[next_token] == "fen":
+            next_token += 1
+        if tokens[next_token] == "startpos":
             fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-            next_token = 2
+            next_token += 1
         else:
             fen = (
-                f"{tokens[1]} "
-                f"{tokens[2]} {tokens[3]} {tokens[4]} "
-                f"{tokens[5] if len(tokens) > 5 else 0} "
-                f"{tokens[6] if len(tokens) > 6 else 0}"
+                f"{tokens[next_token]} "
+                f"{tokens[next_token + 1]} {tokens[next_token + 2]} {tokens[next_token + 3]} "
+                f"{tokens[next_token + 4] if len(tokens) > next_token + 4 else 0} "
+                f"{tokens[next_token + 5] if len(tokens) > next_token + 5 else 0}"
             )
-            next_token = 7
+            next_token += 6
+        print(fen)
         b = board.from_fen(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
             for move_str in tokens[next_token + 1 :]:

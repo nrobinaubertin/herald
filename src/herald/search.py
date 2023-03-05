@@ -58,8 +58,8 @@ def search(
             )
 
     guess = last_search.score if last_search else 0
-    lower = guess - 50
-    upper = guess + 50
+    lower = guess - 100
+    upper = guess + 100
     iteration = 0
 
     # count the number of children (direct and non direct)
@@ -76,6 +76,7 @@ def search(
             True,
             lower,
             upper,
+            depth,
         )
         children += node.children + 1
         # if no best move was found
