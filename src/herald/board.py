@@ -446,24 +446,48 @@ def is_square_attacked(squares: tuple, square: int, color: COLOR) -> bool:
 def will_check_the_king(b: Board, move: Move) -> bool:
     ks = b.king_squares[b.invturn]
 
-    # rapid check before full verification
-    if (
-        move.start // 10 != ks // 10
-        and move.end // 10 != ks // 10
-        and move.start % 10 != ks % 10
-        and move.end % 10 != ks % 10
-        and (move.start - ks) % 11 != 0
-        and (move.end - ks) % 11 != 0
-        and move.moving_piece != PIECE.KNIGHT
-    ):
-        return False
-
-    # if we pass the rapid check as a knight, we can avoid the push()
+    # if we pass the rapid check as a knight, we can avoid the rest
     if move.moving_piece == PIECE.KNIGHT:
-        if move.end not in (21 + ks, 12 + ks, -8 + ks, -19 + ks, -21 + ks, -12 + ks, 8 + ks, 19 + ks):
+        if move.end not in (
+            21 + ks,
+            12 + ks,
+            -8 + ks,
+            -19 + ks,
+            -21 + ks,
+            -12 + ks,
+            8 + ks,
+            19 + ks,
+        ):
             return False
         else:
             return True
+
+    # rapid check before full verification
+    # TODO: this fails for promotions with check
+    if (
+        (
+            # check if piece could not be hiding another
+            move.start // 10 != ks // 10
+            and move.start % 10 != ks % 10
+            and (move.start - ks) % 11 != 0
+            and (move.start - ks) % 9 != 0
+        )
+        and (
+            # check if piece is ROOK-like
+            # and does not end in the same line or column
+            (move.moving_piece == PIECE.ROOK or move.moving_piece == PIECE.QUEEN)
+            and move.end // 10 != ks // 10
+            and move.end % 10 != ks % 10
+        )
+        and (
+            # check if piece is BISHOP-like
+            # and does not end in the same diagonal
+            (move.moving_piece == PIECE.BISHOP or move.moving_piece == PIECE.QUEEN)
+            and (move.end - ks) % 11 != 0
+            and (move.end - ks) % 9 != 0
+        )
+    ):
+        return False
 
     b2 = push(b, move)
     if is_square_attacked(b2.squares, ks, b2.invturn):
@@ -731,9 +755,10 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
         for x in range(1, 8):
             start = target + x * direction
 
-            if (IS_PIECE[b.squares[start]] == PIECE.BISHOP) and get_color(
-                b.squares[start]
-            ) == b.turn:
+            if (
+                IS_PIECE[b.squares[start]] == PIECE.BISHOP
+                and get_color(b.squares[start]) == b.turn
+            ):
                 yield Move(
                     start=start,
                     end=target,
@@ -752,9 +777,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
         for x in range(1, 8):
             start = target + x * direction
 
-            if (IS_PIECE[b.squares[start]] == PIECE.ROOK) and get_color(
-                b.squares[start]
-            ) == b.turn:
+            if IS_PIECE[b.squares[start]] == PIECE.ROOK and get_color(b.squares[start]) == b.turn:
                 yield Move(
                     start=start,
                     end=target,
@@ -773,9 +796,7 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
         for x in range(1, 8):
             start = target + x * direction
 
-            if (IS_PIECE[b.squares[start]] == PIECE.QUEEN) and get_color(
-                b.squares[start]
-            ) == b.turn:
+            if IS_PIECE[b.squares[start]] == PIECE.QUEEN and get_color(b.squares[start]) == b.turn:
                 yield Move(
                     start=start,
                     end=target,
@@ -808,26 +829,131 @@ def capture_moves(b: Board, target: int) -> Iterable[Move]:
 def pseudo_legal_moves(
     b: Board,
 ) -> Iterable[Move]:
-    for start, piece in enumerate(b.squares[20:100]):
-        if piece == PIECE.INVALID or get_color(piece) != b.turn:
-            continue
-        start = start + 20
-        piece_type = IS_PIECE[piece]
-        if piece_type == PIECE.PAWN:
-            for move in _pawn_moves(b, start):
-                yield move
-        if piece_type == PIECE.KNIGHT:
-            for move in _knight_moves(b, start):
-                yield move
-        if piece_type == PIECE.BISHOP:
-            for move in _bishop_moves(b, start):
-                yield move
-        if piece_type == PIECE.ROOK:
-            for move in _rook_moves(b, start):
-                yield move
-        if piece_type == PIECE.QUEEN:
-            for move in _queen_moves(b, start):
-                yield move
-        if piece_type == PIECE.KING:
-            for move in _king_moves(b, start):
-                yield move
+    for i in range(8):
+        for j in range(8):
+            start = (2 + j) * 10 + (i + 1)
+            piece = b.squares[start]
+            if get_color(piece) != b.turn:
+                continue
+            piece_type = IS_PIECE[piece]
+            if piece_type == PIECE.PAWN:
+                yield from _pawn_moves(b, start)
+                continue
+            if piece_type == PIECE.KNIGHT:
+                yield from _knight_moves(b, start)
+                continue
+            if piece_type == PIECE.BISHOP:
+                yield from _bishop_moves(b, start)
+                continue
+            if piece_type == PIECE.ROOK:
+                yield from _rook_moves(b, start)
+                continue
+            if piece_type == PIECE.QUEEN:
+                yield from _queen_moves(b, start)
+                continue
+            if piece_type == PIECE.KING:
+                yield from _king_moves(b, start)
+                continue
+
+
+# Should return capture moves in MVV-LVA order
+# Should end with check moves (and promotions ?)
+def tactical_moves(
+    b: Board,
+) -> Iterable[Move]:
+    """
+    First we generate capture moves.
+    These capture moves should be generated in a manner
+    that respects MVV-LVA (so that we don't have to do some move ordering later).
+
+    First we need to have the position of ennemy pieces.
+    We don't store the position of the enemy queens since their captures are
+    evaluated immediately (this saves a list generation
+    """
+
+    piece_pawn = []
+    piece_knight = []
+    piece_bishop = []
+    piece_rook = []
+
+    for i in range(8):
+        for j in range(8):
+            square = (2 + j) * 10 + (i + 1)
+            piece = b.squares[square]
+            color = get_color(piece)
+            if color != b.invturn:
+                continue
+            if b.turn == COLOR.BLACK:
+                if b.squares[square + 9] == IS_PVALUE[(COLOR.WHITE, PIECE.PAWN)]:
+                    continue
+                if b.squares[square + 11] == IS_PVALUE[(COLOR.WHITE, PIECE.PAWN)]:
+                    continue
+            if b.turn == COLOR.WHITE:
+                if b.squares[square - 9] == IS_PVALUE[(COLOR.BLACK, PIECE.PAWN)]:
+                    continue
+                if b.squares[square - 11] == IS_PVALUE[(COLOR.BLACK, PIECE.PAWN)]:
+                    continue
+            if IS_PIECE[piece] == PIECE.PAWN:
+                piece_pawn.append(square)
+                continue
+            if IS_PIECE[piece] == PIECE.KNIGHT:
+                piece_knight.append(square)
+                continue
+            if IS_PIECE[piece] == PIECE.BISHOP:
+                piece_bishop.append(square)
+                continue
+            if IS_PIECE[piece] == PIECE.ROOK:
+                piece_rook.append(square)
+                continue
+            if IS_PIECE[piece] == PIECE.QUEEN:
+                yield from capture_moves(b, square)
+                continue
+
+    """
+    We assume that we cannot take the enemy king.
+    The captures against the enemy queens were already yielded.
+    So we start by yielding captures against the enemy rooks, and then bishop...
+    """
+    for square in piece_rook:
+        yield from capture_moves(b, square)
+    for square in piece_bishop:
+        yield from capture_moves(b, square)
+    for square in piece_knight:
+        yield from capture_moves(b, square)
+    for square in piece_pawn:
+        yield from capture_moves(b, square)
+
+    """
+    Once all capture moves are generated, we can try checks.
+    """
+
+    # We don't do that for now, it's too slow
+
+    # for i in range(8):
+    #     for j in range(8):
+    #         start = (2 + j) * 10 + (i + 1)
+    #         piece = b.squares[start]
+    #         if get_color(piece) != b.turn:
+    #             continue
+    #         piece_type = IS_PIECE[piece]
+    #         # if piece_type == PIECE.PAWN:
+    #         #     yield from _pawn_moves(b, start)
+    #         #     continue
+    #         if piece_type == PIECE.KNIGHT:
+    #             for move in _knight_moves(b, start):
+    #                 if will_check_the_king(b, move):
+    #                     yield move
+    #             continue
+    #         if piece_type == PIECE.BISHOP:
+    #             for move in _bishop_moves(b, start):
+    #                 if will_check_the_king(b, move):
+    #                     yield move
+    #             continue
+    #         if piece_type == PIECE.ROOK:
+    #             for move in _rook_moves(b, start):
+    #                 if will_check_the_king(b, move):
+    #                     yield move
+    #             continue
+    #         # if piece_type == PIECE.QUEEN:
+    #         #     yield from _queen_moves(b, start)
+    #         #     continue

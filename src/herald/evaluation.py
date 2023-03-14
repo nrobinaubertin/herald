@@ -1,4 +1,5 @@
 from functools import cache
+
 from .constants import COLOR, IS_PIECE, PIECE, get_color
 
 PIECE_VALUE = {
@@ -213,18 +214,22 @@ def eval_fast(squares: tuple[int]) -> int:
             if color == COLOR.WHITE:
                 evaluation += PIECE_VALUE[IS_PIECE[piece]]
                 evaluation += int(
-                    PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][square] * remaining_material_percent(squares)
-                    + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][square] * (1 - remaining_material_percent(squares))
+                    PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][square]
+                    * remaining_material_percent(squares)
+                    + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][square]
+                    * (1 - remaining_material_percent(squares))
                 )
             else:
-                # invsquare = (9 - j) * 10 + (i + 1)
+                invsquare = (9 - j) * 10 + (i + 1)
                 evaluation -= PIECE_VALUE[IS_PIECE[piece]]
-                evaluation -= int(
-                    PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][119 - square] * remaining_material_percent(squares)
-                    + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][119 - square] * (1 - remaining_material_percent(squares))
-                )
                 # evaluation -= int(
-                #     PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][invsquare] * remaining_material_percent(squares)
-                #     + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][invsquare] * (1 - remaining_material_percent(squares))
+                #     PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][119 - square] * remaining_material_percent(squares)
+                #     + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][119 - square] * (1 - remaining_material_percent(squares))
                 # )
+                evaluation -= int(
+                    PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][invsquare]
+                    * remaining_material_percent(squares)
+                    + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][invsquare]
+                    * (1 - remaining_material_percent(squares))
+                )
     return evaluation

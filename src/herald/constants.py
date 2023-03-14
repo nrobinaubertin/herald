@@ -1,5 +1,5 @@
-from functools import cache
 from enum import IntEnum
+from functools import cache
 
 
 class CASTLE(IntEnum):

@@ -1,7 +1,7 @@
 import multiprocessing
 import sys
 
-from herald import algorithms, board, move_ordering, pruning, quiescence, evaluation
+from herald import algorithms, board, evaluation, move_ordering, pruning, quiescence
 from herald.board import Board
 from herald.configuration import Config
 from herald.constants import COLOR, VALUE_MAX
@@ -53,16 +53,8 @@ def uci_parser(line: str) -> list[str]:
         return [board.to_string(CURRENT_BOARD)]
 
     if tokens[0] == "quietlines":
-        moves = (
-            move
-            for move in board.pseudo_legal_moves(CURRENT_BOARD)
-            if move.is_capture or board.will_check_the_king(CURRENT_BOARD, move)[1]
-        )
-        moves = (
-            move
-            for move in moves
-            if not pruning.is_bad_capture(CURRENT_BOARD, move, with_see=True)
-        )
+        moves = (move for move in board.tactical_moves(CURRENT_BOARD))
+        moves = (move for move in moves if not pruning.is_bad_capture(CURRENT_BOARD, move))
         for move in moves:
             nb = board.push(CURRENT_BOARD, move)
             quiescence.quiescence(CONFIG, nb, [move], -VALUE_MAX, VALUE_MAX, True)
@@ -80,20 +72,15 @@ def uci_parser(line: str) -> list[str]:
         CURRENT_PROCESS = process
 
     if tokens[0] == "quietmoves":
-        moves = (
-            move
-            for move in board.pseudo_legal_moves(CURRENT_BOARD)
-            if move.is_capture or board.will_check_the_king(CURRENT_BOARD, move)[1]
-        )
-        moves = (
-            move
-            for move in moves
-            if not pruning.is_bad_capture(CURRENT_BOARD, move, with_see=True)
-        )
+        moves = (move for move in board.tactical_moves(CURRENT_BOARD))
+        moves = (move for move in moves if not pruning.is_bad_capture(CURRENT_BOARD, move))
         return [", ".join([to_uci(m) for m in moves])]
 
     if tokens[0] == "pseudomoves":
         return [", ".join([to_uci(m) for m in board.pseudo_legal_moves(CURRENT_BOARD)])]
+
+    if tokens[0] == "tacticalmoves":
+        return [", ".join([to_uci(m) for m in board.tactical_moves(CURRENT_BOARD)])]
 
     if tokens[0] == "moves":
         return [", ".join([to_uci(m) for m in board.legal_moves(CURRENT_BOARD)])]
@@ -174,7 +161,6 @@ def uci_parser(line: str) -> list[str]:
                 f"{tokens[next_token + 5] if len(tokens) > next_token + 5 else 0}"
             )
             next_token += 6
-        print(fen)
         b = board.from_fen(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
             for move_str in tokens[next_token + 1 :]:

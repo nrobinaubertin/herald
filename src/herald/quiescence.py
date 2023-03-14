@@ -1,6 +1,6 @@
-import itertools
-from typing import Optional
-from . import board, pruning, move_ordering, evaluation
+from typing import Iterable
+
+from . import board, evaluation, move_ordering, pruning
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX
@@ -16,13 +16,12 @@ def quiescence(
     debug: bool = False,
 ) -> Node:
     node = _search(
-        config,
-        b,
-        0,
-        pv,
-        alpha,
-        beta,
-        2,
+        config=config,
+        b=b,
+        depth=0,
+        pv=pv,
+        alpha=alpha,
+        beta=beta,
     )
 
     if debug:
@@ -39,13 +38,13 @@ def quiescence(
 
 
 def _search(
+    *,
     config: Config,
     b: Board,
-    depth: int,
+    depth: int = 0,
     pv: list[Move],
     alpha: int,
     beta: int,
-    tactical_quota: int,
 ) -> Node:
     assert depth >= 0, depth
 
@@ -93,44 +92,22 @@ def _search(
                     children=1,
                 )
             beta = min(beta, stand_pat)
-    moves = board.pseudo_legal_moves(b)
-
-    if not we_are_in_check and (tactical_quota < 1 or depth > 4):
-        moves = move_ordering.capture_ordering(b, moves)
+        moves = board.tactical_moves(b)
     else:
-        moves = config.move_ordering_fn(b, moves)
+        moves = board.pseudo_legal_moves(b)
 
     for move in moves:
+        if not we_are_in_check:
+            # if we are not evaluating a capture move
+            # and if we found already something good
+            # then we can skip the rest
+            # (capture moves are generated first)
+            if not move.is_capture and best is not None:
+                break
 
-        # we allow everything if we are in check
-        # if the move is a good capture, then it's alright anyway
-        if (
-            (move.is_capture and not pruning.is_bad_capture(b, move, with_see=True))
-            or we_are_in_check
-        ):
-            pass
-        else:
-            # we need to have some tactical quota left
-            if tactical_quota < 1 or depth > 4:
+            # skip bad capture moves
+            if pruning.is_bad_capture(b, move):
                 continue
-            # the only tactical move allowed for now
-            # are moves that check ennemy king
-            if not board.will_check_the_king(b, move):
-                continue
-
-        curr_pv = pv.copy()
-        curr_pv.append(move)
-
-        # return immediately if this is a king capture
-        if move.is_king_capture:
-            return Node(
-                value=VALUE_MAX * b.turn,
-                depth=depth,
-                pv=curr_pv,
-                lower=alpha,
-                upper=beta,
-                children=children,
-            )
 
         nb = board.push(b, move)
 
@@ -139,47 +116,46 @@ def _search(
         if board.king_is_in_check(nb, nb.invturn):
             continue
 
+        curr_pv = pv.copy()
+        curr_pv.append(move)
+
         node = _search(
-            config,
-            nb,
-            depth + 1,
-            curr_pv,
-            alpha,
-            beta,
-            # if we were in check or if it's a capture, then we don't reduce our tactical quota
-            tactical_quota if move.is_capture or we_are_in_check else tactical_quota - 1,
+            config=config,
+            b=nb,
+            depth=depth + 1,
+            pv=curr_pv,
+            alpha=alpha,
+            beta=beta,
         )
 
         children += node.children
 
         if b.turn == COLOR.WHITE:
-            if node.value >= alpha or we_are_in_check:
-                if best is None or node.value > best.value:
-                    best = Node(
-                        value=node.value,
-                        depth=0,
-                        pv=node.pv,
-                        lower=alpha,
-                        upper=beta,
-                        children=children,
-                    )
-                alpha = max(alpha, node.value)
-                if node.value >= beta:
-                    break
+            if best is None or node.value > best.value:
+                best = Node(
+                    value=node.value,
+                    depth=0,
+                    pv=node.pv,
+                    lower=alpha,
+                    upper=beta,
+                    children=children,
+                )
+            alpha = max(alpha, node.value)
+            if node.value >= beta:
+                break
         else:
-            if node.value <= beta or we_are_in_check:
-                if best is None or node.value < best.value:
-                    best = Node(
-                        value=node.value,
-                        depth=0,
-                        pv=node.pv,
-                        lower=alpha,
-                        upper=beta,
-                        children=children,
-                    )
-                beta = min(beta, node.value)
-                if node.value <= alpha:
-                    break
+            if best is None or node.value < best.value:
+                best = Node(
+                    value=node.value,
+                    depth=0,
+                    pv=node.pv,
+                    lower=alpha,
+                    upper=beta,
+                    children=children,
+                )
+            beta = min(beta, node.value)
+            if node.value <= alpha:
+                break
 
     if best is not None:
         node = Node(
@@ -190,6 +166,7 @@ def _search(
         )
     else:
         # this happens when no quiescent move is available
+        # if the king square is attacked and we have no moves, it's a mate
         if board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn):
             node = Node(
                 depth=depth,
