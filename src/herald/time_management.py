@@ -26,7 +26,7 @@ def target_movetime(
         time_inc = binc
 
     # estimated turns remaining
-    t = 40 * remaining_material_percent(b.squares)
+    t = 40 * remaining_material_percent(b.remaining_material)
 
     time = (
         min(

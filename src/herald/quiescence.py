@@ -50,7 +50,7 @@ def _search(
 
     # if we are on a terminal node, return the evaluation
     if depth >= config.quiescence_depth:
-        value = evaluation.eval_fast(b.squares)
+        value = evaluation.eval_fast(b.squares, b.remaining_material)
         return Node(
             value=value,
             depth=0,
@@ -69,7 +69,7 @@ def _search(
 
     if not we_are_in_check:
         # stand_pat evaluation to check if we stop QS
-        stand_pat: int = evaluation.eval_fast(b.squares)
+        stand_pat: int = evaluation.eval_fast(b.squares, b.remaining_material)
         if b.turn == COLOR.WHITE:
             if stand_pat >= beta:
                 return Node(
@@ -116,8 +116,11 @@ def _search(
         if board.king_is_in_check(nb, nb.invturn):
             continue
 
-        curr_pv = pv.copy()
-        curr_pv.append(move)
+        if __debug__:
+            curr_pv = pv.copy()
+            curr_pv.append(move)
+        else:
+            curr_pv = pv
 
         node = _search(
             config=config,
@@ -177,7 +180,7 @@ def _search(
                 children=children,
             )
         else:
-            value = evaluation.eval_fast(b.squares)
+            value = evaluation.eval_fast(b.squares, b.remaining_material)
             return Node(
                 value=value,
                 depth=0,

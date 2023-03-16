@@ -191,14 +191,14 @@ def remaining_material(squares: tuple[int]) -> int:
 
 
 @cache
-def remaining_material_percent(squares: tuple[int]) -> float:
-    return (remaining_material(squares) - PIECE_VALUE[PIECE.KING] * 2) / (
+def remaining_material_percent(remaining_material) -> float:
+    return (remaining_material - PIECE_VALUE[PIECE.KING] * 2) / (
         START_MATERIAL - PIECE_VALUE[PIECE.KING] * 2
     )
 
 
 @cache
-def eval_fast(squares: tuple[int]) -> int:
+def eval_fast(squares: tuple[int], remaining_material: int) -> int:
     evaluation = 0
 
     for i in range(8):
@@ -215,21 +215,17 @@ def eval_fast(squares: tuple[int]) -> int:
                 evaluation += PIECE_VALUE[IS_PIECE[piece]]
                 evaluation += int(
                     PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][square]
-                    * remaining_material_percent(squares)
+                    * remaining_material_percent(remaining_material)
                     + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][square]
-                    * (1 - remaining_material_percent(squares))
+                    * (1 - remaining_material_percent(remaining_material))
                 )
             else:
                 invsquare = (9 - j) * 10 + (i + 1)
                 evaluation -= PIECE_VALUE[IS_PIECE[piece]]
-                # evaluation -= int(
-                #     PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][119 - square] * remaining_material_percent(squares)
-                #     + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][119 - square] * (1 - remaining_material_percent(squares))
-                # )
                 evaluation -= int(
                     PIECE_SQUARE_TABLE_MAILBOX[0][IS_PIECE[piece]][invsquare]
-                    * remaining_material_percent(squares)
+                    * remaining_material_percent(remaining_material)
                     + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][invsquare]
-                    * (1 - remaining_material_percent(squares))
+                    * (1 - remaining_material_percent(remaining_material))
                 )
     return evaluation

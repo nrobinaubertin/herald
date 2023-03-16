@@ -87,7 +87,7 @@ def alphabeta(
                 # display quiescent nodes
                 pv = node.pv  # type: ignore
         else:
-            value = evaluation.eval_fast(b.squares)
+            value = evaluation.eval_fast(b.squares, b.remaining_material)
 
         return Node(
             value=value,
@@ -247,7 +247,7 @@ def minimax(
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=evaluation.eval_fast(b.squares),
+            value=evaluation.eval_fast(b.squares, b.remaining_material),
             depth=0,
             pv=pv,
             children=1,

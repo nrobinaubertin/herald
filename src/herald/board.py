@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from functools import cache
 from typing import Iterable
 
+from . import evaluation
 from .constants import (
     ASCII_REP,
     CASTLE,
@@ -26,15 +27,13 @@ class Board:
     turn: COLOR
     # tuple reprensenting castling rights (index 2 * COLOR + CASTLE)
     castling_rights: tuple
-    # the following values are ints with default values
     en_passant: int
     half_move: int
     full_move: int
     king_en_passant: tuple
-    pawn_number: tuple
-    pawn_in_file: tuple
     king_squares: tuple
     invturn: COLOR
+    remaining_material: int
 
     def __hash__(self):
         return hash((self.squares, self.turn, self.castling_rights))
@@ -122,31 +121,6 @@ def from_uci(b: Board, uci: str) -> Move:
     )
 
 
-def get_pawns_stats(squares: list[int]) -> tuple[tuple, tuple]:
-    # fmt: off
-    # number of pawns for [white, black]
-    pawn_number = [0, 0]
-    # number of pawns in each file for [white * 10, black * 10]
-    pawn_in_file = [
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    ]
-    # fmt: on
-
-    for i in range(8):
-        for j in range(8):
-            square = (2 + j) * 10 + (i + 1)
-            piece = squares[square]
-            if piece in [PIECE.EMPTY, PIECE.INVALID]:
-                continue
-            if IS_PIECE[piece] == PIECE.PAWN:
-                color = get_color(piece)
-                pawn_number[color] += 1
-                pawn_in_file[(i + 1) + 10 * color] += 1
-
-    return tuple(pawn_number), tuple(pawn_in_file)
-
-
 def to_string(b: Board) -> str:
     rep = f"{'w' if b.turn == COLOR.WHITE else 'b'}  0 1 2 3 4 5 6 7 8 9"
     for i in range(120):
@@ -208,10 +182,9 @@ def from_fen(fen: str) -> Board:
         int(half_move),
         int(full_move),
         tuple(),
-        get_pawns_stats(squares)[0],
-        get_pawns_stats(squares)[1],
         tuple(king_squares),
         COLOR.WHITE if turn == "b" else COLOR.BLACK,
+        evaluation.remaining_material(tuple(squares)),
     )
 
     return b
@@ -223,10 +196,9 @@ def push(b: Board, move: Move) -> Board:
     king_en_passant = []
     castling_rights = list(b.castling_rights)
     half_move = b.half_move + 1
-    pawn_number = list(b.pawn_number)
-    pawn_in_file = list(b.pawn_in_file)
     king_squares = list(b.king_squares)
     full_move = b.full_move + 1 if b.turn == COLOR.BLACK else b.full_move
+    remaining_material = b.remaining_material
 
     assert b.squares[move.start] != PIECE.EMPTY, "Moving piece cannot be empty"
     assert IS_PIECE[b.squares[move.start]] != PIECE.INVALID, "Moving piece cannot be invalid"
@@ -236,18 +208,7 @@ def push(b: Board, move: Move) -> Board:
     if move.is_capture or IS_PIECE[piece_start] == PIECE.PAWN:
         # reset half_move count when condition is met
         half_move = 0
-
-    if move.is_capture and IS_PIECE[piece_start] == PIECE.PAWN:
-        # the moved pawn changes pawn_in_file numbers
-        color = get_color(squares[move.start])
-        pawn_in_file[(move.start % 10) + 10 * color] -= 1
-        pawn_in_file[(move.end % 10) + 10 * color] += 1
-
-    if move.is_capture and IS_PIECE[squares[move.end]] == PIECE.PAWN:
-        # the pawn taken changes pawn_in_file numbers
-        color = get_color(squares[move.end])
-        pawn_number[color] -= 1
-        pawn_in_file[(move.end % 10) + 10 * color] -= 1
+        remaining_material -= evaluation.PIECE_VALUE[move.captured_piece]
 
     # do the move
     squares[move.start] = PIECE.EMPTY
@@ -260,10 +221,7 @@ def push(b: Board, move: Move) -> Board:
     # special removal for "en passant" moves
     if move.end == b.en_passant and IS_PIECE[piece_start] == PIECE.PAWN:
         target = move.end + (10 * COLOR_DIRECTION[b.turn])
-        color = get_color(squares[target])
         squares[target] = PIECE.EMPTY
-        pawn_number[color] -= 1
-        pawn_in_file[(move.end % 10) + 10 * color] -= 1
 
     # declare en_passant square for the current board
     if move.en_passant != -1:
@@ -275,9 +233,6 @@ def push(b: Board, move: Move) -> Board:
     if IS_PIECE[piece_start] == PIECE.PAWN and move.end // 10 == (
         2 if b.turn == COLOR.WHITE else 9
     ):
-        color = get_color(squares[move.end])
-        pawn_number[color] -= 1
-        pawn_in_file[(move.end % 10) + 10 * color] -= 1
         squares[move.end] = IS_PVALUE[(b.turn, PIECE.QUEEN)]
 
     # some hardcode for castling move of the rook
@@ -341,10 +296,9 @@ def push(b: Board, move: Move) -> Board:
         half_move,
         full_move,
         tuple(king_en_passant),
-        tuple(pawn_number),
-        tuple(pawn_in_file),
         tuple(king_squares),
         COLOR(INV_COLOR[b.invturn]),
+        remaining_material,
     )
 
 
