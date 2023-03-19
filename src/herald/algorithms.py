@@ -34,7 +34,7 @@ def to_string(node: Node) -> str:
 
 # alphabeta pruning (fail-soft)
 # with optional move ordering and transposition table
-def alphabeta(
+def alphabeta(  # noqa: C901
     config: Config,
     b: Board,
     depth: int,
@@ -47,7 +47,7 @@ def alphabeta(
     killer_moves: set | None = None,
 ) -> Node:
     # detect repetitions
-    if b.__hash__() in b.hash_history:
+    if depth != max_depth and b.__hash__() in b.hash_history:
         return Node(
             depth=depth,
             value=0,

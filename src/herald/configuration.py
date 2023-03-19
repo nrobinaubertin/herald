@@ -10,7 +10,7 @@ class Config:
     quiescence_fn: Any
     move_ordering_fn: Any
     alg_fn: Any
-    version: str = "0.20.8"
+    version: str = "0.20.9"
     name: str = "Herald"
     author: str = "nrobinaubertin"
     transposition_table: dict[Board, Node] = field(default_factory=dict)

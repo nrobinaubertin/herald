@@ -93,8 +93,9 @@ def search(
                 return None
 
     guess = last_search.score if last_search else 0
-    lower = guess - 100
-    upper = guess + 100
+    MARGIN: int = 50
+    lower = guess - MARGIN
+    upper = guess + MARGIN
     iteration = 0
 
     while True:
@@ -115,14 +116,14 @@ def search(
         # if no best move was found
         # this could happen because of some pruning
         if not node.pv:
-            upper += 100 * (iteration**2)
-            lower -= 100 * (iteration**2)
+            upper += MARGIN * 2
+            lower -= MARGIN * 2
             continue
         if node.value >= upper:
-            upper += 100 * (iteration**2)
+            upper += MARGIN * 2
             continue
         if node.value <= lower:
-            lower -= 100 * (iteration**2)
+            lower -= MARGIN * 2
             continue
         break
 
