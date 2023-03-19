@@ -11,9 +11,10 @@ def target_movetime(
     winc: int,
     binc: int,
 ) -> int:
+    """Return target maximum movetime in deciseconds."""
     # if movetime is decided, return it immediately
     if movetime > 0:
-        return movetime // 1000
+        return movetime // 100
 
     # the engine doesn't perform well when thinking too long
     max_thinking_time: int = 15000
@@ -34,7 +35,7 @@ def target_movetime(
             remaining_time / t + 2 * time_inc,
             max_thinking_time,
         )
-        / 1000
+        / 100
     )
 
     return int(time)

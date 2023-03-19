@@ -1,10 +1,8 @@
-from typing import Iterable
-
-from . import board, evaluation, move_ordering, pruning
+from . import board, evaluation, pruning
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX
-from .data_structures import Move, Node, to_uci
+from .data_structures import Move, Node
 
 
 def quiescence(
@@ -23,9 +21,6 @@ def quiescence(
         alpha=alpha,
         beta=beta,
     )
-
-    if debug:
-        print([node.value] + [to_uci(m) for m in node.pv])
 
     return Node(
         value=node.value,
@@ -64,12 +59,13 @@ def _search(
     # for info purposes
     children = 1
 
-    best = None
     we_are_in_check = board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn)
 
     if not we_are_in_check:
         # stand_pat evaluation to check if we stop QS
         stand_pat: int = evaluation.eval_fast(b.squares, b.remaining_material)
+        # if depth == 0:
+        #     print(stand_pat)
         if b.turn == COLOR.WHITE:
             if stand_pat >= beta:
                 return Node(
@@ -92,8 +88,17 @@ def _search(
                     children=1,
                 )
             beta = min(beta, stand_pat)
+        best = Node(
+            value=stand_pat,
+            depth=0,
+            pv=pv,
+            lower=alpha,
+            upper=beta,
+            children=1,
+        )
         moves = board.tactical_moves(b)
     else:
+        best = None
         moves = board.pseudo_legal_moves(b)
 
     for move in moves:
@@ -135,6 +140,8 @@ def _search(
 
         if b.turn == COLOR.WHITE:
             if best is None or node.value > best.value:
+                # if depth == 0:
+                #     print(best, node)
                 best = Node(
                     value=node.value,
                     depth=0,
@@ -148,6 +155,8 @@ def _search(
                 break
         else:
             if best is None or node.value < best.value:
+                # if depth == 0:
+                #     print(best, node)
                 best = Node(
                     value=node.value,
                     depth=0,

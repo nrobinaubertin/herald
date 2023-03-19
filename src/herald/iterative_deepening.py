@@ -32,14 +32,20 @@ def search_wrapper(
     depth: int,
     config: Config,
     last_search: Search,
+    children: int,
+    transposition_table: dict,
+    hash_move_tt: dict,
 ) -> None:
-    best = search(
-        b,
+    search(
+        b=b,
         depth=depth,
         config=config,
         last_search=last_search,
+        children=children,
+        transposition_table=transposition_table,
+        hash_move_tt=hash_move_tt,
+        queue=queue,
     )
-    queue.put_nowait(best)
     queue.close()
 
 
@@ -52,9 +58,8 @@ def itdep(
 ) -> Optional[Search]:
     # clear transposition table at each new search
     # there seems to be collision/memory issues that I don't have time to handle now
-    if config.use_transposition_table:
-        config.transposition_table.clear()
-        config.move_tt.clear()
+    config.transposition_table.clear()
+    config.hash_move_tt.clear()
 
     if movetime > 0:
         start_time = time.time_ns()
@@ -64,7 +69,7 @@ def itdep(
             # we create a queue to be able to stop the search when there's no time left
             # pylint issue: https://github.com/PyCQA/pylint/issues/3488
             # pylint: disable=unsubscriptable-object
-            queue: multiprocessing.Queue[Search | None] = multiprocessing.Queue()
+            queue: multiprocessing.Queue[tuple[Search, Config] | None] = multiprocessing.Queue()
             process = multiprocessing.Process(
                 target=search_wrapper,
                 args=(queue, b),
@@ -72,6 +77,9 @@ def itdep(
                     "depth": i,
                     "config": config,
                     "last_search": last_search,
+                    "children": 0 if last_search is None else last_search.nodes,
+                    "transposition_table": config.transposition_table,
+                    "hash_move_tt": config.hash_move_tt,
                 },
                 daemon=False,
             )
@@ -79,9 +87,12 @@ def itdep(
 
             current_search: Search | None = None
             while current_search is None:
-                # # every second, we check if we got a move out of the queue
+                # we sometime check if we got a move out of the queue
                 try:
-                    current_search = queue.get(True, 1)
+                    ret: tuple[Search, Config] | None = queue.get(True, 0.1)
+
+                    if ret is not None:
+                        (current_search, config) = ret
 
                     # if there is no move available and no exception was raised
                     if current_search is None:
@@ -114,7 +125,7 @@ def itdep(
                     return last_search
 
                 # calculate used time
-                used_time = int(max(1, (time.time_ns() - start_time) // 1e9))
+                used_time = int(max(1, (time.time_ns() - start_time) // 1e8))
 
                 # bail out if we have no time anymore
                 if used_time + 1 >= movetime:
@@ -133,12 +144,16 @@ def itdep(
 
     last_search = None
     for i in range(1, max_depth + 1):
-        current_search = search(
-            b,
+        ret = search(
+            b=b,
             depth=i,
             last_search=last_search,
             config=config,
+            children=0 if last_search is None else last_search.nodes,
         )
+
+        if ret is not None:
+            current_search, config = ret
 
         # if there is no move available
         if current_search is None:

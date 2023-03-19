@@ -1,6 +1,5 @@
 """Recursive search algorithms."""
 
-import itertools
 from typing import Callable, Iterable, Optional
 
 from . import board, evaluation
@@ -44,7 +43,20 @@ def alphabeta(
     alpha: int = -VALUE_MAX,
     beta: int = VALUE_MAX,
     max_depth: int = 0,
+    children: int = 0,
+    killer_moves: set | None = None,
 ) -> Node:
+    # detect repetitions
+    if b.__hash__() in b.hash_history:
+        return Node(
+            depth=depth,
+            value=0,
+            pv=pv,
+            lower=alpha,
+            upper=beta,
+            children=children,
+        )
+
     if config.use_transposition_table and len(pv) > 0:
         # check if we find a hit in the transposition table
         node = config.transposition_table.get(b, depth)
@@ -63,10 +75,6 @@ def alphabeta(
                 # if this is an exact node
                 if node.lower < node.value < node.upper:
                     return node
-
-    # count the number of children (direct and non direct)
-    # for info purposes
-    children: int = 1
 
     # if we are on a terminal node, return the evaluation
     if depth <= 0:
@@ -109,17 +117,36 @@ def alphabeta(
 
     moves = config.move_ordering_fn(b, moves)
 
-    if config.use_move_tt:
-        hash_move: Optional[Move] = config.move_tt.get(b, None)
-        if hash_move:
-            moves = itertools.chain([hash_move], moves)
+    def order_moves() -> Iterable[Move]:
+        yielded = set()
+        hash_move: Optional[Move] = config.hash_move_tt.get(b, None)
+        if hash_move is not None:
+            yielded.add(hash_move)
+            yield hash_move
+        for move in moves:
+            if move in yielded:
+                continue
+            if move.is_capture and move.captured_piece > 2:
+                yielded.add(move)
+                yield move
+                continue
+            if config.use_killer_moves and killer_moves is not None:
+                for km in killer_moves:
+                    if km not in yielded and board.is_pseudo_legal_move(b, km):
+                        yielded.add(km)
+                        yield km
+            if move == hash_move:
+                continue
+            if config.use_killer_moves and killer_moves is not None:
+                if move in killer_moves:
+                    continue
+            yielded.add(move)
+            yield move
 
-    for move in moves:
-        # this check is here to avoid evaluating
-        # the hash_move twice
-        if move == best_move:
-            continue
+    # create the list of the killer moves that will be found in the children nodes
+    next_killer_moves: set = set()
 
+    for move in order_moves():
         curr_pv = pv.copy()
         curr_pv.append(move)
 
@@ -150,9 +177,11 @@ def alphabeta(
             alpha,
             beta,
             max_depth,
+            children,
+            next_killer_moves,
         )
 
-        children += node.children
+        children = node.children
 
         has_changed: bool = False
         if b.turn == COLOR.WHITE:
@@ -169,6 +198,8 @@ def alphabeta(
                 )
             alpha = max(alpha, node.value)
             if node.value >= beta:
+                if config.use_killer_moves and killer_moves is not None:
+                    killer_moves.add(move)
                 break
         else:
             if best is None or node.value < best.value:
@@ -184,6 +215,8 @@ def alphabeta(
                 )
             beta = min(beta, node.value)
             if node.value <= alpha:
+                if config.use_killer_moves and killer_moves is not None:
+                    killer_moves.add(move)
                 break
 
         # print our intermediary result
@@ -194,9 +227,9 @@ def alphabeta(
         # Save the resulting best node in the transposition table
         if best is not None and best.depth > 0:
             config.transposition_table[b] = best
-        if config.use_move_tt:
+        if config.use_hash_move:
             if best_move is not None:
-                config.move_tt[b] = best_move
+                config.hash_move_tt[b] = best_move
 
     if best is not None:
         node = Node(

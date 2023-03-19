@@ -19,7 +19,8 @@ CONFIG = Config(
     quiescence_search=True,
     quiescence_depth=9,
     use_transposition_table=True,
-    use_move_tt=True,
+    use_hash_move=True,
+    use_killer_moves=True,
     quiescence_fn=quiescence.quiescence,
 )
 
@@ -29,7 +30,7 @@ def stop_calculating() -> None:
         CURRENT_PROCESS.terminate()
 
 
-def uci_parser(line: str) -> list[str]:
+def uci_parser(line: str) -> list[str]:  # noqa: C901
     global CURRENT_BOARD
     global CURRENT_PROCESS
     tokens = line.strip().split()
@@ -47,7 +48,12 @@ def uci_parser(line: str) -> list[str]:
         return [f"SEE: {see(CURRENT_BOARD, int(tokens[1]), 0)}"]
 
     if tokens[0] == "eval":
-        return [f"board: {evaluation.eval_fast(CURRENT_BOARD)}"]
+        return [
+            f"board: {evaluation.eval_fast(CURRENT_BOARD.squares, evaluation.remaining_material(CURRENT_BOARD.squares))}"
+        ]
+
+    if tokens[0] == "remaining_material":
+        return [f"board: {CURRENT_BOARD.remaining_material}"]
 
     if tokens[0] == "print":
         return [board.to_string(CURRENT_BOARD)]
@@ -56,8 +62,16 @@ def uci_parser(line: str) -> list[str]:
         moves = (move for move in board.tactical_moves(CURRENT_BOARD))
         moves = (move for move in moves if not pruning.is_bad_capture(CURRENT_BOARD, move))
         for move in moves:
-            nb = board.push(CURRENT_BOARD, move)
-            quiescence.quiescence(CONFIG, nb, [move], -VALUE_MAX, VALUE_MAX, True)
+            nb = board.push(CURRENT_BOARD, move, fast=False)
+            node = quiescence.quiescence(CONFIG, nb, [move], -VALUE_MAX, VALUE_MAX, True)
+            print([node.value] + [to_uci(m) for m in node.pv])
+
+    if tokens[0] == "lines":
+        moves = (move for move in board.legal_moves(CURRENT_BOARD))
+        for move in moves:
+            nb = board.push(CURRENT_BOARD, move, fast=False)
+            node = algorithms.alphabeta(CONFIG, nb, int(tokens[1]), [move])
+            print([node.value] + [to_uci(m) for m in node.pv])
 
     if tokens[0] == "quiescence":
         if CURRENT_PROCESS is not None:
@@ -81,6 +95,9 @@ def uci_parser(line: str) -> list[str]:
 
     if tokens[0] == "tacticalmoves":
         return [", ".join([to_uci(m) for m in board.tactical_moves(CURRENT_BOARD)])]
+
+    if tokens[0] == "captures":
+        return [", ".join([to_uci(m) for m in board.capture_moves(CURRENT_BOARD, int(tokens[1]))])]
 
     if tokens[0] == "moves":
         return [", ".join([to_uci(m) for m in board.legal_moves(CURRENT_BOARD)])]
@@ -135,7 +152,7 @@ def uci_parser(line: str) -> list[str]:
 
     if tokens[0] == "play":
         move = board.from_uci(CURRENT_BOARD, tokens[1])
-        CURRENT_BOARD = board.push(CURRENT_BOARD, move)
+        CURRENT_BOARD = board.push(CURRENT_BOARD, move, fast=False)
 
     if tokens[0] == "ucinewgame":
         CURRENT_BOARD = board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
@@ -164,7 +181,7 @@ def uci_parser(line: str) -> list[str]:
         b = board.from_fen(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
             for move_str in tokens[next_token + 1 :]:
-                b = board.push(b, board.from_uci(b, move_str))
+                b = board.push(b, board.from_uci(b, move_str), fast=False)
         CURRENT_BOARD = b
 
     if len(tokens) > 1 and tokens[0] == "go":

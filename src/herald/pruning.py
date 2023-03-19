@@ -67,6 +67,14 @@ def is_bad_capture(b: Board, move: Move) -> bool:
     ):
         return False
 
+    # if the piece is defended by a pawn, then it's a bad capture
+    for depl in (9, 11) if b.turn == COLOR.WHITE else (-9, -11):
+        if (
+            IS_PIECE[b.squares[move.start + depl]] == PIECE.PAWN
+            and b.squares[move.start + depl] * COLOR_DIRECTION[b.turn] < 0
+        ):
+            return True
+
     # if SEE is in favor of the other, then we don't attempt the move
     if see(b, move.end, 0) * COLOR_DIRECTION[b.turn] <= 0:
         return True

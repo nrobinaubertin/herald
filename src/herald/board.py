@@ -30,10 +30,10 @@ class Board:
     en_passant: int
     half_move: int
     full_move: int
-    king_en_passant: tuple
     king_squares: tuple
     invturn: COLOR
     remaining_material: int
+    hash_history: set
 
     def __hash__(self):
         return hash((self.squares, self.turn, self.castling_rights))
@@ -102,13 +102,18 @@ def to_fen(b: Board) -> str:
 def from_uci(b: Board, uci: str) -> Move:
     start = to_square_notation(uci[:2])
     end = to_square_notation(uci[2:])
+    is_capture = IS_PIECE[b.squares[end]] != PIECE.EMPTY or end == b.en_passant
     return Move(
         start=start,
         end=end,
-        is_capture=(
-            IS_PIECE[b.squares[end]] != PIECE.EMPTY
-            or end == b.en_passant
-            or end in b.king_en_passant
+        moving_piece=IS_PIECE[b.squares[start]],
+        is_capture=is_capture,
+        captured_piece=(
+            PIECE.EMPTY
+            if not is_capture
+            else IS_PIECE[b.squares[end]]
+            if end != b.en_passant
+            else PIECE.PAWN
         ),
         is_castle=(
             start in (95, 25)
@@ -181,34 +186,45 @@ def from_fen(fen: str) -> Board:
         (to_square_notation(en_passant) if en_passant != "-" else -1),
         int(half_move),
         int(full_move),
-        tuple(),
         tuple(king_squares),
         COLOR.WHITE if turn == "b" else COLOR.BLACK,
         evaluation.remaining_material(tuple(squares)),
+        set(),
     )
 
     return b
 
 
-def push(b: Board, move: Move) -> Board:
+def push(b: Board, move: Move, fast: bool = True) -> Board:
     squares = list(b.squares)
     en_passant = -1
-    king_en_passant = []
     castling_rights = list(b.castling_rights)
     half_move = b.half_move + 1
     king_squares = list(b.king_squares)
     full_move = b.full_move + 1 if b.turn == COLOR.BLACK else b.full_move
     remaining_material = b.remaining_material
 
+    if not fast:
+        hash_history = b.hash_history.copy()
+        hash_history.add(hash(b))
+    else:
+        hash_history = b.hash_history
+
     assert b.squares[move.start] != PIECE.EMPTY, "Moving piece cannot be empty"
     assert IS_PIECE[b.squares[move.start]] != PIECE.INVALID, "Moving piece cannot be invalid"
 
     piece_start = b.squares[move.start]
 
+    if (
+        move.is_capture
+        and move.captured_piece != PIECE.INVALID
+        and move.captured_piece != PIECE.EMPTY
+    ):
+        remaining_material -= evaluation.PIECE_VALUE[move.captured_piece]
+
     if move.is_capture or IS_PIECE[piece_start] == PIECE.PAWN:
         # reset half_move count when condition is met
         half_move = 0
-        remaining_material -= evaluation.PIECE_VALUE[move.captured_piece]
 
     # do the move
     squares[move.start] = PIECE.EMPTY
@@ -243,26 +259,18 @@ def push(b: Board, move: Move) -> Board:
             squares[98] = PIECE.EMPTY
             squares[95] = PIECE.EMPTY
             squares[96] = IS_PVALUE[(COLOR.WHITE, PIECE.ROOK)]
-            king_en_passant.append(96)
-            king_en_passant.append(95)
         if move.end == 93:
             squares[91] = PIECE.EMPTY
             squares[95] = PIECE.EMPTY
             squares[94] = IS_PVALUE[(COLOR.WHITE, PIECE.ROOK)]
-            king_en_passant.append(94)
-            king_en_passant.append(95)
         if move.end == 27:
             squares[28] = PIECE.EMPTY
             squares[25] = PIECE.EMPTY
             squares[26] = IS_PVALUE[(COLOR.BLACK, PIECE.ROOK)]
-            king_en_passant.append(26)
-            king_en_passant.append(25)
         if move.end == 23:
             squares[21] = PIECE.EMPTY
             squares[25] = PIECE.EMPTY
             squares[24] = IS_PVALUE[(COLOR.BLACK, PIECE.ROOK)]
-            king_en_passant.append(24)
-            king_en_passant.append(25)
     else:
         # remove castling rights
         if IS_PIECE[piece_start] == PIECE.KING:
@@ -295,10 +303,10 @@ def push(b: Board, move: Move) -> Board:
         en_passant,
         half_move,
         full_move,
-        tuple(king_en_passant),
         tuple(king_squares),
         COLOR(INV_COLOR[b.invturn]),
         remaining_material,
+        hash_history=hash_history,
     )
 
 
@@ -316,7 +324,30 @@ def number_of(b: Board, piece: PIECE, color: COLOR) -> int:
         return 0
 
 
+# Some fast verifications to check if a move is pseudo legal
+def is_pseudo_legal_move(b: Board, move: Move) -> bool:
+    if move.start < 21 or move.start > 98:
+        return False
+    if move.end < 21 or move.end > 98:
+        return False
+    if IS_PIECE[b.squares[move.start]] != move.moving_piece:
+        return False
+    if move.is_capture:
+        if b.squares[move.end] == PIECE.EMPTY and move.end != b.en_passant:
+            return False
+        if (
+            move.captured_piece != IS_PIECE[b.squares[move.end]]
+            if move.end != b.en_passant
+            else PIECE.PAWN
+        ):
+            return False
+    return True
+
+
 def is_legal_move(b: Board, move: Move) -> bool:
+    if not is_pseudo_legal_move(b, move):
+        return False
+
     # verify that the king of the player to move exists
     if number_of(b, PIECE.KING, b.turn) < 1:
         return False
@@ -330,11 +361,6 @@ def is_legal_move(b: Board, move: Move) -> bool:
 
     if is_square_attacked(b2.squares, ks, b2.turn):
         return False
-
-    # the king_en_passant squares should not be in check
-    for kep in b2.king_en_passant:
-        if is_square_attacked(b2.squares, kep, b2.turn):
-            return False
 
     ks = king_square(b, b.turn)
     if ks is None:
@@ -461,14 +487,14 @@ def _knight_moves(
 ) -> Iterable[Move]:
     for depl in (21, 12, -8, -19, -21, -12, 8, 19):
         end = start + depl
-        is_capture = bool(b.squares[end]) or end in b.king_en_passant
-        is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
+        is_capture = bool(b.squares[end])
+        is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
         if b.squares[end] != PIECE.INVALID and get_color(b.squares[end]) != b.turn:
             yield Move(
                 start=start,
                 end=end,
                 moving_piece=PIECE.KNIGHT,
-                captured_piece=IS_PIECE[b.squares[end]],  # don't take king_en_passant into account
+                captured_piece=IS_PIECE[b.squares[end]],
                 is_capture=is_capture,
                 is_castle=False,
                 en_passant=-1,
@@ -483,8 +509,8 @@ def _rook_moves(
     for direction in (10, -10, 1, -1):
         for x in range(1, 8):
             end = start + x * direction
-            is_capture = bool(b.squares[end]) or end in b.king_en_passant
-            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
+            is_capture = bool(b.squares[end])
+            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
 
             # castling moves are processed here
             # because we are already checking if the path is clear that way
@@ -545,16 +571,14 @@ def _bishop_moves(
     for direction in (11, -11, 9, -9):
         for x in range(1, 8):
             end = start + x * direction
-            is_capture = bool(b.squares[end]) or end in b.king_en_passant
-            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
+            is_capture = bool(b.squares[end])
+            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
             if b.squares[end] != PIECE.INVALID and get_color(b.squares[end]) != b.turn:
                 yield Move(
                     start=start,
                     end=end,
                     moving_piece=PIECE.BISHOP,
-                    captured_piece=IS_PIECE[
-                        b.squares[end]
-                    ],  # don't take king_en_passant into account
+                    captured_piece=IS_PIECE[b.squares[end]],
                     is_capture=is_capture,
                     is_castle=False,
                     en_passant=-1,
@@ -571,16 +595,14 @@ def _queen_moves(
     for direction in (11, -11, 9, -9, 10, -10, 1, -1):
         for x in range(1, 8):
             end = start + x * direction
-            is_capture = bool(b.squares[end]) or end in b.king_en_passant
-            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
+            is_capture = bool(b.squares[end])
+            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
             if b.squares[end] != PIECE.INVALID and get_color(b.squares[end]) != b.turn:
                 yield Move(
                     start=start,
                     end=end,
                     moving_piece=PIECE.QUEEN,
-                    captured_piece=IS_PIECE[
-                        b.squares[end]
-                    ],  # don't take king_en_passant into account
+                    captured_piece=IS_PIECE[b.squares[end]],
                     is_capture=is_capture,
                     is_castle=False,
                     en_passant=-1,
@@ -596,14 +618,14 @@ def _king_moves(
 ) -> Iterable[Move]:
     for depl in (11, -11, 9, -9, 1, -1, 10, -10):
         end = start + depl
-        is_capture = bool(b.squares[end]) or end in b.king_en_passant
-        is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
+        is_capture = bool(b.squares[end])
+        is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
         if b.squares[end] != PIECE.INVALID and get_color(b.squares[end]) != b.turn:
             yield Move(
                 start=start,
                 end=end,
                 moving_piece=PIECE.KING,
-                captured_piece=IS_PIECE[b.squares[end]],  # don't take king_en_passant into account
+                captured_piece=IS_PIECE[b.squares[end]],
                 is_capture=is_capture,
                 is_castle=False,
                 en_passant=-1,
@@ -648,19 +670,15 @@ def _pawn_moves(
     for depl in (9, 11) if b.turn == COLOR.BLACK else (-9, -11):
         end = start + depl
         if (
-            (
-                b.squares[end] not in (PIECE.EMPTY, PIECE.INVALID)
-                and get_color(b.squares[end]) != b.turn
-            )
-            or end == b.en_passant
-            or end in b.king_en_passant
-        ):
-            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING or end in b.king_en_passant
+            b.squares[end] not in (PIECE.EMPTY, PIECE.INVALID)
+            and get_color(b.squares[end]) != b.turn
+        ) or end == b.en_passant:
+            is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
             yield Move(
                 start=start,
                 end=end,
                 moving_piece=PIECE.PAWN,
-                captured_piece=IS_PIECE[b.squares[end]],  # don't take king_en_passant into account
+                captured_piece=IS_PIECE[b.squares[end]],
                 is_capture=True,
                 is_castle=False,
                 en_passant=-1,
@@ -815,7 +833,8 @@ def pseudo_legal_moves(
 def tactical_moves(
     b: Board,
 ) -> Iterable[Move]:
-    """
+    """Generate only tactical moves.
+
     First we generate capture moves.
     These capture moves should be generated in a manner
     that respects MVV-LVA (so that we don't have to do some move ordering later).
@@ -824,7 +843,6 @@ def tactical_moves(
     We don't store the position of the enemy queens since their captures are
     evaluated immediately (this saves a list generation
     """
-
     piece_pawn = []
     piece_knight = []
     piece_bishop = []
@@ -837,16 +855,6 @@ def tactical_moves(
             color = get_color(piece)
             if color != b.invturn:
                 continue
-            if b.turn == COLOR.BLACK:
-                if b.squares[square + 9] == IS_PVALUE[(COLOR.WHITE, PIECE.PAWN)]:
-                    continue
-                if b.squares[square + 11] == IS_PVALUE[(COLOR.WHITE, PIECE.PAWN)]:
-                    continue
-            if b.turn == COLOR.WHITE:
-                if b.squares[square - 9] == IS_PVALUE[(COLOR.BLACK, PIECE.PAWN)]:
-                    continue
-                if b.squares[square - 11] == IS_PVALUE[(COLOR.BLACK, PIECE.PAWN)]:
-                    continue
             if IS_PIECE[piece] == PIECE.PAWN:
                 piece_pawn.append(square)
                 continue
