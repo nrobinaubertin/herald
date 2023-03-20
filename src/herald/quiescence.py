@@ -1,7 +1,7 @@
 from . import board, evaluation, pruning
 from .board import Board
 from .configuration import Config
-from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX
+from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX, PIECE
 from .data_structures import Move, Node
 
 
@@ -76,11 +76,31 @@ def _search(
                     upper=beta,
                     children=1,
                 )
+            # delta pruning
+            if stand_pat + evaluation.PIECE_VALUE[PIECE.QUEEN] < alpha:
+                return Node(
+                    value=alpha,
+                    depth=0,
+                    pv=pv,
+                    lower=alpha,
+                    upper=beta,
+                    children=1,
+                )
             alpha = max(alpha, stand_pat)
         else:
             if stand_pat <= alpha:
                 return Node(
                     value=alpha,
+                    depth=0,
+                    pv=pv,
+                    lower=alpha,
+                    upper=beta,
+                    children=1,
+                )
+            # delta pruning
+            if stand_pat - evaluation.PIECE_VALUE[PIECE.QUEEN] > beta:
+                return Node(
+                    value=beta,
                     depth=0,
                     pv=pv,
                     lower=alpha,

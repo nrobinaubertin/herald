@@ -2,7 +2,7 @@
 
 from typing import Callable, Iterable, Optional
 
-from . import board, evaluation
+from . import board, evaluation, pruning
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX
@@ -131,10 +131,9 @@ def alphabeta(  # noqa: C901
                 yield move
                 continue
             if config.use_killer_moves and killer_moves is not None:
-                for km in killer_moves:
-                    if km not in yielded and board.is_pseudo_legal_move(b, km):
-                        yielded.add(km)
-                        yield km
+                for km in config.move_ordering_fn(b, (km for km in killer_moves if km not in yielded and board.is_pseudo_legal_move(b, km))):
+                    yielded.add(km)
+                    yield km
             if move == hash_move:
                 continue
             if config.use_killer_moves and killer_moves is not None:
@@ -146,7 +145,12 @@ def alphabeta(  # noqa: C901
     # create the list of the killer moves that will be found in the children nodes
     next_killer_moves: set = set()
 
+    moves_searched: int = 0
+
     for move in order_moves():
+
+        moves_searched += 1
+
         curr_pv = pv.copy()
         curr_pv.append(move)
 
@@ -168,10 +172,16 @@ def alphabeta(  # noqa: C901
         if board.king_is_in_check(nb, nb.invturn):
             continue
 
+        new_depth = depth - 1
+
+        # Late move reduction
+        if moves_searched > depth * 10:
+            new_depth = depth - 2
+
         node = alphabeta(
             config,
             nb,
-            depth - 1,
+            new_depth,
             curr_pv,
             False,
             alpha,
@@ -263,110 +273,3 @@ def alphabeta(  # noqa: C901
             )
 
     return node
-
-
-# Simple minimax
-def minimax(
-    config: Config,
-    b: Board,
-    depth: int,
-    pv: list[Move],
-    gen_legal_moves: bool = False,
-    alpha: int = 0,
-    beta: int = 0,
-) -> Node:
-    assert depth >= 0, depth
-
-    # if we are on a terminal node, return the evaluation
-    if depth == 0:
-        return Node(
-            value=evaluation.eval_fast(b.squares, b.remaining_material),
-            depth=0,
-            pv=pv,
-            children=1,
-        )
-
-    best = None
-
-    # count the number of children (direct and non direct)
-    # for info purposes
-    children = 1
-
-    moves: Iterable[Move] = []
-    if gen_legal_moves:
-        moves = board.legal_moves(b)
-    else:
-        moves = board.pseudo_legal_moves(b)
-    for move in config.move_ordering_fn(b, moves):
-        curr_board = board.push(b, move)
-        curr_pv = pv.copy()
-        curr_pv.append(move)
-
-        # return immediately if this is a king capture
-        if move.is_king_capture:
-            return Node(
-                value=VALUE_MAX * b.turn,
-                depth=depth,
-                pv=curr_pv,
-                children=children,
-            )
-
-        # if the king is in check after we move
-        # then it's a bad move (we will lose the game)
-        if board.king_is_in_check(curr_board, curr_board.invturn):
-            continue
-
-        node = minimax(
-            config,
-            curr_board,
-            depth - 1,
-            curr_pv,
-            False,
-        )
-
-        children += node.children
-
-        if b.turn == COLOR.WHITE:
-            if best is None or node.value > best.value:
-                best = Node(
-                    value=node.value,
-                    depth=depth,
-                    pv=node.pv,
-                    children=children,
-                )
-        else:
-            if best is None or node.value < best.value:
-                best = Node(
-                    value=node.value,
-                    depth=depth,
-                    pv=node.pv,
-                    children=children,
-                )
-
-    if isinstance(best, Node):
-        return Node(
-            value=best.value,
-            depth=best.depth,
-            pv=best.pv,
-            children=children,
-        )
-
-    # no "best" found
-    # should happen only in case of stalemate/checkmate
-    if board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn):
-        return Node(
-            depth=depth,
-            value=VALUE_MAX * b.turn * -1,
-            pv=pv,
-            lower=alpha,
-            upper=beta,
-            children=children,
-        )
-    return Node(
-        depth=depth,
-        value=0,
-        pv=pv,
-        lower=alpha,
-        upper=beta,
-        children=children,
-    )
