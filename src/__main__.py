@@ -1,4 +1,6 @@
+#!/usr/bin/env -S python3 -O
 import multiprocessing
+import threading
 import sys
 
 from herald import algorithms, board, evaluation, move_ordering, pruning, quiescence
@@ -12,6 +14,8 @@ from herald.time_management import target_movetime
 
 CURRENT_BOARD = board.from_fen("startpos")
 CURRENT_PROCESS = None
+CURRENT_QUEUE = None
+LAST_SEARCH = None
 
 CONFIG = Config(
     alg_fn=algorithms.alphabeta,
@@ -26,13 +30,18 @@ CONFIG = Config(
 
 
 def stop_calculating() -> None:
+    global CURRENT_PROCESS
+    global CURRENT_QUEUE
     if CURRENT_PROCESS is not None:
         CURRENT_PROCESS.terminate()
+    CURRENT_QUEUE = None
 
 
 def uci_parser(line: str) -> list[str]:  # noqa: C901
     global CURRENT_BOARD
     global CURRENT_PROCESS
+    global CURRENT_QUEUE
+    global LAST_SEARCH
     tokens = line.strip().split()
 
     if not tokens:
@@ -43,6 +52,12 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
             f"White king is in check: {board.king_is_in_check(CURRENT_BOARD, COLOR.WHITE)}",
             f"Black king is in check: {board.king_is_in_check(CURRENT_BOARD, COLOR.BLACK)}",
         ]
+
+    if tokens[0] == "lastsearch":
+        if LAST_SEARCH is not None:
+            return [f"LAST SEARCH: {to_uci(LAST_SEARCH.pv)}"]
+        else:
+            return ["LAST SEARCH: None"]
 
     if tokens[0] == "see":
         return [f"SEE: {see(CURRENT_BOARD, int(tokens[1]), 0)}"]
@@ -143,6 +158,9 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
             "uciok",
         ]
 
+    if tokens[0] == "clearsearch":
+        LAST_SEARCH = None
+
     if tokens[0] == "stop":
         stop_calculating()
 
@@ -211,10 +229,13 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
         if CURRENT_PROCESS is not None:
             CURRENT_PROCESS.terminate()
 
+        CURRENT_QUEUE = multiprocessing.Queue()
+        t = threading.Thread(target=wait_for_current_queue)
+        t.start()
         if depth == 0:
             process = multiprocessing.Process(
                 target=itdep,
-                args=(CURRENT_BOARD, CONFIG),
+                args=(CURRENT_QUEUE, CURRENT_BOARD, CONFIG),
                 kwargs={
                     "movetime": target_movetime(
                         CURRENT_BOARD,
@@ -224,21 +245,34 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
                         winc,
                         binc,
                     ),
+                    "last_search": LAST_SEARCH,
                 },
                 daemon=False,
             )
         else:
             process = multiprocessing.Process(
                 target=itdep,
-                args=(CURRENT_BOARD, CONFIG),
+                args=(CURRENT_QUEUE, CURRENT_BOARD, CONFIG),
                 kwargs={
                     "max_depth": depth,
+                    "last_search": LAST_SEARCH,
                 },
                 daemon=False,
             )
         process.start()
         CURRENT_PROCESS = process
     return []
+
+
+def wait_for_current_queue():
+    global CURRENT_QUEUE
+    global LAST_SEARCH
+    while CURRENT_QUEUE is not None:
+        try:
+            LAST_SEARCH = CURRENT_QUEUE.get(timeout=1)
+            break
+        except:
+            pass
 
 
 if __name__ == "__main__":

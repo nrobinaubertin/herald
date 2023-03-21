@@ -12,6 +12,7 @@ from .data_structures import Move
 
 @dataclass
 class Search:
+    board: Board
     move: Move
     depth: int
     score: int
@@ -56,6 +57,7 @@ def search(
     if len(possible_moves) == 1:
         ret = (
             Search(
+                board=b,
                 move=possible_moves[0],
                 pv=[possible_moves[0]],
                 depth=0,
@@ -77,6 +79,7 @@ def search(
         if move.is_king_capture:
             ret = (
                 Search(
+                    board=b,
                     move=move,
                     pv=[move],
                     depth=1,
@@ -128,6 +131,7 @@ def search(
         break
 
     search = Search(
+        board=b,
         move=node.pv[0],
         pv=node.pv,
         depth=node.depth,
