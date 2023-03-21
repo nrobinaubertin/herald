@@ -1,15 +1,12 @@
-FROM python:3.11.1-buster
-
-COPY lichess-bot/requirements.txt /workdir/requirements.txt
-
-RUN set -xe \
-    && cd /workdir \
-    && chmod 755 -R /workdir \
-    && pip install -r /workdir/requirements.txt
-
-COPY lichess-bot /workdir/lichess-bot
-COPY src /workdir/src/
+FROM python:3.11.2-buster
 
 WORKDIR /workdir
 
-CMD ["python3", "-O", "/workdir/lichess-bot/lichess-bot.py", "-v", "--config", "/workdir/config/config.yml"]
+COPY lichess-bot/requirements.txt /workdir/requirements.txt
+RUN pip install -r /workdir/requirements.txt
+
+COPY lichess-bot /workdir/
+COPY src /workdir/engines/
+RUN chmod 755 -R /workdir
+
+CMD ["python3", "-O", "/workdir/lichess-bot.py", "-v", "--config", "/workdir/config/config.yml"]
