@@ -885,6 +885,22 @@ def tactical_moves(
     for square in piece_pawn:
         yield from capture_moves(b, square)
 
+    # handle en passant
+    if b.en_passant != -1:
+        for depl in (9, 11) if b.turn == COLOR.WHITE else (-9, -11):
+            start = b.en_passant + depl
+            if IS_PIECE[b.squares[start]] == PIECE.PAWN and get_color(b.squares[start]) == b.turn:
+                yield Move(
+                    start=start,
+                    end=b.en_passant,
+                    moving_piece=PIECE.PAWN,
+                    captured_piece=IS_PIECE[b.squares[b.en_passant]],
+                    is_capture=True,
+                    is_castle=False,
+                    en_passant=-1,
+                    is_king_capture=False,
+                )
+
     """
     Once all capture moves are generated, we can try checks.
     """
