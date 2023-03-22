@@ -2,7 +2,7 @@
 
 from typing import Callable, Iterable, Optional
 
-from . import board, evaluation, pruning
+from . import board, evaluation
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX
@@ -35,6 +35,7 @@ def to_string(node: Node) -> str:
 # alphabeta pruning (fail-soft)
 # with optional move ordering and transposition table
 def alphabeta(  # noqa: C901
+    *,
     config: Config,
     b: Board,
     depth: int,
@@ -45,10 +46,10 @@ def alphabeta(  # noqa: C901
     max_depth: int = 0,
     children: int = 0,
     killer_moves: set | None = None,
-) -> Node:
+) -> Iterable[Node]:
     # detect repetitions
     if depth != max_depth and b.__hash__() in b.hash_history:
-        return Node(
+        yield Node(
             depth=depth,
             value=0,
             pv=pv,
@@ -56,6 +57,7 @@ def alphabeta(  # noqa: C901
             upper=beta,
             children=children,
         )
+        return
 
     if config.use_transposition_table and len(pv) > 0:
         # check if we find a hit in the transposition table
@@ -74,7 +76,8 @@ def alphabeta(  # noqa: C901
 
                 # if this is an exact node
                 if node.lower < node.value < node.upper:
-                    return node
+                    yield node
+                    return
 
     # if we are on a terminal node, return the evaluation
     if depth <= 0:
@@ -97,7 +100,7 @@ def alphabeta(  # noqa: C901
         else:
             value = evaluation.eval_fast(b.squares, b.remaining_material)
 
-        return Node(
+        yield Node(
             value=value,
             depth=0,
             pv=pv,
@@ -105,6 +108,7 @@ def alphabeta(  # noqa: C901
             upper=beta,
             children=children,
         )
+        return
 
     best = None
     best_move = None
@@ -131,7 +135,14 @@ def alphabeta(  # noqa: C901
                 yield move
                 continue
             if config.use_killer_moves and killer_moves is not None:
-                for km in config.move_ordering_fn(b, (km for km in killer_moves if km not in yielded and board.is_pseudo_legal_move(b, km))):
+                for km in config.move_ordering_fn(
+                    b,
+                    (
+                        km
+                        for km in killer_moves
+                        if km not in yielded and board.is_pseudo_legal_move(b, km)
+                    ),
+                ):
                     yielded.add(km)
                     yield km
             if move == hash_move:
@@ -148,7 +159,6 @@ def alphabeta(  # noqa: C901
     moves_searched: int = 0
 
     for move in order_moves():
-
         moves_searched += 1
 
         curr_pv = pv.copy()
@@ -156,7 +166,7 @@ def alphabeta(  # noqa: C901
 
         # return immediately if this is a king capture
         if move.is_king_capture:
-            return Node(
+            yield Node(
                 value=VALUE_MAX * b.turn,
                 depth=depth,
                 pv=curr_pv,
@@ -164,6 +174,7 @@ def alphabeta(  # noqa: C901
                 upper=beta,
                 children=children,
             )
+            return
 
         nb = board.push(b, move)
 
@@ -178,18 +189,19 @@ def alphabeta(  # noqa: C901
         if moves_searched > depth * 10:
             new_depth = depth - 2
 
-        node = alphabeta(
-            config,
-            nb,
-            new_depth,
-            curr_pv,
-            False,
-            alpha,
-            beta,
-            max_depth,
-            children,
-            next_killer_moves,
-        )
+        for node in alphabeta(
+            config=config,
+            b=nb,
+            depth=new_depth,
+            pv=curr_pv,
+            gen_legal_moves=False,
+            alpha=alpha,
+            beta=beta,
+            max_depth=max_depth,
+            children=children,
+            killer_moves=next_killer_moves,
+        ):
+            continue
 
         children = node.children
 
@@ -231,6 +243,7 @@ def alphabeta(  # noqa: C901
 
         # print our intermediary result
         if max_depth != 0 and best is not None and depth == max_depth and has_changed:
+            yield best
             print(to_string(best))
 
     if config.use_transposition_table:
@@ -272,4 +285,4 @@ def alphabeta(  # noqa: C901
                 children=children,
             )
 
-    return node
+    yield node

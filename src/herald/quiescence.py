@@ -1,7 +1,7 @@
 from . import board, evaluation, pruning
 from .board import Board
 from .configuration import Config
-from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX, PIECE
+from .constants import COLOR, COLOR_DIRECTION, PIECE, VALUE_MAX
 from .data_structures import Move, Node
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env -S python3 -O
 import multiprocessing
-import threading
 import sys
+import threading
 
 from herald import algorithms, board, evaluation, move_ordering, pruning, quiescence
 from herald.board import Board

@@ -5,7 +5,7 @@ from typing import Any, Optional
 from . import board
 from .board import Board
 from .configuration import Config
-from .constants import VALUE_MAX
+from .constants import COLOR_DIRECTION, VALUE_MAX
 from .data_structures import to_uci
 from .search import Search, search
 
@@ -67,7 +67,7 @@ def itdep(
     if last_search is not None:
         # try to find a useful subsearch in the last_search
         for move in last_search.pv:
-            if hash(last_search.board) == hash(b):
+            if hash(last_search.board) == hash(b) or len(last_search.pv) < 2:
                 break
             # compute next subsearch
             last_search = Search(
@@ -85,7 +85,7 @@ def itdep(
             last_search = None
 
     if last_search is not None:
-        start_depth = len(last_search.pv) + 1
+        start_depth = len(last_search.pv)
     else:
         start_depth = 1
 
@@ -113,7 +113,7 @@ def itdep(
             process.start()
 
             current_search: Search | None = None
-            while current_search is None:
+            while True:
                 # we sometime check if we got a move out of the queue
                 try:
                     ret: tuple[Search, Config] | None = subqueue.get(True, 1)
@@ -138,14 +138,17 @@ def itdep(
                 if last_search is not None and last_search.stop_search:
                     process.terminate()
                     subqueue.close()
-                    queue.put_nowait(last_search)
+                    queue.put(last_search)
                     if print_uci:
                         print(f"bestmove {to_uci(last_search.move)}")
                     return last_search
 
                 # bail out if we have a mate
-                if last_search is not None and abs(last_search.score) >= VALUE_MAX:
-                    queue.put_nowait(last_search)
+                if (
+                    last_search is not None
+                    and COLOR_DIRECTION[b.turn] * last_search.score >= VALUE_MAX
+                ):
+                    queue.put(last_search)
                     if print_uci:
                         print(f"bestmove {to_uci(last_search.move)}")
                     return last_search
@@ -163,7 +166,12 @@ def itdep(
                         return last_search
                     return None
 
-        queue.put_nowait(last_search)
+                if last_search is not None and last_search.end:
+                    process.terminate()
+                    subqueue.close()
+                    break
+
+        queue.put(last_search)
         if last_search is not None and print_uci:
             print(f"bestmove {to_uci(last_search.move)}")
             return last_search
@@ -199,5 +207,6 @@ def itdep(
 
     if last_search is not None and print_uci:
         print(f"bestmove {to_uci(last_search.move)}")
-    queue.put_nowait(last_search)
+    if queue is not None:
+        queue.put_nowait(last_search)
     return last_search
