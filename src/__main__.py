@@ -269,7 +269,9 @@ def wait_for_current_queue():
     global LAST_SEARCH
     while CURRENT_QUEUE is not None:
         try:
-            LAST_SEARCH = CURRENT_QUEUE.get(timeout=1)
+            last_search = CURRENT_QUEUE.get(timeout=1)
+            if last_search is not None and last_search.end:
+                LAST_SEARCH = last_search
             break
         except:
             pass

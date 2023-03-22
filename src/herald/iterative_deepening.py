@@ -85,7 +85,7 @@ def itdep(
             last_search = None
 
     if last_search is not None:
-        start_depth = len(last_search.pv)
+        start_depth = len(last_search.pv) + 1
     else:
         start_depth = 1
 
