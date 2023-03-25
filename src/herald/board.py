@@ -341,6 +341,9 @@ def is_pseudo_legal_move(b: Board, move: Move) -> bool:
             else PIECE.PAWN
         ):
             return False
+    if not move.is_capture:
+        if b.squares[move.end] != PIECE.EMPTY:
+            return False
     return True
 
 
