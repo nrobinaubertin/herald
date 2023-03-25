@@ -25,6 +25,7 @@ CONFIG = Config(
     use_transposition_table=True,
     use_hash_move=True,
     use_killer_moves=True,
+    use_late_move_reduction=True,
     quiescence_fn=quiescence.quiescence,
 )
 
@@ -85,7 +86,13 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
         moves = (move for move in board.legal_moves(CURRENT_BOARD))
         for move in moves:
             nb = board.push(CURRENT_BOARD, move, fast=False)
-            node = algorithms.alphabeta(CONFIG, nb, int(tokens[1]), [move])
+            for node in algorithms.alphabeta(
+                config=CONFIG,
+                b=nb,
+                depth=int(tokens[1]),
+                pv=[move]
+            ):
+                continue
             print([node.value] + [to_uci(m) for m in node.pv])
 
     if tokens[0] == "quiescence":

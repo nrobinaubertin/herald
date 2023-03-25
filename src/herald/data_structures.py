@@ -58,6 +58,6 @@ def to_uci(input_move: Move | Iterable[Move]) -> str:
         )
 
     if isinstance(input_move, Iterable):
-        return ",".join([to_uci(x) for x in input_move])
+        return " ".join([to_uci(x) for x in input_move])
 
     raise Exception("Unknown input_move for to_uci()")

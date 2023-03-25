@@ -22,16 +22,6 @@ Alg_fn = Callable[
 ]
 
 
-def to_string(node: Node) -> str:
-    return (
-        ""
-        + f"info depth {node.depth} "
-        + f"score cp {node.value} "
-        + f"nodes {node.children} "
-        + f"pv {' '.join([to_uci(x) for x in node.pv])}"
-    )
-
-
 # alphabeta pruning (fail-soft)
 # with optional move ordering and transposition table
 def alphabeta(  # noqa: C901
@@ -127,6 +117,7 @@ def alphabeta(  # noqa: C901
         if hash_move is not None:
             yielded.add(hash_move)
             yield hash_move
+        killer_moves_yielded = False
         for move in moves:
             if move in yielded:
                 continue
@@ -134,22 +125,23 @@ def alphabeta(  # noqa: C901
                 yielded.add(move)
                 yield move
                 continue
-            if config.use_killer_moves and killer_moves is not None:
+            if config.use_killer_moves and killer_moves is not None and not killer_moves_yielded:
                 for km in config.move_ordering_fn(
                     b,
                     (
                         km
                         for km in killer_moves
-                        if km not in yielded and board.is_pseudo_legal_move(b, km)
+                        if board.is_pseudo_legal_move(b, km)
                     ),
                 ):
-                    yielded.add(km)
-                    yield km
-            if move == hash_move:
+                    if km not in yielded:
+                        yielded.add(km)
+                        if __debug__:
+                            print(to_uci(km))
+                        yield km
+                killer_moves_yielded = True
+            if move in yielded:
                 continue
-            if config.use_killer_moves and killer_moves is not None:
-                if move in killer_moves:
-                    continue
             yielded.add(move)
             yield move
 
@@ -186,7 +178,7 @@ def alphabeta(  # noqa: C901
         new_depth = depth - 1
 
         # Late move reduction
-        if moves_searched > depth * 10:
+        if config.use_late_move_reduction and moves_searched > depth * 10:
             new_depth = depth - 2
 
         for node in alphabeta(
@@ -242,9 +234,13 @@ def alphabeta(  # noqa: C901
                 break
 
         # print our intermediary result
-        if max_depth != 0 and best is not None and depth == max_depth and has_changed:
+        if (
+            max_depth != 0
+            and best is not None
+            and depth == max_depth
+            and has_changed
+        ):
             yield best
-            print(to_string(best))
 
     if config.use_transposition_table:
         # Save the resulting best node in the transposition table
