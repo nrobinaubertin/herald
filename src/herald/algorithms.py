@@ -136,8 +136,6 @@ def alphabeta(  # noqa: C901
                 ):
                     if km not in yielded:
                         yielded.add(km)
-                        if __debug__:
-                            print(to_uci(km))
                         yield km
                 killer_moves_yielded = True
             if move in yielded:

@@ -10,7 +10,7 @@ class Config:
     quiescence_fn: Any
     move_ordering_fn: Any
     alg_fn: Any
-    version: str = "0.20.11"
+    version: str = "0.20.12"
     name: str = "Herald"
     author: str = "nrobinaubertin"
     transposition_table: dict[Board, Node] = field(default_factory=dict)
@@ -20,6 +20,6 @@ class Config:
     use_hash_move: bool = False
     use_killer_moves: bool = False
     use_late_move_reduction: bool = False
+    use_saved_search: bool = False
     quiescence_search: bool = False
     quiescence_depth: int = 0
-    use_saved_search: bool = False

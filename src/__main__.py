@@ -26,6 +26,7 @@ CONFIG = Config(
     use_hash_move=True,
     use_killer_moves=True,
     use_late_move_reduction=True,
+    use_saved_search=True,
     quiescence_fn=quiescence.quiescence,
 )
 

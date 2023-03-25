@@ -62,11 +62,13 @@ def itdep(
                 nodes=0,
                 score=last_search.score,
                 time=0,
-                stop_search=False,
             )
         # clear last_search if it can't be used
         if hash(last_search.board) != hash(b):
             last_search = None
+        else:
+            last_search.end = False
+            last_search.stop_search = False
 
     if last_search is not None and config.use_saved_search:
         start_depth = len(last_search.pv) + 1
@@ -157,9 +159,9 @@ def itdep(
                         return last_search
                     return None
 
-                if last_search is not None and last_search.end:
+                if last_search is not None and last_search.end and last_search.depth >= i:
                     if __debug__:
-                        print("end_search")
+                        print(f"end_search: {last_search.depth}")
                     process.terminate()
                     subqueue.close()
                     break
