@@ -31,7 +31,7 @@ def target_movetime(
 
     time = (
         min(
-            remaining_time - 1,
+            remaining_time - 3,  # safeguard
             remaining_time / t + 2 * time_inc,
             max_thinking_time,
         )
