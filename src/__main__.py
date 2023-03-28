@@ -25,7 +25,7 @@ CONFIG = Config(
     use_transposition_table=True,
     use_hash_move=True,
     use_killer_moves=True,
-    use_late_move_reduction=True,
+    use_late_move_reduction=False,
     use_saved_search=True,
     quiescence_fn=quiescence.quiescence,
 )

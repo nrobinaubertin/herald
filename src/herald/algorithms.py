@@ -175,9 +175,14 @@ def alphabeta(  # noqa: C901
 
         new_depth = depth - 1
 
-        # Late move reduction
-        if config.use_late_move_reduction and moves_searched > depth * 10:
-            new_depth = depth - 2
+        # Late move reduction (LMR)
+        if config.use_late_move_reduction and not move.is_capture:
+            if moves_searched > 3 + depth * 3:
+                new_depth = depth - 1
+            if moves_searched > 4 + depth * 6:
+                new_depth = depth - 2
+            if moves_searched > 4 + depth * 8:
+                new_depth = depth - 3
 
         for node in alphabeta(
             config=config,
