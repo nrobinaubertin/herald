@@ -191,9 +191,10 @@ def remaining_material(squares: tuple[int]) -> int:
 
 
 @cache
-def remaining_material_percent(remaining_material) -> float:
-    return (remaining_material - PIECE_VALUE[PIECE.KING] * 2) / (
-        START_MATERIAL - PIECE_VALUE[PIECE.KING] * 2
+def remaining_material_percent(remaining_material: int) -> float:
+    return float(
+        (remaining_material - PIECE_VALUE[PIECE.KING] * 2)
+        / (START_MATERIAL - PIECE_VALUE[PIECE.KING] * 2)
     )
 
 

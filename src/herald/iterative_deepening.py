@@ -102,7 +102,7 @@ def itdep(
             while True:
                 # we sometime check if we got a move out of the queue
                 try:
-                    ret: tuple[Search, Config] | None = subqueue.get(True, .1)
+                    ret: tuple[Search, Config] | None = subqueue.get(True, 0.1)
 
                     if ret is not None:
                         (current_search, config) = ret

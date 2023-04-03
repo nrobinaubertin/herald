@@ -87,12 +87,7 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
         moves = (move for move in board.legal_moves(CURRENT_BOARD))
         for move in moves:
             nb = board.push(CURRENT_BOARD, move, fast=False)
-            for node in algorithms.alphabeta(
-                config=CONFIG,
-                b=nb,
-                depth=int(tokens[1]),
-                pv=[move]
-            ):
+            for node in algorithms.alphabeta(config=CONFIG, b=nb, depth=int(tokens[1]), pv=[move]):
                 continue
             print([node.value] + [to_uci(m) for m in node.pv])
 
@@ -272,7 +267,7 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
     return []
 
 
-def wait_for_current_queue():
+def wait_for_current_queue() -> None:
     global CURRENT_QUEUE
     global LAST_SEARCH
     while CURRENT_QUEUE is not None:

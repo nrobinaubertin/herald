@@ -7,7 +7,7 @@ from . import algorithms, board
 from .board import Board
 from .configuration import Config
 from .constants import COLOR_DIRECTION, VALUE_MAX
-from .data_structures import Node, Move, to_uci
+from .data_structures import Move, Node, to_uci
 
 
 @dataclass
@@ -50,7 +50,6 @@ def search(
     hash_move_tt: dict | None = None,
     queue: Optional[multiprocessing.Queue] = None,
 ) -> tuple[Search, Config] | None:
-
     start_time = time.time_ns()
 
     def handle_search(search: Search | None, queue: Optional[multiprocessing.Queue]):
@@ -100,12 +99,12 @@ def search(
             return handle_search(ret, queue)
 
     guess = last_search.score if last_search else 0
-    MARGIN: int = 50
-    lower = guess - MARGIN
-    upper = guess + MARGIN
+    margin: int = 50
+    lower = guess - margin
+    upper = guess + margin
     iteration = 0
 
-    current: Node = None
+    current: Node | None = None
     while True:
         iteration += 1
         for node in algorithms.alphabeta(
@@ -138,14 +137,14 @@ def search(
         # if no best move was found
         # this could happen because of some pruning
         if not node.pv:
-            upper += MARGIN * 2
-            lower -= MARGIN * 2
+            upper += margin * 2
+            lower -= margin * 2
             continue
         if node.value >= upper:
-            upper += MARGIN * 2
+            upper += margin * 2
             continue
         if node.value <= lower:
-            lower -= MARGIN * 2
+            lower -= margin * 2
             continue
         break
 

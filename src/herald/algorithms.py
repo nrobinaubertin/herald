@@ -6,7 +6,7 @@ from . import board, evaluation
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX
-from .data_structures import Move, Node, to_uci
+from .data_structures import Move, Node
 
 Alg_fn = Callable[
     [
@@ -35,7 +35,7 @@ def alphabeta(  # noqa: C901
     beta: int = VALUE_MAX,
     max_depth: int = 0,
     children: int = 0,
-    killer_moves: set | None = None,
+    killer_moves: set[Move] | None = None,
 ) -> Iterable[Node]:
     # detect repetitions
     if depth != max_depth and b.__hash__() in b.hash_history:
@@ -128,11 +128,7 @@ def alphabeta(  # noqa: C901
             if config.use_killer_moves and killer_moves is not None and not killer_moves_yielded:
                 for km in config.move_ordering_fn(
                     b,
-                    (
-                        km
-                        for km in killer_moves
-                        if board.is_pseudo_legal_move(b, km)
-                    ),
+                    (km for km in killer_moves if board.is_pseudo_legal_move(b, km)),
                 ):
                     if km not in yielded:
                         yielded.add(km)
@@ -144,7 +140,7 @@ def alphabeta(  # noqa: C901
             yield move
 
     # create the list of the killer moves that will be found in the children nodes
-    next_killer_moves: set = set()
+    next_killer_moves: set[Move] = set()
 
     moves_searched: int = 0
 
@@ -237,12 +233,7 @@ def alphabeta(  # noqa: C901
                 break
 
         # print our intermediary result
-        if (
-            max_depth != 0
-            and best is not None
-            and depth == max_depth
-            and has_changed
-        ):
+        if max_depth != 0 and best is not None and depth == max_depth and has_changed:
             yield best
 
     if config.use_transposition_table:

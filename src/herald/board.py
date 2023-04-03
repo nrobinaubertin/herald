@@ -22,20 +22,20 @@ class Board:
     # tuple of PIECE * COLOR
     # 120 squares for a 10*12 mailbox
     # https://www.chessprogramming.org/Mailbox
-    squares: tuple
+    squares: tuple[int, ...]
     # color of the player who's turn it is
     turn: COLOR
     # tuple reprensenting castling rights (index 2 * COLOR + CASTLE)
-    castling_rights: tuple
+    castling_rights: tuple[int, ...]
     en_passant: int
     half_move: int
     full_move: int
-    king_squares: tuple
+    king_squares: tuple[int, ...]
     invturn: COLOR
     remaining_material: int
-    hash_history: set
+    hash_history: set[int]
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.squares, self.turn, self.castling_rights))
 
 
@@ -141,18 +141,15 @@ def from_fen(fen: str) -> Board:
 
     rep, turn, castling_rights, en_passant, half_move, full_move = fen.split()
 
-    cr = [0, 0, 0, 0]
-    if "K" in castling_rights:
-        cr[2 * COLOR.WHITE + CASTLE.KING_SIDE] = 1
-    if "Q" in castling_rights:
-        cr[2 * COLOR.WHITE + CASTLE.QUEEN_SIDE] = 1
-    if "k" in castling_rights:
-        cr[2 * COLOR.BLACK + CASTLE.KING_SIDE] = 1
-    if "q" in castling_rights:
-        cr[2 * COLOR.BLACK + CASTLE.QUEEN_SIDE] = 1
+    cr = (
+        1 if "K" in castling_rights else 0,
+        1 if "Q" in castling_rights else 0,
+        1 if "k" in castling_rights else 0,
+        1 if "q" in castling_rights else 0,
+    )
 
     squares = [int(PIECE.INVALID)] * 120
-    king_squares: list[int] = [0, 0]
+    ks: list[int] = [0, 0]
     s = 19
     for row in rep.split("/"):
         squares[(s := s + 1)] = PIECE.INVALID
@@ -169,7 +166,7 @@ def from_fen(fen: str) -> Board:
                 piece = PIECE.QUEEN + 6 * color
             if c.lower() == "k":
                 piece = PIECE.KING + 6 * color
-                king_squares[color] = s + 1
+                ks[color] = s + 1
             if c.lower() == "p":
                 piece = PIECE.PAWN + 6 * color
             if piece is not None:
@@ -179,14 +176,17 @@ def from_fen(fen: str) -> Board:
                     squares[(s := s + 1)] = PIECE.EMPTY
         squares[(s := s + 1)] = PIECE.INVALID
 
+    # this conversion is done for type safety purposes
+    king_squares: tuple[int, int] = (ks[0], ks[1])
+
     b = Board(
         tuple(squares),
         COLOR.WHITE if turn == "w" else COLOR.BLACK,
-        tuple(cr),
+        cr,
         (to_square_notation(en_passant) if en_passant != "-" else -1),
         int(half_move),
         int(full_move),
-        tuple(king_squares),
+        king_squares,
         COLOR.WHITE if turn == "b" else COLOR.BLACK,
         evaluation.remaining_material(tuple(squares)),
         set(),
@@ -390,7 +390,7 @@ def legal_moves(b: Board) -> list[Move]:
 
 
 @cache
-def is_square_attacked(squares: tuple, square: int, color: COLOR) -> bool:
+def is_square_attacked(squares: tuple[int, ...], square: int, color: COLOR) -> bool:
     """Detect if square on b is attacked by color."""
     for depl in (21, 12, -8, -19, -21, -12, 8, 19):
         if squares[square + depl] == PIECE.KNIGHT + 6 * color:
@@ -642,7 +642,7 @@ def _pawn_moves(
 ) -> Iterable[Move]:
     if b.turn == COLOR.BLACK:
         if start < 40:
-            depls = (10, 20)
+            depls: tuple[int] | tuple[int, int] = (10, 20)
         else:
             depls = (10,)
     else:
