@@ -55,7 +55,10 @@ def itdep(
                 break
             # compute next subsearch
             last_search = Search(
-                board=board.push(last_search.board, move),
+                board=board.push(
+                    last_search.board,
+                    move,
+                ),
                 move=last_search.pv[1],
                 pv=last_search.pv[1:],
                 depth=last_search.depth - 1,
@@ -77,15 +80,33 @@ def itdep(
 
     if movetime > 0:
         start_time = time.time_ns()
-        max_depth = max(1, min(10, max_depth))
-        for i in range(start_depth, max_depth + 1):
+        max_depth = max(
+            1,
+            min(
+                10,
+                max_depth,
+            ),
+        )
+        for i in range(
+            start_depth,
+            max_depth + 1,
+        ):
             # we create a queue to be able to stop the search when there's no time left
             # pylint issue: https://github.com/PyCQA/pylint/issues/3488
             # pylint: disable=unsubscriptable-object
-            subqueue: multiprocessing.Queue[tuple[Search, Config] | None] = multiprocessing.Queue()
+            subqueue: multiprocessing.Queue[
+                tuple[
+                    Search,
+                    Config,
+                ]
+                | None
+            ] = multiprocessing.Queue()
             process = multiprocessing.Process(
                 target=search_wrapper,
-                args=(subqueue, b),
+                args=(
+                    subqueue,
+                    b,
+                ),
                 kwargs={
                     "depth": i,
                     "config": config,
@@ -102,10 +123,19 @@ def itdep(
             while True:
                 # we sometime check if we got a move out of the queue
                 try:
-                    ret: tuple[Search, Config] | None = subqueue.get(True, 0.1)
+                    ret: tuple[
+                        Search,
+                        Config,
+                    ] | None = subqueue.get(
+                        True,
+                        0.1,
+                    )
 
                     if ret is not None:
-                        (current_search, config) = ret
+                        (
+                            current_search,
+                            config,
+                        ) = ret
 
                     # if there is no move available and no exception was raised
                     if current_search is None:
@@ -114,14 +144,17 @@ def itdep(
                             print("bestmove nomove")
                         return None
 
-                except:
+                except Exception:
                     current_search = None
 
                 if current_search is not None:
                     last_search = current_search
 
                 # bail out if the search tells us to stop
-                assert isinstance(last_search, Search)
+                assert isinstance(
+                    last_search,
+                    Search,
+                )
                 if last_search is not None and last_search.stop_search:
                     if __debug__:
                         print("stop_search")
@@ -145,7 +178,12 @@ def itdep(
                     return last_search
 
                 # calculate used time
-                used_time = int(max(1, (time.time_ns() - start_time) // 1e8))
+                used_time = int(
+                    max(
+                        1,
+                        (time.time_ns() - start_time) // 1e8,
+                    )
+                )
 
                 # bail out if we have no time anymore
                 if used_time + 1 >= movetime:
@@ -174,17 +212,20 @@ def itdep(
         return None
 
     last_search = None
-    for i in range(start_depth, max_depth + 1):
-        ret = search(
-            b=b,
-            depth=i,
-            last_search=last_search,
-            config=config,
-            children=0 if last_search is None else last_search.nodes,
-        )
+    for i in range(
+        start_depth,
+        max_depth + 1,
+    ):
+        children = 0
+        if last_search is not None:
+            children = last_search.nodes
+        ret = search(b=b, depth=i, last_search=last_search, config=config, children=children)
 
         if ret is not None:
-            current_search, config = ret
+            (
+                current_search,
+                config,
+            ) = ret
 
         # if there is no move available
         if current_search is None:

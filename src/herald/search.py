@@ -22,7 +22,9 @@ class Search:
     stop_search: bool = False
     end: bool = False
 
-    def __str__(self) -> str:
+    def __str__(
+        self,
+    ) -> str:
         return (
             ""
             + f"info depth {self.depth} "
@@ -30,7 +32,18 @@ class Search:
             + f"time {int(self.time // 1e9)} "
             + f"nodes {self.nodes} "
             + (
-                "nps " + str(int(self.nodes * 1e9 // max(0.001, self.time))) + " "
+                "nps "
+                + str(
+                    int(
+                        self.nodes
+                        * 1e9
+                        // max(
+                            0.001,
+                            self.time,
+                        )
+                    )
+                )
+                + " "
                 if self.time > 0
                 else ""
             )
@@ -49,15 +62,26 @@ def search(
     transposition_table: dict | None = None,
     hash_move_tt: dict | None = None,
     queue: Optional[multiprocessing.Queue] = None,
-) -> tuple[Search, Config] | None:
+) -> tuple[Search, Config,] | None:
     start_time = time.time_ns()
 
-    def handle_search(search: Search | None, queue: Optional[multiprocessing.Queue]):
+    def handle_search(
+        search: Search | None,
+        queue: Optional[multiprocessing.Queue],
+    ):
         if search is not None:
             print(search)
         if queue is not None:
-            queue.put((search, config))
-        return (search, config)
+            queue.put(
+                (
+                    search,
+                    config,
+                )
+            )
+        return (
+            search,
+            config,
+        )
 
     if transposition_table is not None:
         config.transposition_table = transposition_table
@@ -68,7 +92,10 @@ def search(
 
     # return None if there is no possible move
     if len(possible_moves) == 0:
-        return handle_search(None, queue)
+        return handle_search(
+            None,
+            queue,
+        )
 
     # if there's only one move possible, return it immediately
     if len(possible_moves) == 1:
@@ -82,7 +109,10 @@ def search(
             time=(time.time_ns() - start_time),
             stop_search=True,
         )
-        return handle_search(ret, queue)
+        return handle_search(
+            ret,
+            queue,
+        )
 
     # return immediately if there is a king capture
     for move in possible_moves:
@@ -96,7 +126,10 @@ def search(
                 score=VALUE_MAX * b.turn,
                 time=(time.time_ns() - start_time),
             )
-            return handle_search(ret, queue)
+            return handle_search(
+                ret,
+                queue,
+            )
 
     guess = last_search.score if last_search else 0
     margin: int = 50
@@ -132,7 +165,10 @@ def search(
                     time=(time.time_ns() - start_time),
                     stop_search=(COLOR_DIRECTION[b.turn] * node.value) > VALUE_MAX - 100,
                 )
-                handle_search(search, queue)
+                handle_search(
+                    search,
+                    queue,
+                )
 
         # if no best move was found
         # this could happen because of some pruning
@@ -149,4 +185,7 @@ def search(
         break
 
     search.end = True
-    return handle_search(search, queue)
+    return handle_search(
+        search,
+        queue,
+    )

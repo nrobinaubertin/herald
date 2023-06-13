@@ -39,7 +39,9 @@ def stop_calculating() -> None:
     CURRENT_QUEUE = None
 
 
-def uci_parser(line: str) -> list[str]:  # noqa: C901
+def uci_parser(
+    line: str,
+) -> list[str]:  # noqa: C901
     global CURRENT_BOARD
     global CURRENT_PROCESS
     global CURRENT_QUEUE
@@ -58,16 +60,17 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
     if tokens[0] == "lastsearch":
         if LAST_SEARCH is not None:
             return [f"LAST SEARCH: {to_uci(LAST_SEARCH.pv)}"]
-        else:
-            return ["LAST SEARCH: None"]
+        return ["LAST SEARCH: None"]
 
     if tokens[0] == "see":
         return [f"SEE: {see(CURRENT_BOARD, int(tokens[1]), 0)}"]
 
     if tokens[0] == "eval":
-        return [
-            f"board: {evaluation.eval_fast(CURRENT_BOARD.squares, evaluation.remaining_material(CURRENT_BOARD.squares))}"
-        ]
+        curr_eval = evaluation.eval_fast(
+            CURRENT_BOARD.squares,
+            evaluation.remaining_material(CURRENT_BOARD.squares),
+        )
+        return [f"board: {curr_eval}"]
 
     if tokens[0] == "remaining_material":
         return [f"board: {CURRENT_BOARD.remaining_material}"]
@@ -77,17 +80,44 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
 
     if tokens[0] == "quietlines":
         moves = (move for move in board.tactical_moves(CURRENT_BOARD))
-        moves = (move for move in moves if not pruning.is_bad_capture(CURRENT_BOARD, move))
+        moves = (
+            move
+            for move in moves
+            if not pruning.is_bad_capture(
+                CURRENT_BOARD,
+                move,
+            )
+        )
         for move in moves:
-            nb = board.push(CURRENT_BOARD, move, fast=False)
-            node = quiescence.quiescence(CONFIG, nb, [move], -VALUE_MAX, VALUE_MAX, True)
+            new_board = board.push(
+                CURRENT_BOARD,
+                move,
+                fast=False,
+            )
+            node = quiescence.quiescence(
+                CONFIG,
+                new_board,
+                [move],
+                -VALUE_MAX,
+                VALUE_MAX,
+                True,
+            )
             print([node.value] + [to_uci(m) for m in node.pv])
 
     if tokens[0] == "lines":
         moves = (move for move in board.legal_moves(CURRENT_BOARD))
         for move in moves:
-            nb = board.push(CURRENT_BOARD, move, fast=False)
-            for node in algorithms.alphabeta(config=CONFIG, b=nb, depth=int(tokens[1]), pv=[move]):
+            new_board = board.push(
+                CURRENT_BOARD,
+                move,
+                fast=False,
+            )
+            for node in algorithms.alphabeta(
+                config=CONFIG,
+                b=new_board,
+                depth=int(tokens[1]),
+                pv=[move],
+            ):
                 continue
             print([node.value] + [to_uci(m) for m in node.pv])
 
@@ -97,7 +127,14 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
 
         process = multiprocessing.Process(
             target=quiescence.quiescence,
-            args=(CONFIG, CURRENT_BOARD, [], -VALUE_MAX, VALUE_MAX, True),
+            args=(
+                CONFIG,
+                CURRENT_BOARD,
+                [],
+                -VALUE_MAX,
+                VALUE_MAX,
+                True,
+            ),
             daemon=False,
         )
         process.start()
@@ -105,7 +142,14 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
 
     if tokens[0] == "quietmoves":
         moves = (move for move in board.tactical_moves(CURRENT_BOARD))
-        moves = (move for move in moves if not pruning.is_bad_capture(CURRENT_BOARD, move))
+        moves = (
+            move
+            for move in moves
+            if not pruning.is_bad_capture(
+                CURRENT_BOARD,
+                move,
+            )
+        )
         return [", ".join([to_uci(m) for m in moves])]
 
     if tokens[0] == "pseudomoves":
@@ -115,7 +159,17 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
         return [", ".join([to_uci(m) for m in board.tactical_moves(CURRENT_BOARD)])]
 
     if tokens[0] == "captures":
-        return [", ".join([to_uci(m) for m in board.capture_moves(CURRENT_BOARD, int(tokens[1]))])]
+        return [
+            ", ".join(
+                [
+                    to_uci(m)
+                    for m in board.capture_moves(
+                        CURRENT_BOARD,
+                        int(tokens[1]),
+                    )
+                ]
+            )
+        ]
 
     if tokens[0] == "moves":
         return [", ".join([to_uci(m) for m in board.legal_moves(CURRENT_BOARD)])]
@@ -127,7 +181,10 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
         total = 0
         to_display = []
 
-        def execute(b: Board, depth: int) -> int:
+        def execute(
+            b: Board,
+            depth: int,
+        ) -> int:
             if depth == 0:
                 return 1
 
@@ -136,14 +193,26 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
 
             nodes = 0
             for move in board.legal_moves(b):
-                curr_board = board.push(b, move)
-                nodes += execute(curr_board, depth - 1)
+                curr_board = board.push(
+                    b,
+                    move,
+                )
+                nodes += execute(
+                    curr_board,
+                    depth - 1,
+                )
 
             return nodes
 
         for move in board.legal_moves(CURRENT_BOARD):
-            b = board.push(CURRENT_BOARD, move)
-            nodes = execute(b, int(tokens[1]) - 1)
+            b = board.push(
+                CURRENT_BOARD,
+                move,
+            )
+            nodes = execute(
+                b,
+                int(tokens[1]) - 1,
+            )
             to_display.append(f"{to_uci(move)}: {nodes}")
             total += nodes
         to_display.append(f"Nodes: {total}")
@@ -172,8 +241,15 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
         sys.exit()
 
     if tokens[0] == "play":
-        move = board.from_uci(CURRENT_BOARD, tokens[1])
-        CURRENT_BOARD = board.push(CURRENT_BOARD, move, fast=False)
+        move = board.from_uci(
+            CURRENT_BOARD,
+            tokens[1],
+        )
+        CURRENT_BOARD = board.push(
+            CURRENT_BOARD,
+            move,
+            fast=False,
+        )
 
     if tokens[0] == "ucinewgame":
         CURRENT_BOARD = board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
@@ -202,7 +278,14 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
         b = board.from_fen(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
             for move_str in tokens[next_token + 1 :]:
-                b = board.push(b, board.from_uci(b, move_str), fast=False)
+                b = board.push(
+                    b,
+                    board.from_uci(
+                        b,
+                        move_str,
+                    ),
+                    fast=False,
+                )
         CURRENT_BOARD = b
 
     if len(tokens) > 1 and tokens[0] == "go":
@@ -233,12 +316,16 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
             CURRENT_PROCESS.terminate()
 
         CURRENT_QUEUE = multiprocessing.Queue()
-        t = threading.Thread(target=wait_for_current_queue)
-        t.start()
+        curr_thread = threading.Thread(target=wait_for_current_queue)
+        curr_thread.start()
         if depth == 0:
             process = multiprocessing.Process(
                 target=itdep,
-                args=(CURRENT_QUEUE, CURRENT_BOARD, CONFIG),
+                args=(
+                    CURRENT_QUEUE,
+                    CURRENT_BOARD,
+                    CONFIG,
+                ),
                 kwargs={
                     "movetime": target_movetime(
                         CURRENT_BOARD,
@@ -255,7 +342,11 @@ def uci_parser(line: str) -> list[str]:  # noqa: C901
         else:
             process = multiprocessing.Process(
                 target=itdep,
-                args=(CURRENT_QUEUE, CURRENT_BOARD, CONFIG),
+                args=(
+                    CURRENT_QUEUE,
+                    CURRENT_BOARD,
+                    CONFIG,
+                ),
                 kwargs={
                     "max_depth": depth,
                     "last_search": LAST_SEARCH,
@@ -276,7 +367,7 @@ def wait_for_current_queue() -> None:
             if last_search is not None and last_search.end:
                 LAST_SEARCH = last_search
             break
-        except:
+        except Exception:
             pass
 
 

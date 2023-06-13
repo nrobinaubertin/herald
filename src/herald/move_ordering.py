@@ -47,13 +47,37 @@ def capture_ordering(
             mem4 = m
             continue
         if m.captured_piece < mem1.captured_piece:
-            m, mem1 = mem1, m
+            (
+                m,
+                mem1,
+            ) = (
+                mem1,
+                m,
+            )
         if m.captured_piece < mem2.captured_piece:
-            m, mem2 = mem2, m
+            (
+                m,
+                mem2,
+            ) = (
+                mem2,
+                m,
+            )
         if m.captured_piece < mem3.captured_piece:
-            m, mem3 = mem3, m
+            (
+                m,
+                mem3,
+            ) = (
+                mem3,
+                m,
+            )
         if m.captured_piece < mem4.captured_piece:
-            m, mem4 = mem4, m
+            (
+                m,
+                mem4,
+            ) = (
+                mem4,
+                m,
+            )
         yield m
     if mem4:
         yield mem4
@@ -80,7 +104,10 @@ def fast_ordering(
         if m.is_king_capture:
             yield m
         if m.is_capture:
-            if pruning.is_bad_capture(b, m):
+            if pruning.is_bad_capture(
+                b,
+                m,
+            ):
                 bad_captures.append(m)
                 continue
             if m.captured_piece > 3:

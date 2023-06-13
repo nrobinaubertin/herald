@@ -38,7 +38,7 @@ def alphabeta(  # noqa: C901
     killer_moves: set[Move] | None = None,
 ) -> Iterable[Node]:
     # detect repetitions
-    if depth != max_depth and b.__hash__() in b.hash_history:
+    if depth != max_depth and b in b.hash_history:
         yield Node(
             depth=depth,
             value=0,
@@ -51,18 +51,33 @@ def alphabeta(  # noqa: C901
 
     if config.use_transposition_table and len(pv) > 0:
         # check if we find a hit in the transposition table
-        node = config.transposition_table.get(b, depth)
-        if isinstance(node, Node) and node.depth >= depth:
+        node = config.transposition_table.get(
+            b,
+            depth,
+        )
+        if (
+            isinstance(
+                node,
+                Node,
+            )
+            and node.depth >= depth
+        ):
             # first we make sure that the retrieved node
             # is in our alpha-beta range
             if alpha < node.lower and node.upper < beta:
                 # if this is a cut-node
                 if node.value >= node.upper:
-                    alpha = max(alpha, node.value)
+                    alpha = max(
+                        alpha,
+                        node.value,
+                    )
 
                 # if this is an all-node
                 if node.value <= node.lower:
-                    beta = min(beta, node.value)
+                    beta = min(
+                        beta,
+                        node.value,
+                    )
 
                 # if this is an exact node
                 if node.lower < node.value < node.upper:
@@ -88,7 +103,10 @@ def alphabeta(  # noqa: C901
                 # display quiescent nodes
                 pv = node.pv  # type: ignore
         else:
-            value = evaluation.eval_fast(b.squares, b.remaining_material)
+            value = evaluation.eval_fast(
+                b.squares,
+                b.remaining_material,
+            )
 
         yield Node(
             value=value,
@@ -109,11 +127,17 @@ def alphabeta(  # noqa: C901
     else:
         moves = board.pseudo_legal_moves(b)
 
-    moves = config.move_ordering_fn(b, moves)
+    moves = config.move_ordering_fn(
+        b,
+        moves,
+    )
 
     def order_moves() -> Iterable[Move]:
         yielded = set()
-        hash_move: Optional[Move] = config.hash_move_tt.get(b, None)
+        hash_move: Optional[Move] = config.hash_move_tt.get(
+            b,
+            None,
+        )
         if hash_move is not None:
             yielded.add(hash_move)
             yield hash_move
@@ -128,7 +152,14 @@ def alphabeta(  # noqa: C901
             if config.use_killer_moves and killer_moves is not None and not killer_moves_yielded:
                 for km in config.move_ordering_fn(
                     b,
-                    (km for km in killer_moves if board.is_pseudo_legal_move(b, km)),
+                    (
+                        km
+                        for km in killer_moves
+                        if board.is_pseudo_legal_move(
+                            b,
+                            km,
+                        )
+                    ),
                 ):
                     if km not in yielded:
                         yielded.add(km)
@@ -162,11 +193,17 @@ def alphabeta(  # noqa: C901
             )
             return
 
-        nb = board.push(b, move)
+        nb = board.push(
+            b,
+            move,
+        )
 
         # if the king is in check after we move
         # then it's a bad move (we will lose the game)
-        if board.king_is_in_check(nb, nb.invturn):
+        if board.king_is_in_check(
+            nb,
+            nb.invturn,
+        ):
             continue
 
         new_depth = depth - 1
@@ -209,7 +246,10 @@ def alphabeta(  # noqa: C901
                     upper=beta,
                     children=children,
                 )
-            alpha = max(alpha, node.value)
+            alpha = max(
+                alpha,
+                node.value,
+            )
             if node.value >= beta:
                 if config.use_killer_moves and killer_moves is not None:
                     killer_moves.add(move)
@@ -226,7 +266,10 @@ def alphabeta(  # noqa: C901
                     upper=beta,
                     children=children,
                 )
-            beta = min(beta, node.value)
+            beta = min(
+                beta,
+                node.value,
+            )
             if node.value <= alpha:
                 if config.use_killer_moves and killer_moves is not None:
                     killer_moves.add(move)
@@ -256,7 +299,11 @@ def alphabeta(  # noqa: C901
     else:
         # no "best" found
         # should happen only in case of stalemate/checkmate
-        if board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn):
+        if board.is_square_attacked(
+            b.squares,
+            b.king_squares[b.turn],
+            b.invturn,
+        ):
             node = Node(
                 depth=depth,
                 value=VALUE_MAX * COLOR_DIRECTION[b.turn] * -1,

@@ -45,7 +45,10 @@ def _search(
 
     # if we are on a terminal node, return the evaluation
     if depth >= config.quiescence_depth:
-        value = evaluation.eval_fast(b.squares, b.remaining_material)
+        value = evaluation.eval_fast(
+            b.squares,
+            b.remaining_material,
+        )
         return Node(
             value=value,
             depth=0,
@@ -59,11 +62,18 @@ def _search(
     # for info purposes
     children = 1
 
-    we_are_in_check = board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn)
+    we_are_in_check = board.is_square_attacked(
+        b.squares,
+        b.king_squares[b.turn],
+        b.invturn,
+    )
 
     if not we_are_in_check:
         # stand_pat evaluation to check if we stop QS
-        stand_pat: int = evaluation.eval_fast(b.squares, b.remaining_material)
+        stand_pat: int = evaluation.eval_fast(
+            b.squares,
+            b.remaining_material,
+        )
         # if depth == 0:
         #     print(stand_pat)
         if b.turn == COLOR.WHITE:
@@ -86,7 +96,10 @@ def _search(
                     upper=beta,
                     children=1,
                 )
-            alpha = max(alpha, stand_pat)
+            alpha = max(
+                alpha,
+                stand_pat,
+            )
         else:
             if stand_pat <= alpha:
                 return Node(
@@ -107,7 +120,10 @@ def _search(
                     upper=beta,
                     children=1,
                 )
-            beta = min(beta, stand_pat)
+            beta = min(
+                beta,
+                stand_pat,
+            )
         best = Node(
             value=stand_pat,
             depth=0,
@@ -131,14 +147,23 @@ def _search(
                 break
 
             # skip bad capture moves
-            if pruning.is_bad_capture(b, move):
+            if pruning.is_bad_capture(
+                b,
+                move,
+            ):
                 continue
 
-        nb = board.push(b, move)
+        nb = board.push(
+            b,
+            move,
+        )
 
         # if the king is in check after we move
         # then it's a bad move (we will lose the game)
-        if board.king_is_in_check(nb, nb.invturn):
+        if board.king_is_in_check(
+            nb,
+            nb.invturn,
+        ):
             continue
 
         if __debug__:
@@ -170,7 +195,10 @@ def _search(
                     upper=beta,
                     children=children,
                 )
-            alpha = max(alpha, node.value)
+            alpha = max(
+                alpha,
+                node.value,
+            )
             if node.value >= beta:
                 break
         else:
@@ -185,7 +213,10 @@ def _search(
                     upper=beta,
                     children=children,
                 )
-            beta = min(beta, node.value)
+            beta = min(
+                beta,
+                node.value,
+            )
             if node.value <= alpha:
                 break
 
@@ -199,7 +230,11 @@ def _search(
     else:
         # this happens when no quiescent move is available
         # if the king square is attacked and we have no moves, it's a mate
-        if board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn):
+        if board.is_square_attacked(
+            b.squares,
+            b.king_squares[b.turn],
+            b.invturn,
+        ):
             node = Node(
                 depth=depth,
                 value=VALUE_MAX * COLOR_DIRECTION[b.turn] * -1,
@@ -209,7 +244,10 @@ def _search(
                 children=children,
             )
         else:
-            value = evaluation.eval_fast(b.squares, b.remaining_material)
+            value = evaluation.eval_fast(
+                b.squares,
+                b.remaining_material,
+            )
             return Node(
                 value=value,
                 depth=0,

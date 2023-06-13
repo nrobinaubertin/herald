@@ -160,7 +160,10 @@ PIECE_SQUARE_TABLE = [
 # arrange pst to match our mailbox
 PIECE_SQUARE_TABLE_MAILBOX = []
 for table in PIECE_SQUARE_TABLE:
-    new_piece_table: dict[PIECE, list[int]] = {}
+    new_piece_table: dict[
+        PIECE,
+        list[int],
+    ] = {}
     for piece in table:
         new_table = []
         for i in range(20):
@@ -177,7 +180,9 @@ for table in PIECE_SQUARE_TABLE:
 
 
 @cache
-def remaining_material(squares: tuple[int]) -> int:
+def remaining_material(
+    squares: tuple[int],
+) -> int:
     material = 0
     for i in range(8):
         for j in range(8):
@@ -191,7 +196,9 @@ def remaining_material(squares: tuple[int]) -> int:
 
 
 @cache
-def remaining_material_percent(remaining_material: int) -> float:
+def remaining_material_percent(
+    remaining_material: int,
+) -> float:
     return float(
         (remaining_material - PIECE_VALUE[PIECE.KING] * 2)
         / (START_MATERIAL - PIECE_VALUE[PIECE.KING] * 2)
@@ -199,7 +206,10 @@ def remaining_material_percent(remaining_material: int) -> float:
 
 
 @cache
-def eval_fast(squares: tuple[int], remaining_material: int) -> int:
+def eval_fast(
+    squares: tuple[int],
+    remaining_material: int,
+) -> int:
     evaluation = 0
 
     for i in range(8):
