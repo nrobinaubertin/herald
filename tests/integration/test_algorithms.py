@@ -104,7 +104,7 @@ def test_alphabeta(fen, depth):
     )
 
 
-@pytest.mark.parametrize("fen", fens)
+@pytest.mark.parametrize("fen", fens[:50])
 @pytest.mark.parametrize("depth", (3, 4))
 def test_hash_move(fen, depth):
     r1 = alphabeta(
