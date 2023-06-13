@@ -436,12 +436,8 @@ def is_pseudo_legal_move(
     if move.is_capture:
         if b.squares[move.end] == PIECE.EMPTY and move.end != b.en_passant:
             return False
-        if (
-            move.captured_piece != (
-                IS_PIECE[b.squares[move.end]]
-                if move.end != b.en_passant
-                else PIECE.PAWN
-            )
+        if move.captured_piece != (
+            IS_PIECE[b.squares[move.end]] if move.end != b.en_passant else PIECE.PAWN
         ):
             return False
     if not move.is_capture:
@@ -957,15 +953,10 @@ def _pawn_moves(
         else:
             # do not allow 2 squares move if there's a piece in the way
             break
-    for depl in (
-        (9, 11)
-        if b.turn == COLOR.BLACK
-        else (-9, -11)
-    ):
+    for depl in (9, 11) if b.turn == COLOR.BLACK else (-9, -11):
         end = start + depl
         if (
-            b.squares[end]
-            not in (PIECE.EMPTY, PIECE.INVALID)
+            b.squares[end] not in (PIECE.EMPTY, PIECE.INVALID)
             and get_color(b.squares[end]) != b.turn
         ) or end == b.en_passant:
             is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING

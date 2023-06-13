@@ -1,16 +1,15 @@
 <h1 align="center">
 Herald
 <br/>
-<img align="center" src="herald.webp">
+<img align="center" src="herald.webp" title="Herald reading his script">
 </h1>
 <h4 align="center">Chess engine written in python</h4>
 
 ## Why ?
 
 For fun.  
-But more seriously, the goal of this engine is later to be able to play
-all kind of faery chess variants, not only the standard variation.  
-I want it to only use the standard modules of python.
+I've written a blog post detailing the story of this chess engine
+that you can read [here](http://niels.fr/blog/starting-my-own-chess-engine/).
 
 ## What is implemented for now ?
 
@@ -29,10 +28,10 @@ python3 -m zipapp src \
   -p "/usr/bin/env -S python3 -O"
 ```
 
-## Run a test suite
+## Run the tests
 
-You can run a test suite by using the following command:
+You can run the tests by using the following command:
 
 ```sh
-python3 -m unittest tests/<test_name>
+tox
 ```

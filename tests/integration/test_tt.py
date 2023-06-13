@@ -4,7 +4,6 @@ import pytest
 from herald import algorithms, board, move_ordering, quiescence
 from herald.configuration import Config
 from herald.constants import VALUE_MAX, COLOR
-from herald.data_structures import to_uci
 
 fens = []
 with open("tests/epd/transposition_table.epd", "r") as tt_file:
@@ -56,16 +55,10 @@ def test_tt_equivalence(fen, depth, use_qs):
         node2 = max(alphabeta_result, key=lambda x: x.value)
         # We cannot be sure that exactly the same line will be selected
         # Only the it will be equivalent in value
-        # assert (
-        #     f"{fen}: {','.join([to_uci(x) for x in node1.pv])}" == f"{fen}: {','.join([to_uci(x) for x in node2.pv])}"
-        # )
         assert node1.value == node2.value, f"{node1.value}, {node2.value}"
     else:
         node1 = min(alphabeta_tt_result, key=lambda x: x.value)
         node2 = min(alphabeta_result, key=lambda x: x.value)
         # We cannot be sure that exactly the same line will be selected
         # Only the it will be equivalent in value
-        # assert (
-        #     f"{fen}: {','.join([to_uci(x) for x in node1.pv])}" == f"{fen}: {','.join([to_uci(x) for x in node2.pv])}"
-        # )
         assert node1.value == node2.value, f"{node1.value}, {node2.value}"
