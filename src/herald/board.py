@@ -504,6 +504,21 @@ def is_legal_move(
     ):
         return False
 
+    # a castling move is not acceptable if some transition squares are attacked
+    if move.is_castle:
+        if is_square_attacked(
+            b.squares,
+            move.start + 1,
+            b.invturn,
+        ):
+            return False
+        if is_square_attacked(
+            b.squares,
+            move.start - 1,
+            b.invturn,
+        ):
+            return False
+
     return True
 
 
