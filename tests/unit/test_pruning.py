@@ -1,5 +1,4 @@
 import pytest
-
 from herald import board, pruning
 from herald.constants import COLOR_DIRECTION
 
