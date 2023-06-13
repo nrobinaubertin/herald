@@ -4,7 +4,6 @@ We test our move generation using the perft algorithm
 """
 
 import pytest
-
 from herald import board
 from herald.board import Board
 

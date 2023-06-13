@@ -5,9 +5,9 @@ When comparing move ordering functions, we cannot compare pvs
 """
 
 import pytest
-
-from herald import algorithms, board, evaluation, move_ordering, quiescence
-from herald.algorithms import alphabeta, minimax
+from herald import algorithms, board, move_ordering, quiescence
+from herald.algorithms import alphabeta
+from herald.minimax import minimax
 from herald.configuration import Config
 from herald.constants import VALUE_MAX
 from herald.data_structures import to_uci
@@ -22,60 +22,58 @@ fens = win_at_chess
 
 
 # This test equivalence between raw alphabeta
-# and alphabeta with fast_mvv_lva move ordering
-# This test can sometime fail. Why ? Question for later !
+# and alphabeta with fast move ordering
 @pytest.mark.parametrize("fen", fens)
 @pytest.mark.parametrize("depth", (1, 2, 3))
-def test_fast_mvv_lva(fen, depth):
-    alphabeta_result = alphabeta(
-        Config(
+def test_fast_ordering(fen, depth):
+    r1 = alphabeta(
+        config=Config(
             alg_fn=algorithms.alphabeta,
-            eval_fn=evaluation.eval_simple,
             move_ordering_fn=move_ordering.no_ordering,
-            qs_move_ordering_fn=move_ordering.qs_ordering,
             quiescence_fn=quiescence.quiescence,
-            use_move_tt=False,
             use_transposition_table=False,
         ),
-        board.from_fen(fen),
-        depth,
-        [],
-        False,
-        -VALUE_MAX,
-        VALUE_MAX,
+        b=board.from_fen(fen),
+        depth=depth,
+        pv=[],
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
     )
-    alphabeta_fast_mvv_lva_result = alphabeta(
-        Config(
+    r2 = alphabeta(
+        config=Config(
             alg_fn=algorithms.alphabeta,
-            eval_fn=evaluation.eval_simple,
-            move_ordering_fn=move_ordering.fast_mvv_lva,
-            qs_move_ordering_fn=move_ordering.qs_ordering,
+            move_ordering_fn=move_ordering.fast_ordering,
             quiescence_fn=quiescence.quiescence,
-            use_move_tt=False,
             use_transposition_table=False,
         ),
-        board.from_fen(fen),
-        depth,
-        [],
-        False,
-        -VALUE_MAX,
-        VALUE_MAX,
+        b=board.from_fen(fen),
+        depth=depth,
+        pv=[],
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
     )
-    assert alphabeta_fast_mvv_lva_result.value == alphabeta_result.value
+    n1 = max(r1, key=lambda x: x.value)
+    n2 = max(r2, key=lambda x: x.value)
+    assert n1.value == n2.value
+    # The fast ordering function can return different moves as long
+    # as their value is the same. That means that we cannot test the pv equivalence
+    # assert (
+    #     f"{fen}: {','.join([to_uci(x) for x in n1.pv])}"
+    #     == f"{fen}: {','.join([to_uci(x) for x in n2.pv])}"
+    # )
 
 
 # This test equivalence between raw alphabeta and minimax
 @pytest.mark.parametrize("fen", fens[:100])
 @pytest.mark.parametrize("depth", (1, 2, 3))
 def test_alphabeta(fen, depth):
-    minimax_result = minimax(
+    r1 = minimax(
         Config(
-            alg_fn=algorithms.minimax,
-            eval_fn=evaluation.eval_simple,
+            alg_fn=minimax,
             move_ordering_fn=move_ordering.no_ordering,
-            qs_move_ordering_fn=move_ordering.qs_ordering,
             quiescence_fn=quiescence.quiescence,
-            use_move_tt=False,
             use_transposition_table=False,
         ),
         board.from_fen(fen),
@@ -83,27 +81,26 @@ def test_alphabeta(fen, depth):
         [],
         False,
     )
-    alphabeta_result = alphabeta(
-        Config(
+    r2 = alphabeta(
+        config=Config(
             alg_fn=algorithms.alphabeta,
-            eval_fn=evaluation.eval_simple,
             move_ordering_fn=move_ordering.no_ordering,
-            qs_move_ordering_fn=move_ordering.qs_ordering,
             quiescence_fn=quiescence.quiescence,
-            use_move_tt=False,
             use_transposition_table=False,
         ),
-        board.from_fen(fen),
-        depth,
-        [],
-        False,
-        -VALUE_MAX,
-        VALUE_MAX,
+        b=board.from_fen(fen),
+        depth=depth,
+        pv=[],
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
     )
-    assert minimax_result.value == alphabeta_result.value
+    n1 = r1
+    n2 = max(r2, key=lambda x: x.value)
+    assert n1.value == n2.value
     assert (
-        f"{fen}: {','.join([to_uci(x) for x in minimax_result.pv])}"
-        == f"{fen}: {','.join([to_uci(x) for x in alphabeta_result.pv])}"
+        f"{fen}: {','.join([to_uci(x) for x in n1.pv])}"
+        == f"{fen}: {','.join([to_uci(x) for x in n2.pv])}"
     )
 
 
@@ -111,45 +108,41 @@ def test_alphabeta(fen, depth):
 @pytest.mark.parametrize("depth", (3, 4))
 def test_hash_move(fen, depth):
     r1 = alphabeta(
-        Config(
+        config=Config(
             alg_fn=algorithms.alphabeta,
-            eval_fn=evaluation.eval_new,
-            move_ordering_fn=move_ordering.fast_mvv_lva,
-            qs_move_ordering_fn=move_ordering.qs_ordering,
+            move_ordering_fn=move_ordering.fast_ordering,
             quiescence_depth=50,
             quiescence_fn=quiescence.quiescence,
             quiescence_search=True,
-            use_move_tt=True,
             use_transposition_table=True,
         ),
-        board.from_fen(fen),
-        depth,
-        [],
-        False,
-        -VALUE_MAX,
-        VALUE_MAX,
+        b=board.from_fen(fen),
+        depth=depth,
+        pv=[],
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
     )
     r2 = alphabeta(
-        Config(
+        config=Config(
             alg_fn=algorithms.alphabeta,
-            eval_fn=evaluation.eval_new,
-            move_ordering_fn=move_ordering.fast_mvv_lva,
-            qs_move_ordering_fn=move_ordering.qs_ordering,
+            move_ordering_fn=move_ordering.fast_ordering,
             quiescence_depth=50,
             quiescence_fn=quiescence.quiescence,
             quiescence_search=True,
-            use_move_tt=False,
             use_transposition_table=True,
         ),
-        board.from_fen(fen),
-        depth,
-        [],
-        False,
-        -VALUE_MAX,
-        VALUE_MAX,
+        b=board.from_fen(fen),
+        depth=depth,
+        pv=[],
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
     )
-    assert r1.value == r2.value
+    n1 = max(r1, key=lambda x: x.value)
+    n2 = max(r2, key=lambda x: x.value)
+    assert n1.value == n2.value
     assert (
-        f"{fen}: {','.join([to_uci(x) for x in r1.pv])}"
-        == f"{fen}: {','.join([to_uci(x) for x in r2.pv])}"
+        f"{fen}: {','.join([to_uci(x) for x in n1.pv])}"
+        == f"{fen}: {','.join([to_uci(x) for x in n2.pv])}"
     )
