@@ -437,9 +437,11 @@ def is_pseudo_legal_move(
         if b.squares[move.end] == PIECE.EMPTY and move.end != b.en_passant:
             return False
         if (
-            move.captured_piece != IS_PIECE[b.squares[move.end]]
-            if move.end != b.en_passant
-            else PIECE.PAWN
+            move.captured_piece != (
+                IS_PIECE[b.squares[move.end]]
+                if move.end != b.en_passant
+                else PIECE.PAWN
+            )
         ):
             return False
     if not move.is_capture:
@@ -506,13 +508,13 @@ def is_legal_move(
 
     # a castling move is not acceptable if some transition squares are attacked
     if move.is_castle:
-        if is_square_attacked(
+        if move.end > move.start and is_square_attacked(
             b.squares,
             move.start + 1,
             b.invturn,
         ):
             return False
-        if is_square_attacked(
+        if move.end < move.start and is_square_attacked(
             b.squares,
             move.start - 1,
             b.invturn,
@@ -929,10 +931,7 @@ def _pawn_moves(
             depls = (10,)
     else:
         if start > 79:
-            depls = (
-                -10,
-                -20,
-            )
+            depls = (-10, -20)
         else:
             depls = (-10,)
     for depl in depls:
@@ -959,23 +958,14 @@ def _pawn_moves(
             # do not allow 2 squares move if there's a piece in the way
             break
     for depl in (
-        (
-            9,
-            11,
-        )
+        (9, 11)
         if b.turn == COLOR.BLACK
-        else (
-            -9,
-            -11,
-        )
+        else (-9, -11)
     ):
         end = start + depl
         if (
             b.squares[end]
-            not in (
-                PIECE.EMPTY,
-                PIECE.INVALID,
-            )
+            not in (PIECE.EMPTY, PIECE.INVALID)
             and get_color(b.squares[end]) != b.turn
         ) or end == b.en_passant:
             is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
@@ -983,7 +973,7 @@ def _pawn_moves(
                 start=start,
                 end=end,
                 moving_piece=PIECE.PAWN,
-                captured_piece=IS_PIECE[b.squares[end]],
+                captured_piece=IS_PIECE[b.squares[end]] if end != b.en_passant else PIECE.PAWN,
                 is_capture=True,
                 is_castle=False,
                 en_passant=-1,
