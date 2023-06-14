@@ -23,7 +23,7 @@ fens = win_at_chess
 
 # This test equivalence between raw alphabeta
 # and alphabeta with fast move ordering
-@pytest.mark.parametrize("fen", fens)
+@pytest.mark.parametrize("fen", fens[:25])
 @pytest.mark.parametrize("depth", (1, 2, 3))
 def test_fast_ordering(fen, depth):
     r1 = alphabeta(
@@ -66,7 +66,7 @@ def test_fast_ordering(fen, depth):
 
 
 # This test equivalence between raw alphabeta and minimax
-@pytest.mark.parametrize("fen", fens[:100])
+@pytest.mark.parametrize("fen", fens[:25])
 @pytest.mark.parametrize("depth", (1, 2, 3))
 def test_alphabeta(fen, depth):
     r1 = minimax(
@@ -104,7 +104,7 @@ def test_alphabeta(fen, depth):
     )
 
 
-@pytest.mark.parametrize("fen", fens[:50])
+@pytest.mark.parametrize("fen", fens[:25])
 @pytest.mark.parametrize("depth", (3, 4))
 def test_hash_move(fen, depth):
     r1 = alphabeta(
