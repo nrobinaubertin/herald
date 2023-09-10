@@ -106,6 +106,7 @@ def alphabeta(  # noqa: C901
             value = evaluation.eval_fast(
                 b.squares,
                 b.remaining_material,
+                config.randomness,
             )
 
         yield Node(

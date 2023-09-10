@@ -1,4 +1,5 @@
 from functools import cache
+import random
 
 from .constants import COLOR, IS_PIECE, PIECE, get_color
 
@@ -209,6 +210,7 @@ def remaining_material_percent(
 def eval_fast(
     squares: tuple[int],
     remaining_material: int,
+    randomness: int = 0,
 ) -> int:
     evaluation = 0
 
@@ -239,4 +241,8 @@ def eval_fast(
                     + PIECE_SQUARE_TABLE_MAILBOX[1][IS_PIECE[piece]][invsquare]
                     * (1 - remaining_material_percent(remaining_material))
                 )
+
+    if randomness != 0:
+        evaluation += random.randint(-randomness, randomness)
+
     return evaluation

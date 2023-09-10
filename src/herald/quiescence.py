@@ -48,6 +48,7 @@ def _search(
         value = evaluation.eval_fast(
             b.squares,
             b.remaining_material,
+            config.randomness,
         )
         return Node(
             value=value,
@@ -73,6 +74,7 @@ def _search(
         stand_pat: int = evaluation.eval_fast(
             b.squares,
             b.remaining_material,
+            config.randomness,
         )
         # if depth == 0:
         #     print(stand_pat)
@@ -247,6 +249,7 @@ def _search(
             value = evaluation.eval_fast(
                 b.squares,
                 b.remaining_material,
+                config.randomness,
             )
             return Node(
                 value=value,

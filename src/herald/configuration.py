@@ -10,7 +10,7 @@ class Config:
     quiescence_fn: Any
     move_ordering_fn: Any
     alg_fn: Any
-    version: str = "0.20.12"
+    version: str = "0.21.0"
     name: str = "Herald"
     author: str = "nrobinaubertin"
     transposition_table: dict[
@@ -32,3 +32,4 @@ class Config:
     use_saved_search: bool = False
     quiescence_search: bool = False
     quiescence_depth: int = 0
+    randomness: int = 0

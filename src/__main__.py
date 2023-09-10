@@ -28,6 +28,7 @@ CONFIG = Config(
     use_late_move_reduction=False,
     use_saved_search=True,
     quiescence_fn=quiescence.quiescence,
+    randomness=50,
 )
 
 
