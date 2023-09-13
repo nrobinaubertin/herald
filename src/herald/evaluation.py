@@ -1,5 +1,4 @@
 from functools import cache
-import random
 
 from .constants import COLOR, IS_PIECE, PIECE, get_color
 
@@ -243,6 +242,6 @@ def eval_fast(
                 )
 
     if randomness != 0:
-        evaluation += random.randint(-randomness, randomness)
+        evaluation += (evaluation * 7919) % (randomness * 2) - randomness
 
     return evaluation
