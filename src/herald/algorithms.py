@@ -107,6 +107,7 @@ def alphabeta(  # noqa: C901
                 b.squares,
                 b.remaining_material,
                 config.randomness,
+                config.seed,
             )
 
         yield Node(

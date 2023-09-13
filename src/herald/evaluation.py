@@ -210,6 +210,7 @@ def eval_fast(
     squares: tuple[int],
     remaining_material: int,
     randomness: int = 0,
+    seed: int = 0,
 ) -> int:
     evaluation = 0
 
@@ -242,6 +243,6 @@ def eval_fast(
                 )
 
     if randomness != 0:
-        evaluation += (evaluation * 7919) % (randomness * 2) - randomness
+        evaluation += (seed + evaluation * 7919) % (randomness * 2) - randomness
 
     return evaluation

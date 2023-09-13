@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import random
 from typing import Any
 
 from .board import Board
@@ -33,3 +34,4 @@ class Config:
     quiescence_search: bool = False
     quiescence_depth: int = 0
     randomness: int = 0
+    seed: int = random.randint(-100000, 100000)

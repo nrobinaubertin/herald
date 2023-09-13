@@ -49,6 +49,7 @@ def _search(
             b.squares,
             b.remaining_material,
             config.randomness,
+            config.seed,
         )
         return Node(
             value=value,
@@ -75,6 +76,7 @@ def _search(
             b.squares,
             b.remaining_material,
             config.randomness,
+            config.seed,
         )
         # if depth == 0:
         #     print(stand_pat)
@@ -250,6 +252,7 @@ def _search(
                 b.squares,
                 b.remaining_material,
                 config.randomness,
+                config.seed,
             )
             return Node(
                 value=value,
