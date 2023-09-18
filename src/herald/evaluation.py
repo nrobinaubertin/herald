@@ -243,6 +243,6 @@ def eval_fast(
                 )
 
     if randomness != 0:
-        evaluation += (seed + evaluation * 7919) % (randomness * 2) - randomness
+        evaluation += (seed + hash(squares)) % (randomness * 2) - randomness
 
     return evaluation

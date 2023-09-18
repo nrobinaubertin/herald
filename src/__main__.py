@@ -28,7 +28,7 @@ CONFIG = Config(
     use_late_move_reduction=False,
     use_saved_search=True,
     quiescence_fn=quiescence.quiescence,
-    randomness=15,
+    randomness=60,
 )
 
 
@@ -315,6 +315,9 @@ def uci_parser(
 
         if CURRENT_PROCESS is not None:
             CURRENT_PROCESS.terminate()
+
+        # Slowly reduce randomness
+        CONFIG.randomness = max(0, CONFIG.randomness - 3)
 
         CURRENT_QUEUE = multiprocessing.Queue()
         curr_thread = threading.Thread(target=wait_for_current_queue)
