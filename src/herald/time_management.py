@@ -14,10 +14,13 @@ def target_movetime(
     """Return target maximum movetime in deciseconds."""
     # if movetime is decided, return it immediately
     if movetime > 0:
-        return movetime // 100
+        return int(movetime / 100)
 
     # the engine doesn't perform well when thinking too long
     max_thinking_time: int = 15000
+
+    # safeguard of 100ms to make our move
+    safeguard: int = 100
 
     if b.turn == COLOR.WHITE:
         remaining_time = wtime
@@ -27,15 +30,22 @@ def target_movetime(
         time_inc = binc
 
     # estimated turns remaining
-    t = 40 * remaining_material_percent(b.remaining_material)
+    remaining_turns = 60 * remaining_material_percent(b.remaining_material)
 
     time = (
         min(
-            remaining_time - 3,  # safeguard
-            remaining_time / t + 2 * time_inc,
+            remaining_time - safeguard,
+            remaining_time / remaining_turns + time_inc,
             max_thinking_time,
         )
-        / 100
     )
 
-    return int(time)
+    print(
+            remaining_time - safeguard,
+            remaining_time / remaining_turns + time_inc,
+            max_thinking_time,
+    )
+    print(remaining_time, time_inc, remaining_material_percent(b.remaining_material), remaining_turns, time)
+
+    # we want to return at least 1
+    return max(1, int(time / 100))
