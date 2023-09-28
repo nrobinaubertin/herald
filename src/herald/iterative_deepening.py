@@ -3,10 +3,10 @@ import time
 from typing import Any, Optional
 
 from . import board
+from . import utils
 from .board import Board
 from .configuration import Config
 from .constants import COLOR_DIRECTION, VALUE_MAX
-from .data_structures import to_uci
 from .search import Search, search
 
 
@@ -162,7 +162,7 @@ def itdep(
                     subqueue.close()
                     queue.put(last_search)
                     if print_uci:
-                        print(f"bestmove {to_uci(last_search.move)}")
+                        print(f"bestmove {utils.to_uci(last_search.move)}")
                     return last_search
 
                 # bail out if we have a mate
@@ -174,7 +174,7 @@ def itdep(
                         print("mate")
                     queue.put(last_search)
                     if print_uci:
-                        print(f"bestmove {to_uci(last_search.move)}")
+                        print(f"bestmove {utils.to_uci(last_search.move)}")
                     return last_search
 
                 # calculate used time
@@ -193,7 +193,7 @@ def itdep(
                     subqueue.close()
                     queue.put_nowait(last_search)
                     if last_search is not None and print_uci:
-                        print(f"bestmove {to_uci(last_search.move)}")
+                        print(f"bestmove {utils.to_uci(last_search.move)}")
                         return last_search
                     return None
 
@@ -206,7 +206,7 @@ def itdep(
 
         queue.put(last_search)
         if last_search is not None and print_uci:
-            print(f"bestmove {to_uci(last_search.move)}")
+            print(f"bestmove {utils.to_uci(last_search.move)}")
             return last_search
 
         return None
@@ -239,7 +239,7 @@ def itdep(
             break
 
     if last_search is not None and print_uci:
-        print(f"bestmove {to_uci(last_search.move)}")
+        print(f"bestmove {utils.to_uci(last_search.move)}")
     if queue is not None:
         queue.put(last_search)
     return last_search

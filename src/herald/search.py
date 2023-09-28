@@ -4,10 +4,11 @@ from dataclasses import dataclass
 from typing import Optional
 
 from . import algorithms, board
+from . import utils
 from .board import Board
 from .configuration import Config
 from .constants import COLOR_DIRECTION, VALUE_MAX
-from .data_structures import Move, Node, to_uci
+from .data_structures import Move, Node
 
 
 @dataclass
@@ -47,7 +48,7 @@ class Search:
                 if self.time > 0
                 else ""
             )
-            + f"pv {to_uci(self.pv)}"
+            + f"pv {utils.to_uci(self.pv)}"
         )
 
 
@@ -153,7 +154,7 @@ def search(
             killer_moves=set(),
         ):
             children = node.children + 1
-            if current is None or to_uci(current.pv) != to_uci(node.pv):
+            if current is None or utils.to_uci(current.pv) != utils.to_uci(node.pv):
                 current = node
                 search = Search(
                     board=b,

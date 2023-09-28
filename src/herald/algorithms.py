@@ -134,10 +134,7 @@ def alphabeta(  # noqa: C901
 
     def order_moves() -> Iterable[Move]:
         yielded = set()
-        hash_move: Optional[Move] = config.hash_move_tt.get(
-            b,
-            None,
-        )
+        hash_move: Optional[Move] = config.hash_move_tt.get(b, None)
         if hash_move is not None:
             yielded.add(hash_move)
             yield hash_move
@@ -152,14 +149,7 @@ def alphabeta(  # noqa: C901
             if config.use_killer_moves and killer_moves is not None and not killer_moves_yielded:
                 for km in config.move_ordering_fn(
                     b,
-                    (
-                        km
-                        for km in killer_moves
-                        if board.is_pseudo_legal_move(
-                            b,
-                            km,
-                        )
-                    ),
+                    (km for km in killer_moves if board.is_pseudo_legal_move(b, km)),
                 ):
                     if km not in yielded:
                         yielded.add(km)
