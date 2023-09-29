@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
-from . import algorithms, board
+from . import alphabeta, board
 from . import utils
 from .board import Board
 from .configuration import Config
@@ -141,7 +141,7 @@ def search(
     current: Node | None = None
     while True:
         iteration += 1
-        for node in algorithms.alphabeta(
+        for node in alphabeta.alphabeta(
             config=config,
             b=b,
             depth=depth,

@@ -5,6 +5,7 @@ We test our move generation using the perft algorithm
 
 import pytest
 from herald import board
+from herald import utils
 from herald.board import Board
 
 
@@ -35,7 +36,7 @@ def perft(b: Board, depth: int):
     ],
 )
 def test_perft(fen, depth, expected):
-    nodes = perft(board.from_fen(fen), depth)
+    nodes = perft(utils.from_fen(fen), depth)
     assert nodes == expected
 
 
@@ -43,7 +44,7 @@ def test_perft(fen, depth, expected):
 @pytest.mark.skip(reason="Underpromotions not supported yet")
 def test_perft_pos4():
     nodes = perft(
-        board.from_fen("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1"), 4
+        utils.from_fen("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1"), 4
     )
     assert nodes == 422333
 
@@ -51,5 +52,5 @@ def test_perft_pos4():
 # https://www.chessprogramming.org/Perft_Results#Position_5
 @pytest.mark.skip(reason="Underpromotions not supported yet")
 def test_perft_pos5():
-    nodes = perft(board.from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8"), 3)
+    nodes = perft(utils.from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8"), 3)
     assert nodes == 62379

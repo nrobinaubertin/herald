@@ -5,12 +5,12 @@ When comparing move ordering functions, we cannot compare pvs
 """
 
 import pytest
-from herald import algorithms, board, move_ordering, quiescence
-from herald.algorithms import alphabeta
-from herald import minimax
+from herald import board, move_ordering, quiescence
 from herald.configuration import Config
 from herald.constants import VALUE_MAX
-from herald.data_structures import to_uci
+from herald import utils
+from herald import alphabeta
+from herald import minimax
 
 win_at_chess = [
     # Some additional FENs that we want to test
@@ -30,28 +30,18 @@ fens = win_at_chess
 @pytest.mark.parametrize("fen", fens[:25])
 @pytest.mark.parametrize("depth", (1, 2, 3))
 def test_fast_ordering(fen, depth):
-    r1 = alphabeta(
-        config=Config(
-            alg_fn=algorithms.alphabeta,
-            move_ordering_fn=move_ordering.no_ordering,
-            quiescence_fn=quiescence.quiescence,
-            use_transposition_table=False,
-        ),
-        b=board.from_fen(fen),
+    r1 = alphabeta.alphabeta(
+        config=Config(use_transposition_table=False),
+        b=utils.from_fen(fen),
         depth=depth,
         pv=[],
         gen_legal_moves=False,
         alpha=-VALUE_MAX,
         beta=VALUE_MAX,
     )
-    r2 = alphabeta(
-        config=Config(
-            alg_fn=algorithms.alphabeta,
-            move_ordering_fn=move_ordering.fast_ordering,
-            quiescence_fn=quiescence.quiescence,
-            use_transposition_table=False,
-        ),
-        b=board.from_fen(fen),
+    r2 = alphabeta.alphabeta(
+        config=Config(use_transposition_table=False),
+        b=utils.from_fen(fen),
         depth=depth,
         pv=[],
         gen_legal_moves=False,
@@ -64,8 +54,8 @@ def test_fast_ordering(fen, depth):
     # The fast ordering function can return different moves as long
     # as their value is the same. That means that we cannot test the pv equivalence
     # assert (
-    #     f"{fen}: {','.join([to_uci(x) for x in n1.pv])}"
-    #     == f"{fen}: {','.join([to_uci(x) for x in n2.pv])}"
+    #     f"{fen}: {','.join([utils.to_uci(x) for x in n1.pv])}"
+    #     == f"{fen}: {','.join([utils.to_uci(x) for x in n2.pv])}"
     # )
 
 
@@ -73,7 +63,7 @@ def test_fast_ordering(fen, depth):
 @pytest.mark.parametrize("fen", fens)
 @pytest.mark.parametrize("depth", (1, 2, 3, 4, 5))
 def test_alphabeta(fen, depth):
-    b = board.from_fen(fen)
+    utils.from_fen(fen)
     pv1 = []
     r1 = minimax.minimax(
         Config(
@@ -88,14 +78,9 @@ def test_alphabeta(fen, depth):
         False,
     )
     pv2 = []
-    r2 = alphabeta(
-        config=Config(
-            alg_fn=algorithms.alphabeta,
-            move_ordering_fn=move_ordering.no_ordering,
-            quiescence_fn=quiescence.quiescence,
-            use_transposition_table=False,
-        ),
-        b=b,
+    r2 = alphabeta.alphabeta(
+        config=Config(use_transposition_table=False),
+        b=utils.from_fen(fen),
         depth=depth,
         pv=pv2,
         gen_legal_moves=False,
@@ -104,46 +89,42 @@ def test_alphabeta(fen, depth):
     )
     n1 = r1
     n2 = max(r2, key=lambda x: x.value)
+    assert n1.value == n2.value, (
+        f"{fen}: "
+        f"{','.join([utils.to_uci(x) for x in n1.pv])} "
+        f"{','.join([utils.to_uci(x) for x in n2.pv])}"
+    )
     assert (
-        n1.value == n2.value
-    ), f"{fen}: {','.join([to_uci(x) for x in n1.pv])}, {','.join([to_uci(x) for x in n2.pv])}"
-    assert (
-        f"{fen}: {','.join([to_uci(x) for x in n1.pv])}"
-        == f"{fen}: {','.join([to_uci(x) for x in n2.pv])}"
+        f"{fen}: {','.join([utils.to_uci(x) for x in n1.pv])}"
+        == f"{fen}: {','.join([utils.to_uci(x) for x in n2.pv])}"
     )
 
 
 @pytest.mark.parametrize("fen", fens[:25])
 @pytest.mark.parametrize("depth", (3, 4))
 def test_hash_move(fen, depth):
-    r1 = alphabeta(
+    r1 = alphabeta.alphabeta(
         config=Config(
-            alg_fn=algorithms.alphabeta,
-            move_ordering_fn=move_ordering.fast_ordering,
             quiescence_depth=50,
-            quiescence_fn=quiescence.quiescence,
             quiescence_search=True,
             use_transposition_table=True,
             use_hash_move=True,
         ),
-        b=board.from_fen(fen),
+        b=utils.from_fen(fen),
         depth=depth,
         pv=[],
         gen_legal_moves=False,
         alpha=-VALUE_MAX,
         beta=VALUE_MAX,
     )
-    r2 = alphabeta(
+    r2 = alphabeta.alphabeta(
         config=Config(
-            alg_fn=algorithms.alphabeta,
-            move_ordering_fn=move_ordering.fast_ordering,
             quiescence_depth=50,
-            quiescence_fn=quiescence.quiescence,
             quiescence_search=True,
             use_transposition_table=True,
             use_hash_move=False,
         ),
-        b=board.from_fen(fen),
+        b=utils.from_fen(fen),
         depth=depth,
         pv=[],
         gen_legal_moves=False,
@@ -154,8 +135,8 @@ def test_hash_move(fen, depth):
     n2 = max(r2, key=lambda x: x.value)
     assert n1.value == n2.value
     assert (
-        f"{fen}: {','.join([to_uci(x) for x in n1.pv])}"
-        == f"{fen}: {','.join([to_uci(x) for x in n2.pv])}"
+        f"{fen}: {','.join([utils.to_uci(x) for x in n1.pv])}"
+        == f"{fen}: {','.join([utils.to_uci(x) for x in n2.pv])}"
     )
 
 

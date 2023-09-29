@@ -1,32 +1,8 @@
-from . import board, evaluation
+from . import board
 from .board import Board
 from .constants import COLOR, COLOR_DIRECTION, IS_PIECE, PIECE
 from .data_structures import Move
 from .evaluation import PIECE_VALUE
-
-
-def is_futile(
-    b: Board,
-    depth: int,
-    alpha: int,
-    beta: int,
-) -> bool:
-    static_eval: int = evaluation.eval_fast(b.squares)
-
-    def futility_margin(
-        depth: int,
-    ) -> int:
-        return 165 * depth
-
-    # colors are inverted since this is a board resulting from our tested move
-    if b.turn == COLOR.BLACK:
-        if static_eval + futility_margin(depth) <= alpha:
-            return True
-    else:
-        if static_eval - futility_margin(depth) >= beta:
-            return True
-
-    return False
 
 
 # see() returns a colorified score
@@ -62,10 +38,7 @@ def see(
             return max(
                 score,
                 see(
-                    board.push(
-                        b,
-                        move,
-                    ),
+                    board.push(b, move),
                     target,
                     score + value,
                 ),
@@ -73,10 +46,7 @@ def see(
         return min(
             score,
             see(
-                board.push(
-                    b,
-                    move,
-                ),
+                board.push(b, move),
                 target,
                 score + value,
             ),
@@ -108,17 +78,7 @@ def is_bad_capture(
         return False
 
     # if the piece is defended by a pawn, then it's a bad capture
-    for depl in (
-        (
-            9,
-            11,
-        )
-        if b.turn == COLOR.WHITE
-        else (
-            -9,
-            -11,
-        )
-    ):
+    for depl in (9, 11) if b.turn == COLOR.WHITE else (-9, -11):
         if (
             IS_PIECE[b.squares[move.start + depl]] == PIECE.PAWN
             and b.squares[move.start + depl] * COLOR_DIRECTION[b.turn] < 0
@@ -126,15 +86,7 @@ def is_bad_capture(
             return True
 
     # if SEE is in favor of the other, then we don't attempt the move
-    if (
-        see(
-            b,
-            move.end,
-            0,
-        )
-        * COLOR_DIRECTION[b.turn]
-        <= 0
-    ):
+    if see(b, move.end, 0) * COLOR_DIRECTION[b.turn] <= 0:
         return True
 
     # if we don't know, we have to try the move (we can't say that it's bad for sure)

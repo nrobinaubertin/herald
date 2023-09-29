@@ -2,65 +2,24 @@ from . import board, evaluation, pruning
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, COLOR_DIRECTION, PIECE, VALUE_MAX
-from .data_structures import Move, Node
 
 
 def quiescence(
-    config: Config,
-    b: Board,
-    pv: list[Move],
-    alpha: int,
-    beta: int,
-    debug: bool = False,
-) -> Node:
-    node = _search(
-        config=config,
-        b=b,
-        depth=0,
-        pv=pv,
-        alpha=alpha,
-        beta=beta,
-    )
-
-    return Node(
-        value=node.value,
-        depth=0,
-        pv=node.pv,
-        lower=alpha,
-        upper=beta,
-        children=node.children,
-    )
-
-
-def _search(
     *,
     config: Config,
     b: Board,
     depth: int = 0,
-    pv: list[Move],
     alpha: int,
     beta: int,
-) -> Node:
+) -> int:
     assert depth >= 0, depth
 
     # if we are on a terminal node, return the evaluation
     if depth >= config.quiescence_depth:
-        value = evaluation.eval_fast(
+        return evaluation.evaluation(
             b.squares,
             b.remaining_material,
         )
-        return Node(
-            value=value,
-            depth=0,
-            pv=pv,
-            lower=alpha,
-            upper=beta,
-            children=1,
-        )
-
-    # count the number of children (direct and non direct)
-    # for info purposes
-    children = 1
 
     we_are_in_check = board.is_square_attacked(
         b.squares,
@@ -70,7 +29,7 @@ def _search(
 
     if not we_are_in_check:
         # stand_pat evaluation to check if we stop QS
-        stand_pat: int = evaluation.eval_fast(
+        stand_pat: int = evaluation.evaluation(
             b.squares,
             b.remaining_material,
         )
@@ -78,60 +37,19 @@ def _search(
         #     print(stand_pat)
         if b.turn == COLOR.WHITE:
             if stand_pat >= beta:
-                return Node(
-                    value=beta,
-                    depth=0,
-                    pv=pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=1,
-                )
+                return beta
             # delta pruning
             if stand_pat + evaluation.PIECE_VALUE[PIECE.QUEEN] < alpha:
-                return Node(
-                    value=alpha,
-                    depth=0,
-                    pv=pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=1,
-                )
-            alpha = max(
-                alpha,
-                stand_pat,
-            )
+                return alpha
+            alpha = max(alpha, stand_pat)
         else:
             if stand_pat <= alpha:
-                return Node(
-                    value=alpha,
-                    depth=0,
-                    pv=pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=1,
-                )
+                return alpha
             # delta pruning
             if stand_pat - evaluation.PIECE_VALUE[PIECE.QUEEN] > beta:
-                return Node(
-                    value=beta,
-                    depth=0,
-                    pv=pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=1,
-                )
-            beta = min(
-                beta,
-                stand_pat,
-            )
-        best = Node(
-            value=stand_pat,
-            depth=0,
-            pv=pv,
-            lower=alpha,
-            upper=beta,
-            children=1,
-        )
+                return beta
+            beta = min(beta, stand_pat)
+        best = stand_pat
         moves = board.tactical_moves(b)
     else:
         best = None
@@ -147,86 +65,39 @@ def _search(
                 break
 
             # skip bad capture moves
-            if pruning.is_bad_capture(
-                b,
-                move,
-            ):
+            if pruning.is_bad_capture(b, move):
                 continue
 
-        nb = board.push(
-            b,
-            move,
-        )
+        nb = board.push(b, move)
 
         # if the king is in check after we move
         # then it's a bad move (we will lose the game)
-        if board.king_is_in_check(
-            nb,
-            nb.invturn,
-        ):
+        if board.king_is_in_check(nb, nb.invturn):
             continue
 
-        if __debug__:
-            curr_pv = pv.copy()
-            curr_pv.append(move)
-        else:
-            curr_pv = pv
-
-        node = _search(
+        value = quiescence(
             config=config,
             b=nb,
             depth=depth + 1,
-            pv=curr_pv,
             alpha=alpha,
             beta=beta,
         )
 
-        children += node.children
-
         if b.turn == COLOR.WHITE:
-            if best is None or node.value > best.value:
-                # if depth == 0:
-                #     print(best, node)
-                best = Node(
-                    value=node.value,
-                    depth=0,
-                    pv=node.pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=children,
-                )
-            alpha = max(
-                alpha,
-                node.value,
-            )
-            if node.value >= beta:
+            if best is None or value > best:
+                best = value
+            alpha = max(alpha, value)
+            if value >= beta:
                 break
         else:
-            if best is None or node.value < best.value:
-                # if depth == 0:
-                #     print(best, node)
-                best = Node(
-                    value=node.value,
-                    depth=0,
-                    pv=node.pv,
-                    lower=alpha,
-                    upper=beta,
-                    children=children,
-                )
-            beta = min(
-                beta,
-                node.value,
-            )
-            if node.value <= alpha:
+            if best is None or value < best:
+                best = value
+            beta = min(beta, value)
+            if value <= alpha:
                 break
 
     if best is not None:
-        node = Node(
-            value=best.value,
-            depth=0,
-            pv=best.pv,
-            children=children,
-        )
+        return best
     else:
         # this happens when no quiescent move is available
         # if the king square is attacked and we have no moves, it's a mate
@@ -235,26 +106,9 @@ def _search(
             b.king_squares[b.turn],
             b.invturn,
         ):
-            node = Node(
-                depth=depth,
-                value=VALUE_MAX * COLOR_DIRECTION[b.turn] * -1,
-                pv=pv,
-                lower=alpha,
-                upper=beta,
-                children=children,
-            )
+            return VALUE_MAX * COLOR_DIRECTION[b.turn] * -1
         else:
-            value = evaluation.eval_fast(
+            return evaluation.evaluation(
                 b.squares,
                 b.remaining_material,
             )
-            return Node(
-                value=value,
-                depth=0,
-                pv=pv,
-                lower=alpha,
-                upper=beta,
-                children=children,
-            )
-
-    return node

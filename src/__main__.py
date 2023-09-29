@@ -3,7 +3,7 @@ import multiprocessing
 import sys
 import threading
 
-from herald import algorithms, board, evaluation, move_ordering, quiescence
+from herald import board, evaluation
 from herald.board import Board
 from herald.configuration import Config
 from herald.iterative_deepening import itdep
@@ -16,8 +16,6 @@ CURRENT_QUEUE = None
 LAST_SEARCH = None
 
 CONFIG = Config(
-    alg_fn=algorithms.alphabeta,
-    move_ordering_fn=move_ordering.fast_ordering,
     quiescence_search=True,
     quiescence_depth=9,
     use_transposition_table=True,
@@ -25,7 +23,6 @@ CONFIG = Config(
     use_killer_moves=True,
     use_late_move_reduction=False,
     use_saved_search=True,
-    quiescence_fn=quiescence.quiescence,
 )
 
 
@@ -50,7 +47,7 @@ def uci_parser(
         return []
 
     if tokens[0] == "eval":
-        curr_eval = evaluation.eval_fast(
+        curr_eval = evaluation.evaluation(
             CURRENT_BOARD.squares,
             evaluation.remaining_material(CURRENT_BOARD.squares),
         )
@@ -58,23 +55,6 @@ def uci_parser(
 
     if tokens[0] == "print":
         return [str(CURRENT_BOARD)]
-
-    if tokens[0] == "lines":
-        moves = (move for move in board.legal_moves(CURRENT_BOARD))
-        for move in moves:
-            new_board = board.push(
-                CURRENT_BOARD,
-                move,
-                fast=False,
-            )
-            for node in algorithms.alphabeta(
-                config=CONFIG,
-                b=new_board,
-                depth=int(tokens[1]),
-                pv=[move],
-            ):
-                continue
-            print([node.value] + [utils.to_uci(m) for m in node.pv])
 
     if tokens[0] == "moves":
         return [", ".join([utils.to_uci(m) for m in board.legal_moves(CURRENT_BOARD)])]

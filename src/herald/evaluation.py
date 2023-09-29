@@ -206,7 +206,7 @@ def remaining_material_percent(
 
 
 @cache
-def eval_fast(
+def evaluation(
     squares: tuple[int],
     remaining_material: int,
 ) -> int:

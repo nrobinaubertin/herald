@@ -3,6 +3,7 @@
 from typing import Iterable
 
 from . import board, evaluation
+from . import move_ordering
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, VALUE_MAX
@@ -24,7 +25,7 @@ def minimax(
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return Node(
-            value=evaluation.eval_fast(
+            value=evaluation.evaluation(
                 b.squares,
                 b.remaining_material,
             ),
@@ -44,7 +45,7 @@ def minimax(
         moves = board.legal_moves(b)
     else:
         moves = board.pseudo_legal_moves(b)
-    for move in config.move_ordering_fn(
+    for move in move_ordering.fast_ordering(
         b,
         moves,
     ):

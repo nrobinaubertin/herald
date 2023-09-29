@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Any
 
 from .board import Board
 from .data_structures import Move, Node
@@ -7,12 +6,9 @@ from .data_structures import Move, Node
 
 @dataclass
 class Config:
-    quiescence_fn: Any
-    move_ordering_fn: Any
-    alg_fn: Any
     version: str = "0.21"
     name: str = "Herald"
-    author: str = "nrobinaubertin"
+    author: str = "Niels Robin-Aubertin"
     transposition_table: dict[
         Board,
         Node,

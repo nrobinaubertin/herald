@@ -1,5 +1,5 @@
 import pytest
-from herald import board, time_management
+from herald import utils, time_management
 
 start_fen = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"]
 
@@ -24,5 +24,5 @@ def test_time_management_from_start(
     binc: int,
     expected: int,
 ):
-    b = board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0")
+    b = utils.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0")
     assert time_management.target_movetime(b, movetime, wtime, btime, winc, binc) == expected

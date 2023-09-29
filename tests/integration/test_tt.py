@@ -1,9 +1,10 @@
 """Test transposition table."""
 
 import pytest
-from herald import algorithms, board, move_ordering, quiescence
 from herald.configuration import Config
 from herald.constants import VALUE_MAX, COLOR
+from herald import alphabeta
+from herald import utils
 
 fens = []
 with open("tests/epd/transposition_table.epd", "r") as tt_file:
@@ -17,14 +18,11 @@ with open("tests/epd/transposition_table.epd", "r") as tt_file:
 @pytest.mark.parametrize("depth", (3, 4, 5, 6))
 @pytest.mark.parametrize("use_qs", (True, False))
 def test_tt_equivalence(fen, depth, use_qs):
-    b = board.from_fen(fen)
-    alphabeta_result = algorithms.alphabeta(
+    b = utils.from_fen(fen)
+    alphabeta_result = alphabeta.alphabeta(
         config=Config(
-            alg_fn=algorithms.alphabeta,
-            move_ordering_fn=move_ordering.fast_ordering,
             quiescence_depth=25,
             quiescence_search=use_qs,
-            quiescence_fn=quiescence.quiescence,
             use_transposition_table=False,
         ),
         b=b,
@@ -34,13 +32,10 @@ def test_tt_equivalence(fen, depth, use_qs):
         alpha=-VALUE_MAX,
         beta=VALUE_MAX,
     )
-    alphabeta_tt_result = algorithms.alphabeta(
+    alphabeta_tt_result = alphabeta.alphabeta(
         config=Config(
-            alg_fn=algorithms.alphabeta,
-            move_ordering_fn=move_ordering.fast_ordering,
             quiescence_depth=25,
             quiescence_search=use_qs,
-            quiescence_fn=quiescence.quiescence,
             use_transposition_table=True,
         ),
         b=b,
