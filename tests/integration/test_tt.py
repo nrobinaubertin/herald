@@ -2,7 +2,7 @@
 
 import pytest
 from herald.configuration import Config
-from herald.constants import VALUE_MAX, COLOR
+from herald.constants import VALUE_MAX
 from herald import alphabeta
 from herald import utils
 
@@ -19,6 +19,7 @@ with open("tests/epd/transposition_table.epd", "r") as tt_file:
 @pytest.mark.parametrize("use_qs", (True, False))
 def test_tt_equivalence(fen, depth, use_qs):
     b = utils.from_fen(fen)
+    pv1 = []
     alphabeta_result = alphabeta.alphabeta(
         config=Config(
             quiescence_depth=25,
@@ -27,11 +28,12 @@ def test_tt_equivalence(fen, depth, use_qs):
         ),
         b=b,
         depth=depth,
-        pv=[],
+        pv=pv1,
         gen_legal_moves=False,
         alpha=-VALUE_MAX,
         beta=VALUE_MAX,
     )
+    pv2 = []
     alphabeta_tt_result = alphabeta.alphabeta(
         config=Config(
             quiescence_depth=25,
@@ -40,20 +42,14 @@ def test_tt_equivalence(fen, depth, use_qs):
         ),
         b=b,
         depth=depth,
-        pv=[],
+        pv=pv2,
         gen_legal_moves=False,
         alpha=-VALUE_MAX,
         beta=VALUE_MAX,
     )
-    if b.turn == COLOR.WHITE:
-        node1 = max(alphabeta_tt_result, key=lambda x: x.value)
-        node2 = max(alphabeta_result, key=lambda x: x.value)
-        # We cannot be sure that exactly the same line will be selected
-        # Only the it will be equivalent in value
-        assert node1.value == node2.value, f"{node1.value}, {node2.value}"
-    else:
-        node1 = min(alphabeta_tt_result, key=lambda x: x.value)
-        node2 = min(alphabeta_result, key=lambda x: x.value)
-        # We cannot be sure that exactly the same line will be selected
-        # Only the it will be equivalent in value
-        assert node1.value == node2.value, f"{node1.value}, {node2.value}"
+    assert alphabeta_tt_result == alphabeta_result, (
+        f"{alphabeta_tt_result} "
+        f"{','.join([utils.to_uci(x) for x in pv1])}, "
+        f"{alphabeta_result} "
+        f"{','.join([utils.to_uci(x) for x in pv2])}"
+    )

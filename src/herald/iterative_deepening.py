@@ -17,7 +17,6 @@ def search_wrapper(
     depth: int,
     config: Config,
     last_search: Search,
-    children: int,
     transposition_table: dict,
     hash_move_tt: dict,
 ) -> None:
@@ -26,7 +25,6 @@ def search_wrapper(
         depth=depth,
         config=config,
         last_search=last_search,
-        children=children,
         transposition_table=transposition_table,
         hash_move_tt=hash_move_tt,
         queue=queue,
@@ -55,14 +53,10 @@ def itdep(
                 break
             # compute next subsearch
             last_search = Search(
-                board=board.push(
-                    last_search.board,
-                    move,
-                ),
+                board=board.push(last_search.board, move),
                 move=last_search.pv[1],
                 pv=last_search.pv[1:],
                 depth=last_search.depth - 1,
-                nodes=0,
                 score=last_search.score,
                 time=0,
             )
@@ -111,7 +105,6 @@ def itdep(
                     "depth": i,
                     "config": config,
                     "last_search": last_search,
-                    "children": 0 if last_search is None else last_search.nodes,
                     "transposition_table": config.transposition_table,
                     "hash_move_tt": config.hash_move_tt,
                 },
@@ -126,16 +119,10 @@ def itdep(
                     ret: tuple[
                         Search,
                         Config,
-                    ] | None = subqueue.get(
-                        True,
-                        0.1,
-                    )
+                    ] | None = subqueue.get(True, 0.1)
 
                     if ret is not None:
-                        (
-                            current_search,
-                            config,
-                        ) = ret
+                        (current_search, config) = ret
 
                     # if there is no move available and no exception was raised
                     if current_search is None:
@@ -151,10 +138,7 @@ def itdep(
                     last_search = current_search
 
                 # bail out if the search tells us to stop
-                assert isinstance(
-                    last_search,
-                    Search,
-                )
+                assert isinstance(last_search, Search)
                 if last_search is not None and last_search.stop_search:
                     if __debug__:
                         print("stop_search")
@@ -216,16 +200,10 @@ def itdep(
         start_depth,
         max_depth + 1,
     ):
-        children = 0
-        if last_search is not None:
-            children = last_search.nodes
-        ret = search(b=b, depth=i, last_search=last_search, config=config, children=children)
+        ret = search(b=b, depth=i, last_search=last_search, config=config)
 
         if ret is not None:
-            (
-                current_search,
-                config,
-            ) = ret
+            (current_search, config) = ret
 
         # if there is no move available
         if current_search is None:

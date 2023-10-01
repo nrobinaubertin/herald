@@ -36,7 +36,7 @@ def stop_calculating() -> None:
 
 def uci_parser(
     line: str,
-) -> list[str]:  # noqa: C901
+) -> list[str]:
     global CURRENT_BOARD
     global CURRENT_PROCESS
     global CURRENT_QUEUE
