@@ -19,7 +19,5 @@ class Move:
 class Node:
     value: int
     depth: int
-    pv: list[Move]
     upper: int = VALUE_MAX
     lower: int = -VALUE_MAX
-    children: int = 1

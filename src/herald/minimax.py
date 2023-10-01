@@ -30,15 +30,9 @@ def minimax(
                 b.remaining_material,
             ),
             depth=0,
-            pv=pv,
-            children=1,
         )
 
     best = None
-
-    # count the number of children (direct and non direct)
-    # for info purposes
-    children = 1
 
     moves: Iterable[Move] = []
     if gen_legal_moves:
@@ -61,8 +55,6 @@ def minimax(
             return Node(
                 value=VALUE_MAX * b.turn,
                 depth=depth,
-                pv=curr_pv,
-                children=children,
             )
 
         # if the king is in check after we move
@@ -81,23 +73,17 @@ def minimax(
             False,
         )
 
-        children += node.children
-
         if b.turn == COLOR.WHITE:
             if best is None or node.value > best.value:
                 best = Node(
                     value=node.value,
                     depth=depth,
-                    pv=node.pv,
-                    children=children,
                 )
         else:
             if best is None or node.value < best.value:
                 best = Node(
                     value=node.value,
                     depth=depth,
-                    pv=node.pv,
-                    children=children,
                 )
 
     if isinstance(
@@ -107,8 +93,6 @@ def minimax(
         return Node(
             value=best.value,
             depth=best.depth,
-            pv=best.pv,
-            children=children,
         )
 
     # no "best" found
@@ -121,16 +105,12 @@ def minimax(
         return Node(
             depth=depth,
             value=VALUE_MAX * b.turn * -1,
-            pv=pv,
             lower=alpha,
             upper=beta,
-            children=children,
         )
     return Node(
         depth=depth,
         value=0,
-        pv=pv,
         lower=alpha,
         upper=beta,
-        children=children,
     )
