@@ -43,10 +43,7 @@ def minimax(
         b,
         moves,
     ):
-        curr_board = board.push(
-            b,
-            move,
-        )
+        curr_board = board.push(b, move)
         curr_pv = pv.copy()
         curr_pv.append(move)
 
@@ -86,10 +83,7 @@ def minimax(
                     depth=depth,
                 )
 
-    if isinstance(
-        best,
-        Node,
-    ):
+    if isinstance(best, Node):
         return Node(
             value=best.value,
             depth=best.depth,

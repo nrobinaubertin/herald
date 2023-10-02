@@ -24,7 +24,6 @@ class Config:
     use_transposition_table: bool = False
     use_hash_move: bool = False
     use_killer_moves: bool = False
-    use_late_move_reduction: bool = False
     use_saved_search: bool = False
     quiescence_search: bool = False
     quiescence_depth: int = 0

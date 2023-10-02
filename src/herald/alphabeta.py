@@ -90,16 +90,7 @@ def alphabeta(
     # create the list of the killer moves that will be found in the children nodes
     next_killer_moves: set[Move] = set()
 
-    moves_searched: int = 0
-
     for move in order_moves():
-        moves_searched += 1
-
-        # return immediately if this is a king capture
-        if move.is_king_capture:
-            assert False, "KING CAPTURE: should not happen, code to remove"
-            return VALUE_MAX * b.turn
-
         nb = board.push(b, move)
 
         # if the king is in check after we move
@@ -108,15 +99,6 @@ def alphabeta(
             continue
 
         new_depth = depth - 1
-
-        # Late move reduction (LMR)
-        if config.use_late_move_reduction and not move.is_capture:
-            if moves_searched > 3 + depth * 3:
-                new_depth = depth - 1
-            if moves_searched > 4 + depth * 6:
-                new_depth = depth - 2
-            if moves_searched > 4 + depth * 8:
-                new_depth = depth - 3
 
         value = alphabeta(
             config=config,

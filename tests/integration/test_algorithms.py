@@ -24,40 +24,6 @@ with open("tests/epd/wac.epd", "r") as wacfile:
 fens = win_at_chess
 
 
-# This test equivalence between raw alphabeta
-# and alphabeta with fast move ordering
-@pytest.mark.parametrize("fen", fens[:25])
-@pytest.mark.parametrize("depth", (1, 2, 3))
-def test_fast_ordering(fen, depth):
-    pv1 = []
-    r1 = alphabeta.alphabeta(
-        config=Config(use_transposition_table=False),
-        b=utils.from_fen(fen),
-        depth=depth,
-        pv=pv1,
-        gen_legal_moves=False,
-        alpha=-VALUE_MAX,
-        beta=VALUE_MAX,
-    )
-    pv2 = []
-    r2 = alphabeta.alphabeta(
-        config=Config(use_transposition_table=False),
-        b=utils.from_fen(fen),
-        depth=depth,
-        pv=pv2,
-        gen_legal_moves=False,
-        alpha=-VALUE_MAX,
-        beta=VALUE_MAX,
-    )
-    assert r1 == r2
-    # The fast ordering function can return different moves as long
-    # as their value is the same. That means that we cannot test the pv equivalence
-    # assert (
-    #     f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
-    #     == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
-    # )
-
-
 # This test equivalence between raw alphabeta and minimax
 @pytest.mark.parametrize("fen", fens)
 @pytest.mark.parametrize("depth", (1, 2, 3, 4, 5))
