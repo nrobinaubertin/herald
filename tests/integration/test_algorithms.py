@@ -53,16 +53,9 @@ def test_alphabeta(fen, depth):
         alpha=-VALUE_MAX,
         beta=VALUE_MAX,
     )
-    n1 = r1
-    n2 = max(r2, key=lambda x: x.value)
-    assert n1.value == n2.value, (
-        f"{fen}: "
-        f"{','.join([utils.to_uci(x) for x in n1.pv])} "
-        f"{','.join([utils.to_uci(x) for x in n2.pv])}"
-    )
-    assert r1.value == r2
+    assert r1 == r2
     assert (
-        f"{fen}: {','.join([utils.to_uci(x) for x in r1.pv])}"
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
         == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
     )
 

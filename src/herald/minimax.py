@@ -7,7 +7,7 @@ from . import move_ordering
 from .board import Board
 from .configuration import Config
 from .constants import COLOR, VALUE_MAX
-from .data_structures import Move, Node
+from .data_structures import Move
 
 
 # Simple minimax
@@ -19,20 +19,15 @@ def minimax(
     gen_legal_moves: bool = False,
     alpha: int = 0,
     beta: int = 0,
-) -> Node:
+) -> int:
     assert depth >= 0, depth
 
     # if we are on a terminal node, return the evaluation
     if depth == 0:
-        return Node(
-            value=evaluation.evaluation(
-                b.squares,
-                b.remaining_material,
-            ),
-            depth=0,
-        )
+        return evaluation.evaluation(b.squares, b.remaining_material)
 
     best = None
+    child_pv: list[Move] = []
 
     moves: Iterable[Move] = []
     if gen_legal_moves:
@@ -44,15 +39,10 @@ def minimax(
         moves,
     ):
         curr_board = board.push(b, move)
-        curr_pv = pv.copy()
-        curr_pv.append(move)
 
         # return immediately if this is a king capture
         if move.is_king_capture:
-            return Node(
-                value=VALUE_MAX * b.turn,
-                depth=depth,
-            )
+            return VALUE_MAX * b.turn
 
         # if the king is in check after we move
         # then it's a bad move (we will lose the game)
@@ -62,32 +52,29 @@ def minimax(
         ):
             continue
 
-        node = minimax(
+        value = minimax(
             config,
             curr_board,
             depth - 1,
-            curr_pv,
+            child_pv,
             False,
         )
 
         if b.turn == COLOR.WHITE:
-            if best is None or node.value > best.value:
-                best = Node(
-                    value=node.value,
-                    depth=depth,
-                )
+            if best is None or value > best:
+                best = value
+                pv.clear()
+                pv.append(move)
+                pv += child_pv
         else:
-            if best is None or node.value < best.value:
-                best = Node(
-                    value=node.value,
-                    depth=depth,
-                )
+            if best is None or value < best:
+                best = value
+                pv.clear()
+                pv.append(move)
+                pv += child_pv
 
-    if isinstance(best, Node):
-        return Node(
-            value=best.value,
-            depth=best.depth,
-        )
+    if best is not None:
+        return best
 
     # no "best" found
     # should happen only in case of stalemate/checkmate
@@ -96,15 +83,5 @@ def minimax(
         b.king_squares[b.turn],
         b.invturn,
     ):
-        return Node(
-            depth=depth,
-            value=VALUE_MAX * b.turn * -1,
-            lower=alpha,
-            upper=beta,
-        )
-    return Node(
-        depth=depth,
-        value=0,
-        lower=alpha,
-        upper=beta,
-    )
+        return VALUE_MAX * b.turn * -1
+    return 0
