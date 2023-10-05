@@ -22,11 +22,10 @@ def alphabeta(
     gen_legal_moves: bool = False,
     alpha: int = -VALUE_MAX,
     beta: int = VALUE_MAX,
-    max_depth: int = 0,
     killer_moves: set[Move] | None = None,
 ) -> int:
     # detect repetitions
-    if depth != max_depth and b in b.hash_history:
+    if b in b.hash_history:
         return 0
 
     if config.use_transposition_table:
@@ -108,7 +107,6 @@ def alphabeta(
             gen_legal_moves=False,
             alpha=alpha,
             beta=beta,
-            max_depth=max_depth,
             killer_moves=next_killer_moves,
         )
 

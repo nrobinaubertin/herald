@@ -44,18 +44,15 @@ def search(
     transposition_table: dict | None = None,
     hash_move_tt: dict | None = None,
     queue: Optional[multiprocessing.Queue] = None,
-) -> tuple[Search, Config,] | None:
+) -> Search | None:
     start_time = time.time_ns()
 
-    def handle_search(
-        search: Search | None,
-        queue: Optional[multiprocessing.Queue],
-    ):
+    def handle_search(search: Search | None):
         if search is not None:
             print(search)
         if queue is not None:
-            queue.put((search, config))
-        return (search, config)
+            queue.put(search)
+        return search
 
     if transposition_table is not None:
         config.transposition_table = transposition_table
@@ -66,7 +63,7 @@ def search(
 
     # return None if there is no possible move
     if len(possible_moves) == 0:
-        return handle_search(None, queue)
+        return handle_search(None)
 
     # if there's only one move possible, return it immediately
     if len(possible_moves) == 1:
@@ -79,7 +76,7 @@ def search(
             time=(time.time_ns() - start_time),
             stop_search=True,
         )
-        return handle_search(ret, queue)
+        return handle_search(ret)
 
     # return immediately if there is a king capture
     for move in possible_moves:
@@ -92,7 +89,7 @@ def search(
                 score=VALUE_MAX * b.turn,
                 time=(time.time_ns() - start_time),
             )
-            return handle_search(ret, queue)
+            return handle_search(ret)
 
     guess = last_search.score if last_search else 0
     margin: int = 50
@@ -111,7 +108,6 @@ def search(
             gen_legal_moves=True,
             alpha=lower,
             beta=upper,
-            max_depth=depth if not silent else 0,
             killer_moves=set(),
         )
 
@@ -139,4 +135,4 @@ def search(
         stop_search=(COLOR_DIRECTION[b.turn] * value) > VALUE_MAX - 100,
     )
     search.end = True
-    return handle_search(search, queue)
+    return handle_search(search)

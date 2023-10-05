@@ -1,4 +1,8 @@
-"""Minimax algorithms."""
+"""Minimax algorithm.
+
+This is used for testing purposes only.
+It is way too slow but easy to understand. I'm using this to verify my alphabeta implementation.
+"""
 
 from typing import Iterable
 

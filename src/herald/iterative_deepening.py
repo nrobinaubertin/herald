@@ -10,28 +10,6 @@ from .constants import COLOR_DIRECTION, VALUE_MAX
 from .search import Search, search
 
 
-# wrapper around the search function to allow for multiprocess time management
-def search_wrapper(
-    queue: Any,
-    b: Board,
-    depth: int,
-    config: Config,
-    last_search: Search,
-    transposition_table: dict,
-    hash_move_tt: dict,
-) -> None:
-    search(
-        b=b,
-        depth=depth,
-        config=config,
-        last_search=last_search,
-        transposition_table=transposition_table,
-        hash_move_tt=hash_move_tt,
-        queue=queue,
-    )
-    queue.close()
-
-
 def itdep(
     queue: Any,
     b: Board,
@@ -88,19 +66,10 @@ def itdep(
             # we create a queue to be able to stop the search when there's no time left
             # pylint issue: https://github.com/PyCQA/pylint/issues/3488
             # pylint: disable=unsubscriptable-object
-            subqueue: multiprocessing.Queue[
-                tuple[
-                    Search,
-                    Config,
-                ]
-                | None
-            ] = multiprocessing.Queue()
+            subqueue: multiprocessing.Queue[Search | None] = multiprocessing.Queue()
             process = multiprocessing.Process(
-                target=search_wrapper,
-                args=(
-                    subqueue,
-                    b,
-                ),
+                target=search,
+                args=(b,),
                 kwargs={
                     "depth": i,
                     "config": config,
@@ -116,13 +85,7 @@ def itdep(
             while True:
                 # we sometime check if we got a move out of the queue
                 try:
-                    ret: tuple[
-                        Search,
-                        Config,
-                    ] | None = subqueue.get(True, 0.1)
-
-                    if ret is not None:
-                        (current_search, config) = ret
+                    current_search = subqueue.get(True, 0.1)
 
                     # if there is no move available and no exception was raised
                     if current_search is None:
@@ -200,10 +163,7 @@ def itdep(
         start_depth,
         max_depth + 1,
     ):
-        ret = search(b=b, depth=i, last_search=last_search, config=config)
-
-        if ret is not None:
-            (current_search, config) = ret
+        current_search = search(b=b, depth=i, last_search=last_search, config=config)
 
         # if there is no move available
         if current_search is None:
