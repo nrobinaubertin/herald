@@ -1,5 +1,5 @@
 import pytest
-from herald import board, data_structures
+from herald import board, data_structures, constants
 
 win_at_chess = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"]
 
@@ -150,3 +150,48 @@ def test_gen_moves(
     legal_moves = {data_structures.to_uci(m) for m in board.legal_moves(b)}
     expected_moves = set(uci_moves.split(","))
     assert legal_moves == expected_moves
+
+
+@pytest.mark.parametrize(
+    "fen, square, color, expected",
+    [
+        (
+            "5k2/6pp/p7/3p4/2pP4/2PKP2Q/PP3r2/3R4 w - - 0 3",
+            74,
+            constants.COLOR.BLACK,
+            True,
+        ),
+        (
+            "5k2/6pp/p7/3p4/2pP4/2PKP2Q/PP3r2/3R4 w - - 0 3",
+            72,
+            constants.COLOR.BLACK,
+            True,
+        ),
+        (
+            "5k2/6pp/p7/3p4/2pP4/2PKP2Q/PP3r2/3R4 w - - 0 3",
+            71,
+            constants.COLOR.WHITE,
+            True,
+        ),
+        (
+            "5k2/6pp/p7/3p4/2pP4/2PKP2Q/PP3r2/3R4 w - - 0 3",
+            34,
+            constants.COLOR.WHITE,
+            True,
+        ),
+        (
+            "5k2/6pp/p7/3p4/2pP4/2PKP2Q/PP3r2/3R4 w - - 0 3",
+            44,
+            constants.COLOR.WHITE,
+            False,
+        ),
+    ],
+)
+def test_is_square_attacked(
+    fen: str,
+    square: int,
+    color: constants.COLOR,
+    expected: bool,
+):
+    b = board.from_fen(fen)
+    assert expected == board.is_square_attacked(b.squares, square, color)

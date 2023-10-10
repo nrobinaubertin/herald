@@ -7,12 +7,16 @@ When comparing move ordering functions, we cannot compare pvs
 import pytest
 from herald import algorithms, board, move_ordering, quiescence
 from herald.algorithms import alphabeta
-from herald.minimax import minimax
+from herald import minimax
 from herald.configuration import Config
 from herald.constants import VALUE_MAX
 from herald.data_structures import to_uci
 
-win_at_chess = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"]
+win_at_chess = [
+    # Some additional FENs that we want to test
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0",
+    "rnbqkbnr/pp2pppp/2p5/3p4/3P1B2/5N2/PPP1PPPP/RN1QKB1R b KQkq - 1 3",
+]
 with open("tests/epd/wac.epd", "r") as wacfile:
     for line in wacfile:
         epd = line.split()
@@ -66,21 +70,24 @@ def test_fast_ordering(fen, depth):
 
 
 # This test equivalence between raw alphabeta and minimax
-@pytest.mark.parametrize("fen", fens[:25])
-@pytest.mark.parametrize("depth", (1, 2, 3))
+@pytest.mark.parametrize("fen", fens)
+@pytest.mark.parametrize("depth", (1, 2, 3, 4, 5))
 def test_alphabeta(fen, depth):
-    r1 = minimax(
+    b = board.from_fen(fen)
+    pv1 = []
+    r1 = minimax.minimax(
         Config(
-            alg_fn=minimax,
+            alg_fn=minimax.minimax,
             move_ordering_fn=move_ordering.no_ordering,
             quiescence_fn=quiescence.quiescence,
             use_transposition_table=False,
         ),
         board.from_fen(fen),
         depth,
-        [],
+        pv1,
         False,
     )
+    pv2 = []
     r2 = alphabeta(
         config=Config(
             alg_fn=algorithms.alphabeta,
@@ -88,16 +95,18 @@ def test_alphabeta(fen, depth):
             quiescence_fn=quiescence.quiescence,
             use_transposition_table=False,
         ),
-        b=board.from_fen(fen),
+        b=b,
         depth=depth,
-        pv=[],
+        pv=pv2,
         gen_legal_moves=False,
         alpha=-VALUE_MAX,
         beta=VALUE_MAX,
     )
     n1 = r1
     n2 = max(r2, key=lambda x: x.value)
-    assert n1.value == n2.value
+    assert (
+        n1.value == n2.value
+    ), f"{fen}: {','.join([to_uci(x) for x in n1.pv])}, {','.join([to_uci(x) for x in n2.pv])}"
     assert (
         f"{fen}: {','.join([to_uci(x) for x in n1.pv])}"
         == f"{fen}: {','.join([to_uci(x) for x in n2.pv])}"
@@ -115,6 +124,7 @@ def test_hash_move(fen, depth):
             quiescence_fn=quiescence.quiescence,
             quiescence_search=True,
             use_transposition_table=True,
+            use_hash_move=True,
         ),
         b=board.from_fen(fen),
         depth=depth,
@@ -131,6 +141,7 @@ def test_hash_move(fen, depth):
             quiescence_fn=quiescence.quiescence,
             quiescence_search=True,
             use_transposition_table=True,
+            use_hash_move=False,
         ),
         b=board.from_fen(fen),
         depth=depth,
@@ -146,3 +157,43 @@ def test_hash_move(fen, depth):
         f"{fen}: {','.join([to_uci(x) for x in n1.pv])}"
         == f"{fen}: {','.join([to_uci(x) for x in n2.pv])}"
     )
+
+
+# @pytest.mark.parametrize("fen", fens[:25])
+# @pytest.mark.parametrize("depth", (3, 4))
+# def test_killer_move(fen, depth):
+#     pv1 = []
+#     r1 = alphabeta.alphabeta(
+#         config=Config(
+#             quiescence_depth=50,
+#             quiescence_search=True,
+#             use_transposition_table=True,
+#             use_killer_moves=True,
+#         ),
+#         b=utils.from_fen(fen),
+#         depth=depth,
+#         pv=pv1,
+#         gen_legal_moves=False,
+#         alpha=-VALUE_MAX,
+#         beta=VALUE_MAX,
+#     )
+#     pv2 = []
+#     r2 = alphabeta.alphabeta(
+#         config=Config(
+#             quiescence_depth=50,
+#             quiescence_search=True,
+#             use_transposition_table=True,
+#             use_killer_moves=False,
+#         ),
+#         b=utils.from_fen(fen),
+#         depth=depth,
+#         pv=pv2,
+#         gen_legal_moves=False,
+#         alpha=-VALUE_MAX,
+#         beta=VALUE_MAX,
+#     )
+#     assert r1 == r2
+#     assert (
+#         f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
+#         == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+#     )
