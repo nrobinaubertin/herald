@@ -1,5 +1,5 @@
 import pytest
-from herald import utils, time_management
+import utils, time_management
 
 start_fen = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"]
 

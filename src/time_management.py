@@ -1,6 +1,6 @@
-from .board import Board
-from .constants import COLOR
-from .evaluation import remaining_material_percent
+from board import Board
+from constants import COLOR
+from evaluation import remaining_material_percent
 
 
 def target_movetime(

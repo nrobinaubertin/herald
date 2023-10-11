@@ -1,6 +1,6 @@
 import pytest
-from herald import pruning, utils
-from herald.constants import COLOR_DIRECTION
+import pruning, utils
+from constants import COLOR_DIRECTION
 
 
 @pytest.mark.parametrize(

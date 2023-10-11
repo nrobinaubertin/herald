@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from functools import cache
 from typing import Iterable
 
-from . import evaluation
-from .constants import (
+import evaluation
+from constants import (
     ASCII_REP,
     CASTLE,
     COLOR,
@@ -14,7 +14,7 @@ from .constants import (
     PIECE,
     get_color,
 )
-from .data_structures import Move
+from data_structures import Move
 
 
 @dataclass(frozen=True)

@@ -5,11 +5,13 @@ When comparing move ordering functions, we cannot compare pvs
 """
 
 import pytest
-from herald.configuration import Config
-from herald.constants import VALUE_MAX
-from herald import utils
-from herald import alphabeta
-from herald import minimax
+
+from configuration import Config
+from constants import VALUE_MAX
+import utils
+import alphabeta
+
+import minimax
 
 win_at_chess = [
     # Some additional FENs that we want to test
@@ -31,14 +33,10 @@ def test_alphabeta(fen, depth):
     b = utils.from_fen(fen)
     pv1 = []
     r1 = minimax.minimax(
-        Config(
-            use_transposition_table=False,
-            quiescence_search=False,
-        ),
-        b,
-        depth,
-        pv1,
-        False,
+        b=b,
+        depth=depth,
+        pv=pv1,
+        gen_legal_moves=False,
     )
     pv2 = []
     r2 = alphabeta.alphabeta(

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
-from .board import Board
-from .data_structures import Move, Node
+from board import Board
+from data_structures import Move, Node
 
 
 @dataclass

@@ -4,9 +4,9 @@ We test our move generation using the perft algorithm
 """
 
 import pytest
-from herald import board
-from herald import utils
-from herald.board import Board
+import board
+import utils
+from board import Board
 
 
 def perft(b: Board, depth: int):

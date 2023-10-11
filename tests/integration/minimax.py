@@ -1,31 +1,26 @@
 """Minimax algorithm.
 
 This is used for testing purposes only.
-It is way too slow but easy to understand. I'm using this to verify my alphabeta implementation.
+It is way too slow but easy to understand.
 """
 
 from typing import Iterable
 
-from . import board, evaluation
-from . import move_ordering
-from .board import Board
-from .configuration import Config
-from .constants import COLOR, VALUE_MAX
-from .data_structures import Move
+import board, evaluation
+import move_ordering
+from board import Board
+from constants import COLOR, VALUE_MAX
+from data_structures import Move
 
 
 # Simple minimax
 def minimax(
-    config: Config,
+    *,
     b: Board,
     depth: int,
     pv: list[Move],
     gen_legal_moves: bool = False,
-    alpha: int = 0,
-    beta: int = 0,
 ) -> int:
-    assert depth >= 0, depth
-
     # if we are on a terminal node, return the evaluation
     if depth == 0:
         return evaluation.evaluation(b.squares, b.remaining_material)
@@ -50,18 +45,14 @@ def minimax(
 
         # if the king is in check after we move
         # then it's a bad move (we will lose the game)
-        if board.king_is_in_check(
-            curr_board,
-            curr_board.invturn,
-        ):
+        if board.king_is_in_check(curr_board, curr_board.invturn):
             continue
 
         value = minimax(
-            config,
-            curr_board,
-            depth - 1,
-            child_pv,
-            False,
+            b=curr_board,
+            depth=depth - 1,
+            pv=child_pv,
+            gen_legal_moves=False,
         )
 
         if b.turn == COLOR.WHITE:
@@ -81,11 +72,12 @@ def minimax(
         return best
 
     # no "best" found
+    # this means that we have no move available
     # should happen only in case of stalemate/checkmate
-    if board.is_square_attacked(
-        b.squares,
-        b.king_squares[b.turn],
-        b.invturn,
-    ):
+
+    # if the king square is attacked, it's a checkmate
+    if board.king_is_in_check(b, b.turn):
         return VALUE_MAX * b.turn * -1
+
+    # if the king square is not attacked, then it's a stalemate
     return 0

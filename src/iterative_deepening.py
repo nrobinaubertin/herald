@@ -2,12 +2,12 @@ import multiprocessing
 import time
 from typing import Any, Optional
 
-from . import board
-from . import utils
-from .board import Board
-from .configuration import Config
-from .constants import COLOR_DIRECTION, VALUE_MAX
-from .search import Search, search
+import board
+import utils
+from board import Board
+from configuration import Config
+from constants import COLOR_DIRECTION, VALUE_MAX
+from search import Search, search
 
 
 def itdep(

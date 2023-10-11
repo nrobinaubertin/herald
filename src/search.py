@@ -3,12 +3,12 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
-from . import alphabeta, board
-from . import utils
-from .board import Board
-from .configuration import Config
-from .constants import COLOR_DIRECTION, VALUE_MAX
-from .data_structures import Move
+import alphabeta, board
+import utils
+from board import Board
+from configuration import Config
+from constants import COLOR_DIRECTION, VALUE_MAX
+from data_structures import Move
 
 
 @dataclass

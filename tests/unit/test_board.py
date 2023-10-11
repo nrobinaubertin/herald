@@ -1,5 +1,5 @@
 import pytest
-from herald import board, utils, constants
+import board, utils, constants
 
 win_at_chess = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"]
 
@@ -193,5 +193,5 @@ def test_is_square_attacked(
     color: constants.COLOR,
     expected: bool,
 ):
-    b = board.from_fen(fen)
+    b = utils.from_fen(fen)
     assert expected == board.is_square_attacked(b.squares, square, color)

@@ -1,10 +1,10 @@
 """Test transposition table."""
 
 import pytest
-from herald.configuration import Config
-from herald.constants import VALUE_MAX
-from herald import alphabeta
-from herald import utils
+from configuration import Config
+from constants import VALUE_MAX
+import alphabeta
+import utils
 
 fens = []
 with open("tests/epd/transposition_table.epd", "r") as tt_file:

@@ -1,9 +1,9 @@
 from typing import Iterable
 
-from . import pruning
-from .board import Board
-from .constants import PIECE
-from .data_structures import Move
+import pruning
+from board import Board
+from constants import PIECE
+from data_structures import Move
 
 
 def fast_ordering(

@@ -3,12 +3,13 @@ import multiprocessing
 import sys
 import threading
 
-from herald import board, evaluation
-from herald.board import Board
-from herald.configuration import Config
-from herald.iterative_deepening import itdep
-from herald.time_management import target_movetime
-from herald import utils
+import board
+import evaluation
+from board import Board
+from configuration import Config
+from iterative_deepening import itdep
+from time_management import target_movetime
+import utils
 
 CURRENT_BOARD = utils.from_fen("startpos")
 CURRENT_PROCESS = None

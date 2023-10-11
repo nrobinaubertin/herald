@@ -1,13 +1,13 @@
-from . import board
-from . import evaluation
-from .constants import (
+import board
+import evaluation
+from constants import (
     ASCII_REP,
     CASTLE,
     COLOR,
     IS_PIECE,
     PIECE,
 )
-from .data_structures import Move
+from data_structures import Move
 from typing import Iterable
 
 

@@ -1,6 +1,6 @@
 from functools import cache
 
-from .constants import COLOR, IS_PIECE, PIECE, get_color
+from constants import COLOR, IS_PIECE, PIECE, get_color
 
 PIECE_VALUE = {
     PIECE.EMPTY: 0,

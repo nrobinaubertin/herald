@@ -1,14 +1,14 @@
 """Alphabeta search."""
 
 from typing import Iterable, Optional
-from . import board
-from . import evaluation
-from .board import Board
-from .configuration import Config
-from .constants import COLOR, COLOR_DIRECTION, VALUE_MAX
-from .data_structures import Move, Node
-from . import quiescence
-from . import move_ordering
+import board
+import evaluation
+from board import Board
+from configuration import Config
+from constants import COLOR, COLOR_DIRECTION, VALUE_MAX
+from data_structures import Move, Node
+import quiescence
+import move_ordering
 
 
 # alphabeta pruning (fail-soft)

@@ -1,8 +1,8 @@
-from . import board
-from .board import Board
-from .constants import COLOR, COLOR_DIRECTION, IS_PIECE, PIECE
-from .data_structures import Move
-from .evaluation import PIECE_VALUE
+import board
+from board import Board
+from constants import COLOR, COLOR_DIRECTION, IS_PIECE, PIECE
+from data_structures import Move
+from evaluation import PIECE_VALUE
 
 
 # see() returns a colorified score

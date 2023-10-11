@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .constants import PIECE, VALUE_MAX
+from constants import PIECE, VALUE_MAX
 
 
 @dataclass(frozen=True)
