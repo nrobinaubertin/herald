@@ -9,7 +9,7 @@ import pytest
 from configuration import Config
 from constants import VALUE_MAX
 import utils
-import alphabeta
+import search
 
 import minimax
 
@@ -39,7 +39,7 @@ def test_alphabeta(fen, depth):
         gen_legal_moves=False,
     )
     pv2 = []
-    r2 = alphabeta.alphabeta(
+    r2 = search.alphabeta(
         config=Config(
             use_transposition_table=False,
             quiescence_search=False,
@@ -62,7 +62,7 @@ def test_alphabeta(fen, depth):
 @pytest.mark.parametrize("depth", (3, 4))
 def test_hash_move(fen, depth):
     pv1 = []
-    r1 = alphabeta.alphabeta(
+    r1 = search.alphabeta(
         config=Config(
             quiescence_depth=50,
             quiescence_search=True,

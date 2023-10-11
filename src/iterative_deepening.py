@@ -7,7 +7,7 @@ import utils
 from board import Board
 from configuration import Config
 from constants import COLOR_DIRECTION, VALUE_MAX
-from search import Search, search
+from root_search import Search, root_search
 
 
 def itdep(
@@ -68,14 +68,16 @@ def itdep(
             # pylint: disable=unsubscriptable-object
             subqueue: multiprocessing.Queue[Search | None] = multiprocessing.Queue()
             process = multiprocessing.Process(
-                target=search,
-                args=(b,),
+                target=root_search,
+                args=(),
                 kwargs={
+                    "b": b,
                     "depth": i,
                     "config": config,
                     "last_search": last_search,
                     "transposition_table": config.transposition_table,
                     "hash_move_tt": config.hash_move_tt,
+                    "queue": subqueue,
                 },
                 daemon=False,
             )
@@ -101,7 +103,6 @@ def itdep(
                     last_search = current_search
 
                 # bail out if the search tells us to stop
-                assert isinstance(last_search, Search)
                 if last_search is not None and last_search.stop_search:
                     if __debug__:
                         print("stop_search")
@@ -163,7 +164,7 @@ def itdep(
         start_depth,
         max_depth + 1,
     ):
-        current_search = search(b=b, depth=i, last_search=last_search, config=config)
+        current_search = root_search(b=b, depth=i, last_search=last_search, config=config)
 
         # if there is no move available
         if current_search is None:

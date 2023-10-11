@@ -3,7 +3,7 @@
 import pytest
 from configuration import Config
 from constants import VALUE_MAX
-import alphabeta
+import search
 import utils
 
 fens = []
@@ -20,7 +20,7 @@ with open("tests/epd/transposition_table.epd", "r") as tt_file:
 def test_tt_equivalence(fen, depth, use_qs):
     b = utils.from_fen(fen)
     pv1 = []
-    alphabeta_result = alphabeta.alphabeta(
+    alphabeta_result = search.alphabeta(
         config=Config(
             quiescence_depth=25,
             quiescence_search=use_qs,
@@ -34,7 +34,7 @@ def test_tt_equivalence(fen, depth, use_qs):
         beta=VALUE_MAX,
     )
     pv2 = []
-    alphabeta_tt_result = alphabeta.alphabeta(
+    alphabeta_tt_result = search.alphabeta(
         config=Config(
             quiescence_depth=25,
             quiescence_search=use_qs,

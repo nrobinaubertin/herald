@@ -6,7 +6,8 @@ It is way too slow but easy to understand.
 
 from typing import Iterable
 
-import board, evaluation
+import board
+import evaluation
 import move_ordering
 from board import Board
 from constants import COLOR, VALUE_MAX

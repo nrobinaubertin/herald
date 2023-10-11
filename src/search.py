@@ -1,138 +1,169 @@
-import multiprocessing
-import time
-from dataclasses import dataclass
-from typing import Optional
+"""Alphabeta search."""
 
-import alphabeta, board
-import utils
+from typing import Iterable, Optional
+import board
+import evaluation
 from board import Board
 from configuration import Config
-from constants import COLOR_DIRECTION, VALUE_MAX
-from data_structures import Move
+from constants import COLOR, COLOR_DIRECTION, VALUE_MAX
+from data_structures import Move, Node
+import quiescence
+import move_ordering
 
 
-@dataclass
-class Search:
-    board: Board
-    move: Move
-    depth: int
-    score: int
-    time: int
-    pv: list[Move]
-    stop_search: bool = False
-    end: bool = False
-
-    def __str__(
-        self,
-    ) -> str:
-        return (
-            ""
-            + f"info depth {self.depth} "
-            + f"score cp {self.score} "
-            + f"time {int(self.time // 1e9)} "
-            + f"pv {utils.to_uci(self.pv)}"
-        )
-
-
-def search(
+# alphabeta pruning (fail-soft)
+# with optional move ordering and transposition table
+def alphabeta(
     *,
+    config: Config,
     b: Board,
     depth: int,
-    config: Config,
-    last_search: Search | None = None,
-    silent: bool = False,
-    transposition_table: dict | None = None,
-    hash_move_tt: dict | None = None,
-    queue: Optional[multiprocessing.Queue] = None,
-) -> Search | None:
-    start_time = time.time_ns()
+    pv: list[Move],
+    gen_legal_moves: bool = False,
+    alpha: int = -VALUE_MAX,
+    beta: int = VALUE_MAX,
+    killer_moves: set[Move] | None = None,
+) -> int:
+    # detect repetitions
+    if b in b.hash_history:
+        return 0
 
-    def handle_search(search: Search | None):
-        if search is not None:
-            print(search)
-        if queue is not None:
-            queue.put(search)
-        return search
+    if config.use_transposition_table:
+        node = config.transposition_table.get(b, depth)
+        if isinstance(node, Node) and node.depth >= depth:
+            # first we make sure that the retrieved node
+            # is in our alpha-beta range
+            if alpha < node.lower and node.upper < beta:
+                # if this is an exact node
+                if node.lower < node.value < node.upper:
+                    return node.value
 
-    if transposition_table is not None:
-        config.transposition_table = transposition_table
-    if hash_move_tt is not None:
-        config.hash_move_tt = hash_move_tt
+    # if we are on a terminal node, return the evaluation
+    if depth <= 0:
+        if config.quiescence_search:
+            value = quiescence.quiescence(config=config, b=b, alpha=alpha, beta=beta)
+        else:
+            value = evaluation.evaluation(b.squares, b.remaining_material)
+        return value
 
-    possible_moves = board.legal_moves(b)
+    best: int | None = None
+    best_move: Move | None = None
+    child_pv: list[Move] = []
 
-    # return None if there is no possible move
-    if len(possible_moves) == 0:
-        return handle_search(None)
+    moves: Iterable[Move] = []
+    if gen_legal_moves:
+        moves = board.legal_moves(b)
+    else:
+        moves = board.pseudo_legal_moves(b)
 
-    # if there's only one move possible, return it immediately
-    if len(possible_moves) == 1:
-        ret = Search(
-            board=b,
-            move=possible_moves[0],
-            pv=[possible_moves[0]],
-            depth=0,
-            score=0,
-            time=(time.time_ns() - start_time),
-            stop_search=True,
-        )
-        return handle_search(ret)
+    moves = move_ordering.fast_ordering(b, moves)
 
-    # return immediately if there is a king capture
-    for move in possible_moves:
-        if move.is_king_capture:
-            ret = Search(
-                board=b,
-                move=move,
-                pv=[move],
-                depth=1,
-                score=VALUE_MAX * b.turn,
-                time=(time.time_ns() - start_time),
-            )
-            return handle_search(ret)
+    def order_moves() -> Iterable[Move]:
+        yielded = set()
+        hash_move: Optional[Move] = config.hash_move_tt.get(b, None)
+        if hash_move is not None:
+            yielded.add(hash_move)
+            yield hash_move
+        killer_moves_yielded = False
+        for move in moves:
+            if move in yielded:
+                continue
+            if move.is_capture and move.captured_piece > 2:
+                yielded.add(move)
+                yield move
+                continue
+            if config.use_killer_moves and killer_moves is not None and not killer_moves_yielded:
+                for km in move_ordering.fast_ordering(
+                    b,
+                    (km for km in killer_moves if board.is_pseudo_legal_move(b, km)),
+                ):
+                    if km not in yielded:
+                        yielded.add(km)
+                        yield km
+                killer_moves_yielded = True
+            if move in yielded:
+                continue
+            yielded.add(move)
+            yield move
 
-    guess = last_search.score if last_search else 0
-    margin: int = 50
-    lower = guess - margin
-    upper = guess + margin
-    iteration = 0
+    # create the list of the killer moves that will be found in the children nodes
+    next_killer_moves: set[Move] = set()
 
-    while True:
-        iteration += 1
-        pv: list[Move] = []
-        value = alphabeta.alphabeta(
+    for move in order_moves():
+        nb = board.push(b, move)
+
+        # if the king is in check after we move
+        # then it's a bad move (we will lose the game)
+        if board.king_is_in_check(nb, nb.invturn):
+            continue
+
+        new_depth = depth - 1
+
+        value = alphabeta(
             config=config,
-            b=b,
-            depth=depth,
-            pv=pv,
-            gen_legal_moves=True,
-            alpha=lower,
-            beta=upper,
-            killer_moves=set(),
+            b=nb,
+            depth=new_depth,
+            pv=child_pv,
+            gen_legal_moves=False,
+            alpha=alpha,
+            beta=beta,
+            killer_moves=next_killer_moves,
         )
 
-        # if no best move was found
-        # this could happen because of some pruning
-        if not pv:
-            upper += margin * 2
-            lower -= margin * 2
-            continue
-        if value >= upper:
-            upper += margin * 2
-            continue
-        if value <= lower:
-            lower -= margin * 2
-            continue
-        break
+        # has_changed: bool = False
+        if b.turn == COLOR.WHITE:
+            if best is None or value > best:
+                # has_changed = True
+                best_move = move
+                best = value
+            if value > alpha:
+                alpha = max(alpha, value)
+                pv.clear()
+                pv.append(move)
+                pv += child_pv
+            if value >= beta:
+                if config.use_killer_moves and killer_moves is not None:
+                    killer_moves.add(move)
+                break
+        else:
+            if best is None or value < best:
+                # has_changed = True
+                best_move = move
+                best = value
+            if value < beta:
+                beta = min(beta, value)
+                pv.clear()
+                pv.append(move)
+                pv += child_pv
+            if value <= alpha:
+                if config.use_killer_moves and killer_moves is not None:
+                    killer_moves.add(move)
+                break
 
-    search = Search(
-        board=b,
-        move=pv[0],
-        pv=pv,
-        depth=depth,
-        score=value,
-        time=(time.time_ns() - start_time),
-        stop_search=(COLOR_DIRECTION[b.turn] * value) > VALUE_MAX - 100,
-    )
-    search.end = True
-    return handle_search(search)
+    if config.use_transposition_table:
+        # Save the resulting best node in the transposition table
+        if best is not None and depth > 0:
+            node = Node(
+                depth=depth,
+                value=best,
+                lower=alpha,
+                upper=beta,
+            )
+            config.transposition_table[b] = node
+        if config.use_hash_move:
+            if best_move is not None:
+                config.hash_move_tt[b] = best_move
+
+    if best is not None and best_move is not None:
+        return best
+    else:
+        # no "best" found
+        # should happen only in case of stalemate/checkmate
+        if board.is_square_attacked(
+            b.squares,
+            b.king_squares[b.turn],
+            b.invturn,
+        ):
+            return VALUE_MAX * COLOR_DIRECTION[b.turn] * -1
+        else:
+            return 0

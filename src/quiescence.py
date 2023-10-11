@@ -1,4 +1,6 @@
-import board, evaluation, pruning
+import board
+import evaluation
+import pruning
 from board import Board
 from configuration import Config
 from constants import COLOR, COLOR_DIRECTION, PIECE, VALUE_MAX

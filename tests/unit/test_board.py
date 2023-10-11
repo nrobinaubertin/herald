@@ -1,5 +1,7 @@
 import pytest
-import board, utils, constants
+import board
+import utils
+import constants
 
 win_at_chess = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"]
 

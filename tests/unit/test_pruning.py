@@ -1,5 +1,6 @@
 import pytest
-import pruning, utils
+import pruning
+import utils
 from constants import COLOR_DIRECTION
 
 
