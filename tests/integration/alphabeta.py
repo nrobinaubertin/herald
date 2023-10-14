@@ -1,7 +1,6 @@
-"""Minimax algorithm.
+"""Alphabeta algorithm.
 
 This is used for testing purposes only.
-It is way too slow but easy to understand.
 """
 
 from typing import Iterable
@@ -10,18 +9,19 @@ import board
 import evaluation
 from board import Board
 from constants import COLOR, VALUE_MAX, COLOR_DIRECTION
+import constants
 from data_structures import Move
 
 
-# Simple minimax
-def minimax(
+def alphabeta(
     *,
     b: Board,
     depth: int,
     pv: list[Move],
     gen_legal_moves: bool = False,
+    alpha: int = -VALUE_MAX,
+    beta: int = VALUE_MAX,
 ) -> int:
-    # if we are on a terminal node, return the evaluation
     if depth == 0:
         return evaluation.evaluation(b.squares, b.remaining_material)
 
@@ -35,8 +35,7 @@ def minimax(
         moves = board.pseudo_legal_moves(b)
 
     for move in moves:
-        # Return immediately if this is a king capture.
-        # This is necessary since we don't check if the kings are still here after a pseudomove.
+        # return immediately if this is a king capture
         if move.is_king_capture:
             return VALUE_MAX * COLOR_DIRECTION[b.turn]
 
@@ -47,11 +46,13 @@ def minimax(
         if board.king_is_in_check(curr_board, b.turn):
             continue
 
-        value = minimax(
+        value = alphabeta(
             b=curr_board,
             depth=depth - 1,
             pv=child_pv,
             gen_legal_moves=False,
+            alpha=alpha,
+            beta=beta,
         )
 
         if b.turn == COLOR.WHITE:
@@ -60,12 +61,18 @@ def minimax(
                 pv.clear()
                 pv.append(move)
                 pv += child_pv
+            alpha = max(alpha, value)
+            if value >= beta:
+                break
         else:
             if best is None or value < best:
                 best = value
                 pv.clear()
                 pv.append(move)
                 pv += child_pv
+            beta = min(beta, value)
+            if value <= alpha:
+                break
 
     if best is not None:
         return best

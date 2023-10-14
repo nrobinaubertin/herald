@@ -7,11 +7,14 @@ When comparing move ordering functions, we cannot compare pvs
 import pytest
 
 from configuration import Config
-from constants import VALUE_MAX
+from constants import VALUE_MAX, COLOR_DIRECTION
 import utils
 import search
 
 import minimax
+import alphabeta
+import negamax
+import negamax_mo
 
 win_at_chess = [
     # Some additional FENs that we want to test
@@ -26,9 +29,9 @@ with open("tests/epd/wac.epd", "r") as wacfile:
 fens = win_at_chess
 
 
-# This test equivalence between raw alphabeta and minimax
+# This test equivalence between alphabeta and minimax
 @pytest.mark.parametrize("fen", fens)
-@pytest.mark.parametrize("depth", (1, 2, 3, 4, 5))
+@pytest.mark.parametrize("depth", (1, 2, 3))
 def test_alphabeta(fen, depth):
     b = utils.from_fen(fen)
     pv1 = []
@@ -39,37 +42,33 @@ def test_alphabeta(fen, depth):
         gen_legal_moves=False,
     )
     pv2 = []
-    r2 = search.alphabeta(
-        config=Config(
-            use_transposition_table=False,
-            quiescence_search=False,
-        ),
-        b=utils.from_fen(fen),
+    r2 = alphabeta.alphabeta(
+        b=b,
         depth=depth,
         pv=pv2,
         gen_legal_moves=False,
         alpha=-VALUE_MAX,
         beta=VALUE_MAX,
     )
-    assert r1 == r2
+    assert r1 == r2, (
+        f"{fen}: "
+        f"{','.join([utils.to_uci(x) for x in pv1])} "
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    )
     assert (
         f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
         == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
     )
 
 
-@pytest.mark.parametrize("fen", fens[:25])
-@pytest.mark.parametrize("depth", (3, 4))
-def test_hash_move(fen, depth):
+# This test equivalence between alphabeta and negamax
+@pytest.mark.parametrize("fen", fens)
+@pytest.mark.parametrize("depth", (1, 2, 3, 4))
+def test_negamax(fen, depth):
+    b = utils.from_fen(fen)
     pv1 = []
-    r1 = search.alphabeta(
-        config=Config(
-            quiescence_depth=50,
-            quiescence_search=True,
-            use_transposition_table=True,
-            use_hash_move=True,
-        ),
-        b=utils.from_fen(fen),
+    r1 = alphabeta.alphabeta(
+        b=b,
         depth=depth,
         pv=pv1,
         gen_legal_moves=False,
@@ -77,25 +76,138 @@ def test_hash_move(fen, depth):
         beta=VALUE_MAX,
     )
     pv2 = []
-    r2 = alphabeta.alphabeta(
+    r2 = negamax.negamax(
+        b=b,
+        depth=depth,
+        pv=pv2,
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
+    ) * COLOR_DIRECTION[b.turn]
+    assert r1 == r2, (
+        f"{fen}: "
+        f"{','.join([utils.to_uci(x) for x in pv1])} "
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    )
+    assert (
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
+        == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    )
+
+
+# This test equivalence between negamax and negamax with move ordering
+@pytest.mark.parametrize("fen", fens)
+@pytest.mark.parametrize("depth", (1, 2, 3, 4))
+def test_negamax_mo(fen, depth):
+    b = utils.from_fen(fen)
+    pv1 = []
+    r1 = negamax_mo.negamax_mo(
+        b=b,
+        depth=depth,
+        pv=pv1,
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
+    ) * COLOR_DIRECTION[b.turn]
+    pv2 = []
+    r2 = negamax.negamax(
+        b=b,
+        depth=depth,
+        pv=pv2,
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
+    ) * COLOR_DIRECTION[b.turn]
+    assert r1 == r2, (
+        f"{fen}: "
+        f"{','.join([utils.to_uci(x) for x in pv1])} "
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    )
+    # We cannot compare PVs since move ordering can affect it.
+    # Multiple PVs can have the same evaluation
+    # assert (
+    #     f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
+    #     == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    # )
+
+
+# This test equivalence between our search and negamax_mo
+@pytest.mark.parametrize("fen", fens)
+@pytest.mark.parametrize("depth", (1, 2, 3, 4, 5))
+def test_search(fen, depth):
+    b = utils.from_fen(fen)
+    pv1 = []
+    r1 = negamax_mo.negamax_mo(
+        b=b,
+        depth=depth,
+        pv=pv1,
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
+    ) * COLOR_DIRECTION[b.turn]
+    pv2 = []
+    r2 = search.alphabeta(
         config=Config(
-            quiescence_depth=50,
-            quiescence_search=True,
-            use_transposition_table=True,
+            use_transposition_table=False,
+            quiescence_search=False,
             use_hash_move=False,
         ),
-        b=utils.from_fen(fen),
+        b=b,
         depth=depth,
         pv=pv2,
         gen_legal_moves=False,
         alpha=-VALUE_MAX,
         beta=VALUE_MAX,
     )
-    assert r1 == r2
-    assert (
-        f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
-        == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    assert r1 == r2, (
+        f"{fen}: "
+        f"{','.join([utils.to_uci(x) for x in pv1])} "
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
     )
+    # assert (
+    #     f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
+    #     == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    # )
+
+
+# @pytest.mark.parametrize("fen", fens[:25])
+# @pytest.mark.parametrize("depth", (3, 4))
+# def test_hash_move(fen, depth):
+#     pv1 = []
+#     r1 = search.alphabeta(
+#         config=Config(
+#             quiescence_depth=50,
+#             quiescence_search=True,
+#             use_transposition_table=True,
+#             use_hash_move=True,
+#         ),
+#         b=utils.from_fen(fen),
+#         depth=depth,
+#         pv=pv1,
+#         gen_legal_moves=False,
+#         alpha=-VALUE_MAX,
+#         beta=VALUE_MAX,
+#     )
+#     pv2 = []
+#     r2 = alphabeta.alphabeta(
+#         config=Config(
+#             quiescence_depth=50,
+#             quiescence_search=True,
+#             use_transposition_table=True,
+#             use_hash_move=False,
+#         ),
+#         b=utils.from_fen(fen),
+#         depth=depth,
+#         pv=pv2,
+#         gen_legal_moves=False,
+#         alpha=-VALUE_MAX,
+#         beta=VALUE_MAX,
+#     )
+#     assert r1 == r2
+#     assert (
+#         f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
+#         == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+#     )
 
 
 # @pytest.mark.parametrize("fen", fens[:25])

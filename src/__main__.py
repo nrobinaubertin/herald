@@ -59,6 +59,9 @@ def uci_parser(
     if tokens[0] == "moves":
         return [", ".join([utils.to_uci(m) for m in board.legal_moves(CURRENT_BOARD)])]
 
+    if tokens[0] == "pseudomoves":
+        return [", ".join([utils.to_uci(m) for m in board.pseudo_legal_moves(CURRENT_BOARD)])]
+
     if tokens[0] == "fen":
         return [utils.to_fen(CURRENT_BOARD)]
 
