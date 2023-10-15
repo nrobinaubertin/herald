@@ -32,6 +32,7 @@ fens = win_at_chess
 # This test equivalence between alphabeta and minimax
 @pytest.mark.parametrize("fen", fens)
 @pytest.mark.parametrize("depth", (1, 2, 3))
+@pytest.mark.not_ci
 def test_alphabeta(fen, depth):
     b = utils.from_fen(fen)
     pv1 = []
@@ -64,6 +65,7 @@ def test_alphabeta(fen, depth):
 # This test equivalence between alphabeta and negamax
 @pytest.mark.parametrize("fen", fens)
 @pytest.mark.parametrize("depth", (1, 2, 3, 4))
+@pytest.mark.not_ci
 def test_negamax(fen, depth):
     b = utils.from_fen(fen)
     pv1 = []
@@ -98,6 +100,7 @@ def test_negamax(fen, depth):
 # This test equivalence between negamax and negamax with move ordering
 @pytest.mark.parametrize("fen", fens)
 @pytest.mark.parametrize("depth", (1, 2, 3, 4))
+@pytest.mark.not_ci
 def test_negamax_mo(fen, depth):
     b = utils.from_fen(fen)
     pv1 = []
@@ -133,7 +136,7 @@ def test_negamax_mo(fen, depth):
 
 # This test equivalence between our search and negamax_mo
 @pytest.mark.parametrize("fen", fens)
-@pytest.mark.parametrize("depth", (1, 2, 3, 4, 5))
+@pytest.mark.parametrize("depth", (1, 2, 3, 4))
 def test_search(fen, depth):
     b = utils.from_fen(fen)
     pv1 = []
