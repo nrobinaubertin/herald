@@ -1,5 +1,7 @@
 import pytest
-from herald import board, data_structures
+import board
+import utils
+import constants
 
 win_at_chess = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"]
 
@@ -11,8 +13,8 @@ with open("tests/epd/wac.epd", "r") as wacfile:
 
 @pytest.mark.parametrize("fen", win_at_chess)
 def test_fen(fen: str):
-    b = board.from_fen(fen)
-    assert board.to_fen(b) == fen
+    b = utils.from_fen(fen)
+    assert utils.to_fen(b) == fen
 
 
 @pytest.mark.parametrize(
@@ -116,12 +118,12 @@ def test_push_from_fen(
     uci_moves: str,
     expected_fen: str,
 ):
-    b = board.from_fen(fen)
+    b = utils.from_fen(fen)
     for uci_move in uci_moves.split(","):
-        move = board.from_uci(b, uci_move)
+        move = utils.from_uci(b, uci_move)
         b = board.push(b, move)
-    expected = board.from_fen(expected_fen)
-    assert board.to_fen(b) == expected_fen
+    expected = utils.from_fen(expected_fen)
+    assert utils.to_fen(b) == expected_fen
     for k in b.__dict__:
         # we can't get king_en_passant from fen alone
         if k == "king_en_passant":
@@ -146,7 +148,52 @@ def test_gen_moves(
     fen: str,
     uci_moves: str,
 ):
-    b = board.from_fen(fen)
-    legal_moves = {data_structures.to_uci(m) for m in board.legal_moves(b)}
+    b = utils.from_fen(fen)
+    legal_moves = {utils.to_uci(m) for m in board.legal_moves(b)}
     expected_moves = set(uci_moves.split(","))
     assert legal_moves == expected_moves
+
+
+@pytest.mark.parametrize(
+    "fen, square, color, expected",
+    [
+        (
+            "5k2/6pp/p7/3p4/2pP4/2PKP2Q/PP3r2/3R4 w - - 0 3",
+            74,
+            constants.COLOR.BLACK,
+            True,
+        ),
+        (
+            "5k2/6pp/p7/3p4/2pP4/2PKP2Q/PP3r2/3R4 w - - 0 3",
+            72,
+            constants.COLOR.BLACK,
+            True,
+        ),
+        (
+            "5k2/6pp/p7/3p4/2pP4/2PKP2Q/PP3r2/3R4 w - - 0 3",
+            71,
+            constants.COLOR.WHITE,
+            True,
+        ),
+        (
+            "5k2/6pp/p7/3p4/2pP4/2PKP2Q/PP3r2/3R4 w - - 0 3",
+            34,
+            constants.COLOR.WHITE,
+            True,
+        ),
+        (
+            "5k2/6pp/p7/3p4/2pP4/2PKP2Q/PP3r2/3R4 w - - 0 3",
+            44,
+            constants.COLOR.WHITE,
+            False,
+        ),
+    ],
+)
+def test_is_square_attacked(
+    fen: str,
+    square: int,
+    color: constants.COLOR,
+    expected: bool,
+):
+    b = utils.from_fen(fen)
+    assert expected == board.is_square_attacked(b.squares, square, color)

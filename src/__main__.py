@@ -3,31 +3,26 @@ import multiprocessing
 import sys
 import threading
 
-from herald import algorithms, board, evaluation, move_ordering, pruning, quiescence
-from herald.board import Board
-from herald.configuration import Config
-from herald.constants import COLOR, VALUE_MAX
-from herald.data_structures import to_uci
-from herald.iterative_deepening import itdep
-from herald.pruning import see
-from herald.time_management import target_movetime
+import board
+import evaluation
+from board import Board
+from configuration import Config
+from iterative_deepening import itdep
+from time_management import target_movetime
+import utils
 
-CURRENT_BOARD = board.from_fen("startpos")
+CURRENT_BOARD = utils.from_fen("startpos")
 CURRENT_PROCESS = None
 CURRENT_QUEUE = None
 LAST_SEARCH = None
 
 CONFIG = Config(
-    alg_fn=algorithms.alphabeta,
-    move_ordering_fn=move_ordering.fast_ordering,
     quiescence_search=True,
-    quiescence_depth=9,
+    quiescence_depth=10,
     use_transposition_table=True,
     use_hash_move=True,
-    use_killer_moves=True,
-    use_late_move_reduction=False,
     use_saved_search=True,
-    quiescence_fn=quiescence.quiescence,
+    use_killer_moves=False,  # tests fail
 )
 
 
@@ -41,7 +36,7 @@ def stop_calculating() -> None:
 
 def uci_parser(
     line: str,
-) -> list[str]:  # noqa: C901
+) -> list[str]:
     global CURRENT_BOARD
     global CURRENT_PROCESS
     global CURRENT_QUEUE
@@ -51,131 +46,24 @@ def uci_parser(
     if not tokens:
         return []
 
-    if tokens[0] == "checks":
-        return [
-            f"White king is in check: {board.king_is_in_check(CURRENT_BOARD, COLOR.WHITE)}",
-            f"Black king is in check: {board.king_is_in_check(CURRENT_BOARD, COLOR.BLACK)}",
-        ]
-
-    if tokens[0] == "lastsearch":
-        if LAST_SEARCH is not None:
-            return [f"LAST SEARCH: {to_uci(LAST_SEARCH.pv)}"]
-        return ["LAST SEARCH: None"]
-
-    if tokens[0] == "see":
-        return [f"SEE: {see(CURRENT_BOARD, int(tokens[1]), 0)}"]
-
     if tokens[0] == "eval":
-        curr_eval = evaluation.eval_fast(
+        curr_eval = evaluation.evaluation(
             CURRENT_BOARD.squares,
             evaluation.remaining_material(CURRENT_BOARD.squares),
         )
         return [f"board: {curr_eval}"]
 
-    if tokens[0] == "remaining_material":
-        return [f"board: {CURRENT_BOARD.remaining_material}"]
-
     if tokens[0] == "print":
-        return [board.to_string(CURRENT_BOARD)]
-
-    if tokens[0] == "quietlines":
-        moves = (move for move in board.tactical_moves(CURRENT_BOARD))
-        moves = (
-            move
-            for move in moves
-            if not pruning.is_bad_capture(
-                CURRENT_BOARD,
-                move,
-            )
-        )
-        for move in moves:
-            new_board = board.push(
-                CURRENT_BOARD,
-                move,
-                fast=False,
-            )
-            node = quiescence.quiescence(
-                CONFIG,
-                new_board,
-                [move],
-                -VALUE_MAX,
-                VALUE_MAX,
-                True,
-            )
-            print([node.value] + [to_uci(m) for m in node.pv])
-
-    if tokens[0] == "lines":
-        moves = (move for move in board.legal_moves(CURRENT_BOARD))
-        for move in moves:
-            new_board = board.push(
-                CURRENT_BOARD,
-                move,
-                fast=False,
-            )
-            for node in algorithms.alphabeta(
-                config=CONFIG,
-                b=new_board,
-                depth=int(tokens[1]),
-                pv=[move],
-            ):
-                continue
-            print([node.value] + [to_uci(m) for m in node.pv])
-
-    if tokens[0] == "quiescence":
-        if CURRENT_PROCESS is not None:
-            CURRENT_PROCESS.terminate()
-
-        process = multiprocessing.Process(
-            target=quiescence.quiescence,
-            args=(
-                CONFIG,
-                CURRENT_BOARD,
-                [],
-                -VALUE_MAX,
-                VALUE_MAX,
-                True,
-            ),
-            daemon=False,
-        )
-        process.start()
-        CURRENT_PROCESS = process
-
-    if tokens[0] == "quietmoves":
-        moves = (move for move in board.tactical_moves(CURRENT_BOARD))
-        moves = (
-            move
-            for move in moves
-            if not pruning.is_bad_capture(
-                CURRENT_BOARD,
-                move,
-            )
-        )
-        return [", ".join([to_uci(m) for m in moves])]
-
-    if tokens[0] == "pseudomoves":
-        return [", ".join([to_uci(m) for m in board.pseudo_legal_moves(CURRENT_BOARD)])]
-
-    if tokens[0] == "tacticalmoves":
-        return [", ".join([to_uci(m) for m in board.tactical_moves(CURRENT_BOARD)])]
-
-    if tokens[0] == "captures":
-        return [
-            ", ".join(
-                [
-                    to_uci(m)
-                    for m in board.capture_moves(
-                        CURRENT_BOARD,
-                        int(tokens[1]),
-                    )
-                ]
-            )
-        ]
+        return [str(CURRENT_BOARD)]
 
     if tokens[0] == "moves":
-        return [", ".join([to_uci(m) for m in board.legal_moves(CURRENT_BOARD)])]
+        return [", ".join([utils.to_uci(m) for m in board.legal_moves(CURRENT_BOARD)])]
+
+    if tokens[0] == "pseudomoves":
+        return [", ".join([utils.to_uci(m) for m in board.pseudo_legal_moves(CURRENT_BOARD)])]
 
     if tokens[0] == "fen":
-        return [board.to_fen(CURRENT_BOARD)]
+        return [utils.to_fen(CURRENT_BOARD)]
 
     if tokens[0] == "perft":
         total = 0
@@ -213,7 +101,7 @@ def uci_parser(
                 b,
                 int(tokens[1]) - 1,
             )
-            to_display.append(f"{to_uci(move)}: {nodes}")
+            to_display.append(f"{utils.to_uci(move)}: {nodes}")
             total += nodes
         to_display.append(f"Nodes: {total}")
         return to_display
@@ -241,7 +129,7 @@ def uci_parser(
         sys.exit()
 
     if tokens[0] == "play":
-        move = board.from_uci(
+        move = utils.from_uci(
             CURRENT_BOARD,
             tokens[1],
         )
@@ -252,7 +140,7 @@ def uci_parser(
         )
 
     if tokens[0] == "ucinewgame":
-        CURRENT_BOARD = board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        CURRENT_BOARD = utils.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         return []
 
     if tokens[0] == "isready":
@@ -275,12 +163,12 @@ def uci_parser(
                 f"{tokens[next_token + 5] if len(tokens) > next_token + 5 else 0}"
             )
             next_token += 6
-        b = board.from_fen(fen)
+        b = utils.from_fen(fen)
         if len(tokens) > next_token and tokens[next_token] == "moves":
             for move_str in tokens[next_token + 1 :]:
                 b = board.push(
                     b,
-                    board.from_uci(
+                    utils.from_uci(
                         b,
                         move_str,
                     ),

@@ -3,11 +3,13 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
-from . import algorithms, board
-from .board import Board
-from .configuration import Config
-from .constants import COLOR_DIRECTION, VALUE_MAX
-from .data_structures import Move, Node, to_uci
+import search
+import board
+import utils
+from board import Board
+from configuration import Config
+from constants import COLOR_DIRECTION, VALUE_MAX
+from data_structures import Move
 
 
 @dataclass
@@ -16,7 +18,6 @@ class Search:
     move: Move
     depth: int
     score: int
-    nodes: int
     time: int
     pv: list[Move]
     stop_search: bool = False
@@ -30,58 +31,29 @@ class Search:
             + f"info depth {self.depth} "
             + f"score cp {self.score} "
             + f"time {int(self.time // 1e9)} "
-            + f"nodes {self.nodes} "
-            + (
-                "nps "
-                + str(
-                    int(
-                        self.nodes
-                        * 1e9
-                        // max(
-                            0.001,
-                            self.time,
-                        )
-                    )
-                )
-                + " "
-                if self.time > 0
-                else ""
-            )
-            + f"pv {to_uci(self.pv)}"
+            + f"pv {utils.to_uci(self.pv)}"
         )
 
 
-def search(
+def root_search(
     *,
     b: Board,
     depth: int,
     config: Config,
     last_search: Search | None = None,
     silent: bool = False,
-    children: int = 0,
     transposition_table: dict | None = None,
     hash_move_tt: dict | None = None,
     queue: Optional[multiprocessing.Queue] = None,
-) -> tuple[Search, Config,] | None:
+) -> Search | None:
     start_time = time.time_ns()
 
-    def handle_search(
-        search: Search | None,
-        queue: Optional[multiprocessing.Queue],
-    ):
+    def handle_search(search: Search | None):
         if search is not None:
             print(search)
         if queue is not None:
-            queue.put(
-                (
-                    search,
-                    config,
-                )
-            )
-        return (
-            search,
-            config,
-        )
+            queue.put(search)
+        return search
 
     if transposition_table is not None:
         config.transposition_table = transposition_table
@@ -92,10 +64,7 @@ def search(
 
     # return None if there is no possible move
     if len(possible_moves) == 0:
-        return handle_search(
-            None,
-            queue,
-        )
+        return handle_search(None)
 
     # if there's only one move possible, return it immediately
     if len(possible_moves) == 1:
@@ -104,15 +73,11 @@ def search(
             move=possible_moves[0],
             pv=[possible_moves[0]],
             depth=0,
-            nodes=1,
             score=0,
             time=(time.time_ns() - start_time),
             stop_search=True,
         )
-        return handle_search(
-            ret,
-            queue,
-        )
+        return handle_search(ret)
 
     # return immediately if there is a king capture
     for move in possible_moves:
@@ -122,14 +87,10 @@ def search(
                 move=move,
                 pv=[move],
                 depth=1,
-                nodes=1,
                 score=VALUE_MAX * b.turn,
                 time=(time.time_ns() - start_time),
             )
-            return handle_search(
-                ret,
-                queue,
-            )
+            return handle_search(ret)
 
     guess = last_search.score if last_search else 0
     margin: int = 50
@@ -137,55 +98,42 @@ def search(
     upper = guess + margin
     iteration = 0
 
-    current: Node | None = None
     while True:
         iteration += 1
-        for node in algorithms.alphabeta(
+        pv: list[Move] = []
+        value = search.alphabeta(
             config=config,
             b=b,
             depth=depth,
-            pv=[],
+            pv=pv,
             gen_legal_moves=True,
             alpha=lower,
             beta=upper,
-            max_depth=depth if not silent else 0,
-            children=children,
             killer_moves=set(),
-        ):
-            children = node.children + 1
-            if current is None or to_uci(current.pv) != to_uci(node.pv):
-                current = node
-                search = Search(
-                    board=b,
-                    move=node.pv[0],
-                    pv=node.pv,
-                    depth=node.depth,
-                    nodes=children,
-                    score=node.value,
-                    time=(time.time_ns() - start_time),
-                    stop_search=(COLOR_DIRECTION[b.turn] * node.value) > VALUE_MAX - 100,
-                )
-                handle_search(
-                    search,
-                    queue,
-                )
+        )
 
         # if no best move was found
         # this could happen because of some pruning
-        if not node.pv:
+        if not pv:
             upper += margin * 2
             lower -= margin * 2
             continue
-        if node.value >= upper:
+        if value >= upper:
             upper += margin * 2
             continue
-        if node.value <= lower:
+        if value <= lower:
             lower -= margin * 2
             continue
         break
 
-    search.end = True
-    return handle_search(
-        search,
-        queue,
+    result = Search(
+        board=b,
+        move=pv[0],
+        pv=pv,
+        depth=depth,
+        score=value,
+        time=(time.time_ns() - start_time),
+        stop_search=(COLOR_DIRECTION[b.turn] * value) > VALUE_MAX - 100,
     )
+    result.end = True
+    return handle_search(result)

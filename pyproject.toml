@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "herald"
-version = "0.19.17"
+version = "0.21"
 description = "Chess engine"
 readme = "README.md"
 authors = [{ name = "Niels Robin-Aubertin", email = "git@niels.fr" }]
@@ -21,6 +21,10 @@ requires-python = ">=3.10"
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "--import-mode=importlib"
+pythonpath = ["src/", "tests/integration/"]
+markers = [
+  "assumed_right: marks tests that are assumed to pass from one commit to another",
+]
 
 [tool.black]
 line-length = 99

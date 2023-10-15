@@ -1,6 +1,7 @@
 import pytest
-from herald import board, pruning
-from herald.constants import COLOR_DIRECTION
+import pruning
+import utils
+from constants import COLOR_DIRECTION
 
 
 @pytest.mark.parametrize(
@@ -17,5 +18,5 @@ from herald.constants import COLOR_DIRECTION
     ],
 )
 def test_see(fen: str, target: int, bad_capture: bool):
-    b = board.from_fen(fen)
+    b = utils.from_fen(fen)
     assert bool(pruning.see(b, target, 0) * COLOR_DIRECTION[b.turn] <= 0) == bad_capture

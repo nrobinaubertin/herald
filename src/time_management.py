@@ -1,6 +1,6 @@
-from .board import Board
-from .constants import COLOR
-from .evaluation import remaining_material_percent
+from board import Board
+from constants import COLOR
+from evaluation import remaining_material_percent
 
 
 def target_movetime(
@@ -32,20 +32,24 @@ def target_movetime(
     # estimated turns remaining
     remaining_turns = 60 * remaining_material_percent(b.remaining_material)
 
-    time = (
-        min(
-            remaining_time - safeguard,
-            remaining_time / remaining_turns + time_inc,
-            max_thinking_time,
-        )
+    time = min(
+        remaining_time - safeguard,
+        remaining_time / remaining_turns + time_inc,
+        max_thinking_time,
     )
 
     print(
-            remaining_time - safeguard,
-            remaining_time / remaining_turns + time_inc,
-            max_thinking_time,
+        remaining_time - safeguard,
+        remaining_time / remaining_turns + time_inc,
+        max_thinking_time,
     )
-    print(remaining_time, time_inc, remaining_material_percent(b.remaining_material), remaining_turns, time)
+    print(
+        remaining_time,
+        time_inc,
+        remaining_material_percent(b.remaining_material),
+        remaining_turns,
+        time,
+    )
 
     # we want to return at least 1
     return max(1, int(time / 100))
