@@ -361,7 +361,7 @@ def _is_legal_move(
         return False
 
     # verify that the king of the player to move exists
-    if (_number_of(b, PIECE.KING, b.turn) < 1):
+    if _number_of(b, PIECE.KING, b.turn) < 1:
         return False
 
     b2 = push(b, move)

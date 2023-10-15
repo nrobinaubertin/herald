@@ -9,7 +9,6 @@ import board
 import evaluation
 from board import Board
 from constants import COLOR, VALUE_MAX, COLOR_DIRECTION
-import constants
 from data_structures import Move
 
 

@@ -78,14 +78,17 @@ def test_negamax(fen, depth):
         beta=VALUE_MAX,
     )
     pv2 = []
-    r2 = negamax.negamax(
-        b=b,
-        depth=depth,
-        pv=pv2,
-        gen_legal_moves=False,
-        alpha=-VALUE_MAX,
-        beta=VALUE_MAX,
-    ) * COLOR_DIRECTION[b.turn]
+    r2 = (
+        negamax.negamax(
+            b=b,
+            depth=depth,
+            pv=pv2,
+            gen_legal_moves=False,
+            alpha=-VALUE_MAX,
+            beta=VALUE_MAX,
+        )
+        * COLOR_DIRECTION[b.turn]
+    )
     assert r1 == r2, (
         f"{fen}: "
         f"{','.join([utils.to_uci(x) for x in pv1])} "
@@ -104,23 +107,29 @@ def test_negamax(fen, depth):
 def test_negamax_mo(fen, depth):
     b = utils.from_fen(fen)
     pv1 = []
-    r1 = negamax_mo.negamax_mo(
-        b=b,
-        depth=depth,
-        pv=pv1,
-        gen_legal_moves=False,
-        alpha=-VALUE_MAX,
-        beta=VALUE_MAX,
-    ) * COLOR_DIRECTION[b.turn]
+    r1 = (
+        negamax_mo.negamax_mo(
+            b=b,
+            depth=depth,
+            pv=pv1,
+            gen_legal_moves=False,
+            alpha=-VALUE_MAX,
+            beta=VALUE_MAX,
+        )
+        * COLOR_DIRECTION[b.turn]
+    )
     pv2 = []
-    r2 = negamax.negamax(
-        b=b,
-        depth=depth,
-        pv=pv2,
-        gen_legal_moves=False,
-        alpha=-VALUE_MAX,
-        beta=VALUE_MAX,
-    ) * COLOR_DIRECTION[b.turn]
+    r2 = (
+        negamax.negamax(
+            b=b,
+            depth=depth,
+            pv=pv2,
+            gen_legal_moves=False,
+            alpha=-VALUE_MAX,
+            beta=VALUE_MAX,
+        )
+        * COLOR_DIRECTION[b.turn]
+    )
     assert r1 == r2, (
         f"{fen}: "
         f"{','.join([utils.to_uci(x) for x in pv1])} "
@@ -140,14 +149,17 @@ def test_negamax_mo(fen, depth):
 def test_search(fen, depth):
     b = utils.from_fen(fen)
     pv1 = []
-    r1 = negamax_mo.negamax_mo(
-        b=b,
-        depth=depth,
-        pv=pv1,
-        gen_legal_moves=False,
-        alpha=-VALUE_MAX,
-        beta=VALUE_MAX,
-    ) * COLOR_DIRECTION[b.turn]
+    r1 = (
+        negamax_mo.negamax_mo(
+            b=b,
+            depth=depth,
+            pv=pv1,
+            gen_legal_moves=False,
+            alpha=-VALUE_MAX,
+            beta=VALUE_MAX,
+        )
+        * COLOR_DIRECTION[b.turn]
+    )
     pv2 = []
     r2 = search.alphabeta(
         config=Config(
