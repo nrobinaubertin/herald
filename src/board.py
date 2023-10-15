@@ -22,42 +22,23 @@ class Board:
     # tuple of PIECE * COLOR
     # 120 squares for a 10*12 mailbox
     # https://www.chessprogramming.org/Mailbox
-    squares: tuple[
-        int,
-        ...,
-    ]
+    squares: tuple[int, ...]
     # color of the player who's turn it is
     turn: COLOR
     # tuple reprensenting castling rights (index 2 * COLOR + CASTLE)
-    castling_rights: tuple[
-        int,
-        ...,
-    ]
+    castling_rights: tuple[int, ...]
     en_passant: int
     half_move: int
     full_move: int
-    king_squares: tuple[
-        int,
-        ...,
-    ]
+    king_squares: tuple[int, ...]
     invturn: COLOR
     remaining_material: int
     hash_history: set[int]
 
-    def __hash__(
-        self,
-    ) -> int:
-        return hash(
-            (
-                self.squares,
-                self.turn,
-                self.castling_rights,
-            )
-        )
+    def __hash__(self) -> int:
+        return hash((self.squares, self.turn, self.castling_rights))
 
-    def __str__(
-        self,
-    ) -> str:
+    def __str__(self) -> str:
         rep = f"{'w' if self.turn == COLOR.WHITE else 'b'}  0 1 2 3 4 5 6 7 8 9"
         for i in range(120):
             if i % 10 == 0:
@@ -66,41 +47,22 @@ class Board:
         return rep
 
 
-def _king_square(
-    b: Board,
-    color: COLOR,
-) -> int | None:
+def _king_square(b: Board, color: COLOR) -> int | None:
     try:
         return int(b.squares.index(PIECE.KING + 6 * color))
     except Exception:
         return None
 
 
-def _number_of(
-    b: Board,
-    piece: PIECE,
-    color: COLOR,
-) -> int:
+def _number_of(b: Board, piece: PIECE, color: COLOR) -> int:
     try:
         return int(b.squares.count(piece + 6 * color))
     except Exception:
         return 0
 
 
-def _knight_moves(
-    b: Board,
-    start: int,
-) -> Iterable[Move]:
-    for depl in (
-        21,
-        12,
-        -8,
-        -19,
-        -21,
-        -12,
-        8,
-        19,
-    ):
+def _knight_moves(b: Board, start: int) -> Iterable[Move]:
+    for depl in (21, 12, -8, -19, -21, -12, 8, 19):
         end = start + depl
         is_capture = bool(b.squares[end])
         is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
@@ -117,20 +79,9 @@ def _knight_moves(
             )
 
 
-def _rook_moves(
-    b: Board,
-    start: int,
-) -> Iterable[Move]:
-    for direction in (
-        10,
-        -10,
-        1,
-        -1,
-    ):
-        for x in range(
-            1,
-            8,
-        ):
+def _rook_moves(b: Board, start: int) -> Iterable[Move]:
+    for direction in (10, -10, 1, -1):
+        for x in range(1, 8):
             end = start + x * direction
             is_capture = bool(b.squares[end])
             is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
@@ -142,10 +93,7 @@ def _rook_moves(
                 and start == (28 if b.turn == COLOR.BLACK else 98)
                 and IS_PIECE[b.squares[end]] == PIECE.KING
                 and get_color(b.squares[end]) == b.turn
-                and not king_is_in_check(
-                    b,
-                    b.turn,
-                )
+                and not king_is_in_check(b, b.turn)
             ):
                 yield Move(
                     start=(95 if b.turn == COLOR.WHITE else 25),
@@ -162,10 +110,7 @@ def _rook_moves(
                 and start == (21 if b.turn == COLOR.BLACK else 91)
                 and IS_PIECE[b.squares[end]] == PIECE.KING
                 and get_color(b.squares[end]) == b.turn
-                and not king_is_in_check(
-                    b,
-                    b.turn,
-                )
+                and not king_is_in_check(b, b.turn)
             ):
                 yield Move(
                     start=(95 if b.turn == COLOR.WHITE else 25),
@@ -193,20 +138,9 @@ def _rook_moves(
                 break
 
 
-def _bishop_moves(
-    b: Board,
-    start: int,
-) -> Iterable[Move]:
-    for direction in (
-        11,
-        -11,
-        9,
-        -9,
-    ):
-        for x in range(
-            1,
-            8,
-        ):
+def _bishop_moves(b: Board, start: int) -> Iterable[Move]:
+    for direction in (11, -11, 9, -9):
+        for x in range(1, 8):
             end = start + x * direction
             is_capture = bool(b.squares[end])
             is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
@@ -225,24 +159,9 @@ def _bishop_moves(
                 break
 
 
-def _queen_moves(
-    b: Board,
-    start: int,
-) -> Iterable[Move]:
-    for direction in (
-        11,
-        -11,
-        9,
-        -9,
-        10,
-        -10,
-        1,
-        -1,
-    ):
-        for x in range(
-            1,
-            8,
-        ):
+def _queen_moves(b: Board, start: int) -> Iterable[Move]:
+    for direction in (11, -11, 9, -9, 10, -10, 1, -1):
+        for x in range(1, 8):
             end = start + x * direction
             is_capture = bool(b.squares[end])
             is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
@@ -261,20 +180,8 @@ def _queen_moves(
                 break
 
 
-def _king_moves(
-    b: Board,
-    start: int,
-) -> Iterable[Move]:
-    for depl in (
-        11,
-        -11,
-        9,
-        -9,
-        1,
-        -1,
-        10,
-        -10,
-    ):
+def _king_moves(b: Board, start: int) -> Iterable[Move]:
+    for depl in (11, -11, 9, -9, 1, -1, 10, -10):
         end = start + depl
         is_capture = bool(b.squares[end])
         is_king_capture = IS_PIECE[b.squares[end]] == PIECE.KING
@@ -291,19 +198,10 @@ def _king_moves(
             )
 
 
-def _pawn_moves(
-    b: Board,
-    start: int,
-) -> Iterable[Move]:
+def _pawn_moves(b: Board, start: int) -> Iterable[Move]:
     if b.turn == COLOR.BLACK:
         if start < 40:
-            depls: tuple[int] | tuple[
-                int,
-                int,
-            ] = (
-                10,
-                20,
-            )
+            depls: tuple[int] | tuple[int, int] = (10, 20)
         else:
             depls = (10,)
     else:
@@ -314,10 +212,7 @@ def _pawn_moves(
     for depl in depls:
         end = start + depl
         if b.squares[end] == PIECE.EMPTY:
-            if depl in (
-                -20,
-                20,
-            ):
+            if depl in (-20, 20):
                 en_passant = start + depls[0]
             else:
                 en_passant = -1
@@ -353,10 +248,7 @@ def _pawn_moves(
             )
 
 
-def _is_legal_move(
-    b: Board,
-    move: Move,
-) -> bool:
+def _is_legal_move(b: Board, move: Move) -> bool:
     if not is_pseudo_legal_move(b, move):
         return False
 
@@ -400,11 +292,7 @@ def _is_legal_move(
     return True
 
 
-def push(
-    b: Board,
-    move: Move,
-    fast: bool = True,
-) -> Board:
+def push(b: Board, move: Move, fast: bool = True) -> Board:
     squares = list(b.squares)
     en_passant = -1
     castling_rights = list(b.castling_rights)
@@ -458,12 +346,7 @@ def push(
     if IS_PIECE[piece_start] == PIECE.PAWN and move.end // 10 == (
         2 if b.turn == COLOR.WHITE else 9
     ):
-        squares[move.end] = IS_PVALUE[
-            (
-                b.turn,
-                PIECE.QUEEN,
-            )
-        ]
+        squares[move.end] = IS_PVALUE[(b.turn, PIECE.QUEEN)]
 
     # some hardcode for castling move of the rook
     if move.is_castle:
@@ -472,39 +355,19 @@ def push(
         if move.end == 97:
             squares[98] = PIECE.EMPTY
             squares[95] = PIECE.EMPTY
-            squares[96] = IS_PVALUE[
-                (
-                    COLOR.WHITE,
-                    PIECE.ROOK,
-                )
-            ]
+            squares[96] = IS_PVALUE[(COLOR.WHITE, PIECE.ROOK)]
         if move.end == 93:
             squares[91] = PIECE.EMPTY
             squares[95] = PIECE.EMPTY
-            squares[94] = IS_PVALUE[
-                (
-                    COLOR.WHITE,
-                    PIECE.ROOK,
-                )
-            ]
+            squares[94] = IS_PVALUE[(COLOR.WHITE, PIECE.ROOK)]
         if move.end == 27:
             squares[28] = PIECE.EMPTY
             squares[25] = PIECE.EMPTY
-            squares[26] = IS_PVALUE[
-                (
-                    COLOR.BLACK,
-                    PIECE.ROOK,
-                )
-            ]
+            squares[26] = IS_PVALUE[(COLOR.BLACK, PIECE.ROOK)]
         if move.end == 23:
             squares[21] = PIECE.EMPTY
             squares[25] = PIECE.EMPTY
-            squares[24] = IS_PVALUE[
-                (
-                    COLOR.BLACK,
-                    PIECE.ROOK,
-                )
-            ]
+            squares[24] = IS_PVALUE[(COLOR.BLACK, PIECE.ROOK)]
     else:
         # remove castling rights
         if IS_PIECE[piece_start] == PIECE.KING:
@@ -521,29 +384,13 @@ def push(
                 castling_rights[2 * COLOR.BLACK + CASTLE.QUEEN_SIDE] = 0
 
     # check that border squares are still invalid
+    assert not any(filter(lambda x: x != PIECE.INVALID, squares[:20]))
+    assert not any(filter(lambda x: x != PIECE.INVALID, squares[100:]))
     assert not any(
-        filter(
-            lambda x: x != PIECE.INVALID,
-            squares[:20],
-        )
+        filter(lambda x: x != PIECE.INVALID, [v for k, v in enumerate(squares) if k % 10 == 0])
     )
     assert not any(
-        filter(
-            lambda x: x != PIECE.INVALID,
-            squares[100:],
-        )
-    )
-    assert not any(
-        filter(
-            lambda x: x != PIECE.INVALID,
-            [v for k, v in enumerate(squares) if k % 10 == 0],
-        )
-    )
-    assert not any(
-        filter(
-            lambda x: x != PIECE.INVALID,
-            [v for k, v in enumerate(squares) if k % 10 == 9],
-        )
+        filter(lambda x: x != PIECE.INVALID, [v for k, v in enumerate(squares) if k % 10 == 9])
     )
 
     return Board(
@@ -561,10 +408,7 @@ def push(
 
 
 # Some fast verifications to check if a move is pseudo legal
-def is_pseudo_legal_move(
-    b: Board,
-    move: Move,
-) -> bool:
+def is_pseudo_legal_move(b: Board, move: Move) -> bool:
     if move.start < 21 or move.start > 98:
         return False
     if move.end < 21 or move.end > 98:
@@ -584,30 +428,21 @@ def is_pseudo_legal_move(
     return True
 
 
-def legal_moves(
-    b: Board,
-) -> list[Move]:
+def legal_moves(b: Board) -> list[Move]:
     moves = []
 
     if _number_of(b, PIECE.KING, b.turn) < 1:
         return []
 
     for move in pseudo_legal_moves(b):
-        if not _is_legal_move(
-            b,
-            move,
-        ):
+        if not _is_legal_move(b, move):
             continue
         moves.append(move)
     return moves
 
 
 @cache
-def is_square_attacked(
-    squares: tuple[int, ...],
-    square: int,
-    color: COLOR,
-) -> bool:
+def is_square_attacked(squares: tuple[int, ...], square: int, color: COLOR) -> bool:
     """Detect if square on b is attacked by color."""
     for depl in (21, 12, -8, -19, -21, -12, 8, 19):
         if squares[square + depl] == PIECE.KNIGHT + 6 * color:
@@ -643,15 +478,8 @@ def is_square_attacked(
     return False
 
 
-def king_is_in_check(
-    b: Board,
-    color: COLOR,
-) -> bool:
-    if is_square_attacked(
-        b.squares,
-        b.king_squares[color],
-        INV_COLOR[color],
-    ):
+def king_is_in_check(b: Board, color: COLOR) -> bool:
+    if is_square_attacked(b.squares, b.king_squares[color], INV_COLOR[color]):
         return True
     return False
 
@@ -659,24 +487,11 @@ def king_is_in_check(
 # Special function to create moves that target a square
 # Useful for the SEE function
 # is LVA (least valuable attacker) by implementation
-def capture_moves(
-    b: Board,
-    target: int,
-) -> Iterable[Move]:
+def capture_moves(b: Board, target: int) -> Iterable[Move]:
     is_king_capture = IS_PIECE[b.squares[target]] == PIECE.KING
 
     # PAWN
-    for depl in (
-        (
-            9,
-            11,
-        )
-        if b.turn == COLOR.WHITE
-        else (
-            -9,
-            -11,
-        )
-    ):
+    for depl in (9, 11) if b.turn == COLOR.WHITE else (-9, -11):
         start = target + depl
         if IS_PIECE[b.squares[start]] == PIECE.PAWN and get_color(b.squares[start]) == b.turn:
             yield Move(
@@ -781,9 +596,7 @@ def capture_moves(
             )
 
 
-def pseudo_legal_moves(
-    b: Board,
-) -> Iterable[Move]:
+def pseudo_legal_moves(b: Board) -> Iterable[Move]:
     for i in range(8):
         for j in range(8):
             start = (2 + j) * 10 + (i + 1)
@@ -813,9 +626,7 @@ def pseudo_legal_moves(
 
 # Should return capture moves in MVV-LVA order
 # Should end with check moves (and promotions ?)
-def tactical_moves(
-    b: Board,
-) -> Iterable[Move]:
+def tactical_moves(b: Board) -> Iterable[Move]:
     """Generate only tactical moves.
 
     First we generate capture moves.
@@ -863,34 +674,15 @@ def tactical_moves(
     for square in piece_rook:
         yield from capture_moves(b, square)
     for square in piece_bishop:
-        yield from capture_moves(
-            b,
-            square,
-        )
+        yield from capture_moves(b, square)
     for square in piece_knight:
-        yield from capture_moves(
-            b,
-            square,
-        )
+        yield from capture_moves(b, square)
     for square in piece_pawn:
-        yield from capture_moves(
-            b,
-            square,
-        )
+        yield from capture_moves(b, square)
 
     # handle en passant
     if b.en_passant != -1:
-        for depl in (
-            (
-                9,
-                11,
-            )
-            if b.turn == COLOR.WHITE
-            else (
-                -9,
-                -11,
-            )
-        ):
+        for depl in (9, 11) if b.turn == COLOR.WHITE else (-9, -11):
             start = b.en_passant + depl
             if IS_PIECE[b.squares[start]] == PIECE.PAWN and get_color(b.squares[start]) == b.turn:
                 yield Move(

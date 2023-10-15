@@ -9,21 +9,14 @@ from evaluation import PIECE_VALUE
 # if the value is negative, it's good for black, positive it's good for white.
 # The value is not exact, it does not represent something else than being positive or negative
 # when the returned value is exactly 0, then it's *probably* better not to take
-def see(
-    b: Board,
-    target: int,
-    score: int,
-) -> int:
+def see(b: Board, target: int, score: int) -> int:
     # return score if it's already in our favor
     # this allows to go faster but see() doesn't return exact results
     if COLOR_DIRECTION[b.turn] * score > 0:
         return score
 
     # let's use the move that takes the target with the least valuable attacker
-    for move in board.capture_moves(
-        b,
-        target,
-    ):
+    for move in board.capture_moves(b, target):
         # the inversed colorified value of the captured piece
         value = PIECE_VALUE[IS_PIECE[b.squares[target]]] * COLOR_DIRECTION[b.turn]
 
@@ -37,29 +30,18 @@ def see(
         if b.turn == COLOR.WHITE:
             return max(
                 score,
-                see(
-                    board.push(b, move),
-                    target,
-                    score + value,
-                ),
+                see(board.push(b, move), target, score + value),
             )
         return min(
             score,
-            see(
-                board.push(b, move),
-                target,
-                score + value,
-            ),
+            see(board.push(b, move), target, score + value),
         )
 
     # if no valid move, return score
     return score
 
 
-def is_bad_capture(
-    b: Board,
-    move: Move,
-) -> bool:
+def is_bad_capture(b: Board, move: Move) -> bool:
     # a non-capture move is not a bad capture
     if not move.is_capture:
         return False

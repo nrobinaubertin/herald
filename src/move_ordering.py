@@ -6,10 +6,7 @@ from constants import PIECE
 from data_structures import Move
 
 
-def fast_ordering(
-    b: Board,
-    moves: Iterable[Move],
-) -> Iterable[Move]:
+def fast_ordering(b: Board, moves: Iterable[Move]) -> Iterable[Move]:
     captures: list[Move] = []
     usuals: list[Move] = []
     bad_captures: list[Move] = []

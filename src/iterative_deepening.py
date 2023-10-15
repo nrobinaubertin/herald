@@ -54,15 +54,9 @@ def itdep(
         start_time = time.time_ns()
         max_depth = max(
             1,
-            min(
-                10,
-                max_depth,
-            ),
+            min(10, max_depth),
         )
-        for i in range(
-            start_depth,
-            max_depth + 1,
-        ):
+        for i in range(start_depth, max_depth + 1):
             # we create a queue to be able to stop the search when there's no time left
             # pylint issue: https://github.com/PyCQA/pylint/issues/3488
             # pylint: disable=unsubscriptable-object
@@ -160,10 +154,7 @@ def itdep(
         return None
 
     last_search = None
-    for i in range(
-        start_depth,
-        max_depth + 1,
-    ):
+    for i in range(start_depth, max_depth + 1):
         current_search = root_search(b=b, depth=i, last_search=last_search, config=config)
 
         # if there is no move available

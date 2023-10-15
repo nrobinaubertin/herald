@@ -16,35 +16,19 @@ def decompose_square(
 ) -> tuple[int, int,]:
     row = 10 - (square // 10 - 2) - 2
     column = square - (square // 10) * 10
-    return (
-        row,
-        column,
-    )
+    return (row, column)
 
 
-def is_promotion(
-    move: Move,
-) -> bool:
+def is_promotion(move: Move) -> bool:
     (
         row,
         _,
     ) = decompose_square(move.end)
-    return move.moving_piece == PIECE.PAWN and (
-        row
-        in (
-            8,
-            1,
-        )
-    )
+    return move.moving_piece == PIECE.PAWN and row in (8, 1)
 
 
-def to_normal_notation(
-    square: int,
-) -> str:
-    (
-        row,
-        column,
-    ) = decompose_square(square)
+def to_normal_notation(square: int) -> str:
+    (row, column) = decompose_square(square)
     letter = (
         {
             1: "a",
@@ -60,9 +44,7 @@ def to_normal_notation(
     return f"{letter}{row}"
 
 
-def to_square_notation(
-    uci: str,
-) -> int:
+def to_square_notation(uci: str) -> int:
     uci = uci.lower()
     digits = {
         "a": 1,
@@ -77,10 +59,7 @@ def to_square_notation(
     return digits[uci[0]] + (10 - int(uci[1])) * 10
 
 
-def from_uci(
-    b: board.Board,
-    uci: str,
-) -> Move:
+def from_uci(b: board.Board, uci: str) -> Move:
     start = to_square_notation(uci[:2])
     end = to_square_notation(uci[2:])
     is_capture = IS_PIECE[b.squares[end]] != PIECE.EMPTY or end == b.en_passant
@@ -97,11 +76,7 @@ def from_uci(
             else PIECE.PAWN
         ),
         is_castle=(
-            start
-            in (
-                95,
-                25,
-            )
+            start in (95, 25)
             and IS_PIECE[b.squares[start]] == PIECE.KING
             and abs(end - start) == 2
         ),
@@ -111,31 +86,21 @@ def from_uci(
     )
 
 
-def to_uci(
-    input_move: Move | Iterable[Move],
-) -> str:
-    if isinstance(
-        input_move,
-        Move,
-    ):
+def to_uci(input_move: Move | Iterable[Move]) -> str:
+    if isinstance(input_move, Move):
         return (
             f"{to_normal_notation(input_move.start)}"
             f"{to_normal_notation(input_move.end)}"
             f"{'q' if is_promotion(input_move) else ''}"
         )
 
-    if isinstance(
-        input_move,
-        Iterable,
-    ):
+    if isinstance(input_move, Iterable):
         return " ".join([to_uci(x) for x in input_move])
 
     raise Exception("Unknown input_move for to_uci()")
 
 
-def to_fen(
-    b: board.Board,
-) -> str:
+def to_fen(b: board.Board) -> str:
     rep = ""
     empty = 0
     for i in range(120):
@@ -195,9 +160,7 @@ def to_fen(
     return rep
 
 
-def from_fen(
-    fen: str,
-) -> board.Board:
+def from_fen(fen: str) -> board.Board:
     if fen == "startpos":
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -218,10 +181,7 @@ def from_fen(
     )
 
     squares = [int(PIECE.INVALID)] * 120
-    ks: list[int] = [
-        0,
-        0,
-    ]
+    ks: list[int] = [0, 0]
     s = 19
     for row in rep.split("/"):
         squares[(s := s + 1)] = PIECE.INVALID
@@ -249,13 +209,7 @@ def from_fen(
         squares[(s := s + 1)] = PIECE.INVALID
 
     # this conversion is done for type safety purposes
-    king_squares: tuple[
-        int,
-        int,
-    ] = (
-        ks[0],
-        ks[1],
-    )
+    king_squares: tuple[int, int] = (ks[0], ks[1])
 
     b = board.Board(
         tuple(squares),

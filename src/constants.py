@@ -55,61 +55,22 @@ IS_PIECE = {
 
 
 IS_PVALUE = {
-    (
-        COLOR.WHITE,
-        PIECE.PAWN,
-    ): 1,
-    (
-        COLOR.WHITE,
-        PIECE.KNIGHT,
-    ): 2,
-    (
-        COLOR.WHITE,
-        PIECE.BISHOP,
-    ): 3,
-    (
-        COLOR.WHITE,
-        PIECE.ROOK,
-    ): 4,
-    (
-        COLOR.WHITE,
-        PIECE.QUEEN,
-    ): 5,
-    (
-        COLOR.WHITE,
-        PIECE.KING,
-    ): 6,
-    (
-        COLOR.BLACK,
-        PIECE.PAWN,
-    ): 7,
-    (
-        COLOR.BLACK,
-        PIECE.KNIGHT,
-    ): 8,
-    (
-        COLOR.BLACK,
-        PIECE.BISHOP,
-    ): 9,
-    (
-        COLOR.BLACK,
-        PIECE.ROOK,
-    ): 10,
-    (
-        COLOR.BLACK,
-        PIECE.QUEEN,
-    ): 11,
-    (
-        COLOR.BLACK,
-        PIECE.KING,
-    ): 12,
+    (COLOR.WHITE, PIECE.PAWN): 1,
+    (COLOR.WHITE, PIECE.KNIGHT): 2,
+    (COLOR.WHITE, PIECE.BISHOP): 3,
+    (COLOR.WHITE, PIECE.ROOK): 4,
+    (COLOR.WHITE, PIECE.QUEEN): 5,
+    (COLOR.WHITE, PIECE.KING): 6,
+    (COLOR.BLACK, PIECE.PAWN): 7,
+    (COLOR.BLACK, PIECE.KNIGHT): 8,
+    (COLOR.BLACK, PIECE.BISHOP): 9,
+    (COLOR.BLACK, PIECE.ROOK): 10,
+    (COLOR.BLACK, PIECE.QUEEN): 11,
+    (COLOR.BLACK, PIECE.KING): 12,
 }
 
 
-ASCII_REP: dict[
-    int,
-    str,
-] = {
+ASCII_REP: dict[int, str] = {
     0: ".",
     1: "P",
     2: "N",
@@ -130,9 +91,7 @@ VALUE_MAX: int = 12_000
 
 
 @cache
-def get_color(
-    square: int,
-) -> COLOR:
+def get_color(square: int) -> COLOR:
     if 0 < square < 7:
         return COLOR.WHITE
     if 6 < square < 13:

@@ -18,23 +18,13 @@ def quiescence(
 
     # if we are on a terminal node, return the evaluation
     if depth >= config.quiescence_depth:
-        return evaluation.evaluation(
-            b.squares,
-            b.remaining_material,
-        )
+        return evaluation.evaluation(b.squares, b.remaining_material)
 
-    we_are_in_check = board.is_square_attacked(
-        b.squares,
-        b.king_squares[b.turn],
-        b.invturn,
-    )
+    we_are_in_check = board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn)
 
     if not we_are_in_check:
         # stand_pat evaluation to check if we stop QS
-        stand_pat: int = evaluation.evaluation(
-            b.squares,
-            b.remaining_material,
-        )
+        stand_pat: int = evaluation.evaluation(b.squares, b.remaining_material)
         # if depth == 0:
         #     print(stand_pat)
         if b.turn == COLOR.WHITE:
@@ -103,14 +93,7 @@ def quiescence(
     else:
         # this happens when no quiescent move is available
         # if the king square is attacked and we have no moves, it's a mate
-        if board.is_square_attacked(
-            b.squares,
-            b.king_squares[b.turn],
-            b.invturn,
-        ):
+        if board.is_square_attacked(b.squares, b.king_squares[b.turn], b.invturn):
             return VALUE_MAX * COLOR_DIRECTION[b.turn] * -1
         else:
-            return evaluation.evaluation(
-                b.squares,
-                b.remaining_material,
-            )
+            return evaluation.evaluation(b.squares, b.remaining_material)
