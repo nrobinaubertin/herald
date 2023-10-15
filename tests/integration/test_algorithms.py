@@ -32,7 +32,7 @@ fens = win_at_chess
 # This test equivalence between alphabeta and minimax
 @pytest.mark.parametrize("fen", fens)
 @pytest.mark.parametrize("depth", (1, 2, 3))
-@pytest.mark.not_ci
+@pytest.mark.assumed_right
 def test_alphabeta(fen, depth):
     b = utils.from_fen(fen)
     pv1 = []
@@ -65,7 +65,7 @@ def test_alphabeta(fen, depth):
 # This test equivalence between alphabeta and negamax
 @pytest.mark.parametrize("fen", fens)
 @pytest.mark.parametrize("depth", (1, 2, 3, 4))
-@pytest.mark.not_ci
+@pytest.mark.assumed_right
 def test_negamax(fen, depth):
     b = utils.from_fen(fen)
     pv1 = []
@@ -100,7 +100,7 @@ def test_negamax(fen, depth):
 # This test equivalence between negamax and negamax with move ordering
 @pytest.mark.parametrize("fen", fens)
 @pytest.mark.parametrize("depth", (1, 2, 3, 4))
-@pytest.mark.not_ci
+@pytest.mark.assumed_right
 def test_negamax_mo(fen, depth):
     b = utils.from_fen(fen)
     pv1 = []
@@ -173,81 +173,134 @@ def test_search(fen, depth):
     # )
 
 
-# @pytest.mark.parametrize("fen", fens[:25])
-# @pytest.mark.parametrize("depth", (3, 4))
-# def test_hash_move(fen, depth):
-#     pv1 = []
-#     r1 = search.alphabeta(
-#         config=Config(
-#             quiescence_depth=50,
-#             quiescence_search=True,
-#             use_transposition_table=True,
-#             use_hash_move=True,
-#         ),
-#         b=utils.from_fen(fen),
-#         depth=depth,
-#         pv=pv1,
-#         gen_legal_moves=False,
-#         alpha=-VALUE_MAX,
-#         beta=VALUE_MAX,
-#     )
-#     pv2 = []
-#     r2 = alphabeta.alphabeta(
-#         config=Config(
-#             quiescence_depth=50,
-#             quiescence_search=True,
-#             use_transposition_table=True,
-#             use_hash_move=False,
-#         ),
-#         b=utils.from_fen(fen),
-#         depth=depth,
-#         pv=pv2,
-#         gen_legal_moves=False,
-#         alpha=-VALUE_MAX,
-#         beta=VALUE_MAX,
-#     )
-#     assert r1 == r2
-#     assert (
-#         f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
-#         == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
-#     )
+@pytest.mark.parametrize("fen", fens[:25])
+@pytest.mark.parametrize("depth", (3, 4))
+def test_hash_move(fen, depth):
+    pv1 = []
+    r1 = search.alphabeta(
+        config=Config(
+            quiescence_depth=100,
+            quiescence_search=True,
+            use_transposition_table=True,
+            use_hash_move=True,
+        ),
+        b=utils.from_fen(fen),
+        depth=depth,
+        pv=pv1,
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
+    )
+    pv2 = []
+    r2 = search.alphabeta(
+        config=Config(
+            quiescence_depth=100,
+            quiescence_search=True,
+            use_transposition_table=True,
+            use_hash_move=False,
+        ),
+        b=utils.from_fen(fen),
+        depth=depth,
+        pv=pv2,
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
+    )
+    assert r1 == r2, (
+        f"{fen}: "
+        f"{','.join([utils.to_uci(x) for x in pv1])} "
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    )
+    assert (
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
+        == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    )
 
 
-# @pytest.mark.parametrize("fen", fens[:25])
-# @pytest.mark.parametrize("depth", (3, 4))
-# def test_killer_move(fen, depth):
-#     pv1 = []
-#     r1 = alphabeta.alphabeta(
-#         config=Config(
-#             quiescence_depth=50,
-#             quiescence_search=True,
-#             use_transposition_table=True,
-#             use_killer_moves=True,
-#         ),
-#         b=utils.from_fen(fen),
-#         depth=depth,
-#         pv=pv1,
-#         gen_legal_moves=False,
-#         alpha=-VALUE_MAX,
-#         beta=VALUE_MAX,
-#     )
-#     pv2 = []
-#     r2 = alphabeta.alphabeta(
-#         config=Config(
-#             quiescence_depth=50,
-#             quiescence_search=True,
-#             use_transposition_table=True,
-#             use_killer_moves=False,
-#         ),
-#         b=utils.from_fen(fen),
-#         depth=depth,
-#         pv=pv2,
-#         gen_legal_moves=False,
-#         alpha=-VALUE_MAX,
-#         beta=VALUE_MAX,
-#     )
-#     assert r1 == r2
-#     assert (
-#         f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
-#         == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
-#     )
+@pytest.mark.xfail
+@pytest.mark.parametrize("fen", fens[:25])
+@pytest.mark.parametrize("depth", (3, 4, 5))
+def test_killer_move(fen, depth):
+    pv1 = []
+    r1 = search.alphabeta(
+        config=Config(
+            quiescence_depth=100,
+            quiescence_search=True,
+            use_transposition_table=False,
+            use_killer_moves=False,
+        ),
+        b=utils.from_fen(fen),
+        depth=depth,
+        pv=pv1,
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
+    )
+    pv2 = []
+    r2 = search.alphabeta(
+        config=Config(
+            quiescence_depth=100,
+            quiescence_search=True,
+            use_transposition_table=False,
+            use_killer_moves=True,
+        ),
+        b=utils.from_fen(fen),
+        depth=depth,
+        pv=pv2,
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
+    )
+    assert r1 == r2, (
+        f"{fen}: "
+        f"{','.join([utils.to_uci(x) for x in pv1])} "
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    )
+    assert (
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
+        == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    )
+
+
+@pytest.mark.parametrize("fen", fens)
+@pytest.mark.parametrize("depth", (1, 2, 3))
+def test_quiescence_depth(fen, depth):
+    pv1 = []
+    r1 = search.alphabeta(
+        config=Config(
+            quiescence_depth=100,
+            quiescence_search=True,
+            use_transposition_table=False,
+            use_killer_moves=False,
+        ),
+        b=utils.from_fen(fen),
+        depth=depth,
+        pv=pv1,
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
+    )
+    pv2 = []
+    r2 = search.alphabeta(
+        config=Config(
+            quiescence_depth=10,
+            quiescence_search=True,
+            use_transposition_table=False,
+            use_killer_moves=False,
+        ),
+        b=utils.from_fen(fen),
+        depth=depth,
+        pv=pv2,
+        gen_legal_moves=False,
+        alpha=-VALUE_MAX,
+        beta=VALUE_MAX,
+    )
+    assert r1 == r2, (
+        f"{fen}: "
+        f"{','.join([utils.to_uci(x) for x in pv1])} "
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    )
+    assert (
+        f"{fen}: {','.join([utils.to_uci(x) for x in pv1])}"
+        == f"{fen}: {','.join([utils.to_uci(x) for x in pv2])}"
+    )

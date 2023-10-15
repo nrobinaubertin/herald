@@ -357,56 +357,29 @@ def _is_legal_move(
     b: Board,
     move: Move,
 ) -> bool:
-    if not is_pseudo_legal_move(
-        b,
-        move,
-    ):
+    if not is_pseudo_legal_move(b, move):
         return False
 
     # verify that the king of the player to move exists
-    if (
-        _number_of(
-            b,
-            PIECE.KING,
-            b.turn,
-        )
-        < 1
-    ):
+    if (_number_of(b, PIECE.KING, b.turn) < 1):
         return False
 
-    b2 = push(
-        b,
-        move,
-    )
+    b2 = push(b, move)
 
     # the king should not be in check after the move
-    ks = _king_square(
-        b2,
-        b2.invturn,
-    )
+    ks = _king_square(b2, b2.invturn)
     if ks is None:
         return False
 
-    if is_square_attacked(
-        b2.squares,
-        ks,
-        b2.turn,
-    ):
+    if is_square_attacked(b2.squares, ks, b2.turn):
         return False
 
-    ks = _king_square(
-        b,
-        b.turn,
-    )
+    ks = _king_square(b, b.turn)
     if ks is None:
         return False
 
     # a castling move is only acceptable if the king is not in check
-    if move.is_castle and is_square_attacked(
-        b.squares,
-        ks,
-        b.invturn,
-    ):
+    if move.is_castle and is_square_attacked(b.squares, ks, b.invturn):
         return False
 
     # a castling move is not acceptable if some transition squares are attacked

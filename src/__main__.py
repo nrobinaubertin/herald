@@ -18,11 +18,11 @@ LAST_SEARCH = None
 
 CONFIG = Config(
     quiescence_search=True,
-    quiescence_depth=9,
+    quiescence_depth=10,
     use_transposition_table=True,
     use_hash_move=True,
-    use_killer_moves=True,
     use_saved_search=True,
+    use_killer_moves=False,  # tests fail
 )
 
 
